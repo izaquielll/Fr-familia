@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Família FR · Planos de treino e nutrição</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0f100d;--s1:#171914;--s2:#20231c;--line:#2c3026;--tx:#f3f4ef;--mut:#a4a99c;
+ --lime:#d4ff3a;--lime-ink:#141a00;--or:#ff7a2f;--or-ink:#2a0e00;--mocha:#211814}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 Poppins,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+img{display:block;max-width:100%}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+h1,h2,h3{margin:0;line-height:1.05;letter-spacing:-.01em}
+.wrap{max-width:1120px;margin:0 auto;padding:0 18px}
+.mut{color:var(--mut)}
+.hidden{display:none!important}
+
+/* header */
+header{position:sticky;top:0;z-index:30;background:rgba(15,16,13,.88);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+header .wrap{display:flex;align-items:center;gap:14px;height:62px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.08em;font-size:15px;text-decoration:none;color:var(--tx)}
+.logo i{font-style:normal;width:34px;height:34px;border-radius:9px;background:var(--lime);color:var(--lime-ink);display:grid;place-items:center;font-size:14px;letter-spacing:0}
+nav{margin-left:auto;display:flex;gap:4px}
+nav a{color:var(--mut);text-decoration:none;font-size:14px;font-weight:600;padding:8px 10px;border-radius:8px}
+nav a:hover{color:var(--tx);background:var(--s2)}
+@media(max-width:640px){nav a.hm{display:none}}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:12px;padding:14px 20px;font-weight:700;font-size:15px;background:var(--lime);color:var(--lime-ink);text-decoration:none}
+.btn:hover{filter:brightness(1.07)}
+.btn.or{background:var(--or);color:var(--or-ink)}
+.btn.line{background:transparent;color:var(--tx);box-shadow:inset 0 0 0 1.5px var(--line)}
+.btn.block{width:100%}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+
+/* hero */
+.hero{position:relative;overflow:hidden;border-bottom:1px solid var(--line)}
+.hero .glow{position:absolute;width:620px;height:620px;border-radius:50%;background:var(--lime);filter:blur(120px);opacity:.18;right:-160px;top:-120px}
+.hero .wrap{position:relative;display:grid;grid-template-columns:1.2fr .8fr;gap:20px;align-items:end;min-height:560px;padding-top:40px}
+.hero .ph{align-self:end;justify-self:center;height:540px;filter:grayscale(.35) contrast(1.05);opacity:.9;-webkit-mask-image:linear-gradient(#000 70%,transparent);mask-image:linear-gradient(#000 70%,transparent)}
+.hero .tx{padding-bottom:60px}
+.tag{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;padding:7px 14px;border-radius:999px;background:var(--lime);color:var(--lime-ink)}
+.tag.or{background:var(--or);color:var(--or-ink)}
+.tag.soft{background:var(--s2);color:var(--mut)}
+.hero h1{font-size:clamp(40px,6.4vw,74px);font-weight:800;margin:18px 0 14px}
+.hero h1 em{font-style:normal;color:var(--lime)}
+.hero p{font-size:18px;color:var(--mut);max-width:46ch;margin:0 0 26px}
+.hero .ctas{display:flex;gap:10px;flex-wrap:wrap}
+.promo-line{margin-top:18px;font-size:14px;color:var(--mut)}
+.promo-line b{color:var(--lime)}
+@media(max-width:760px){.hero .wrap{grid-template-columns:1fr;min-height:0}.hero .ph{position:absolute;right:-60px;bottom:0;height:430px;opacity:.28}.hero .tx{padding:20px 0 44px}}
+
+/* sections */
+section{padding:56px 0 8px}
+.sh{margin-bottom:22px}
+.sh h2{font-size:clamp(28px,3.6vw,40px);font-weight:800}
+.sh p{margin:8px 0 0;color:var(--mut)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){.grid{grid-template-columns:1fr}}
+
+/* plan cards */
+.plan{position:relative;overflow:hidden;background:var(--s1);border:1px solid var(--line);border-radius:20px;padding:22px;display:flex;flex-direction:column;gap:12px;min-height:380px}
+.plan.lime{--acc:var(--lime);--ink:var(--lime-ink)}
+.plan.or{--acc:var(--or);--ink:var(--or-ink);background:linear-gradient(160deg,#2a1d16,var(--s1) 60%)}
+.plan .bg{position:absolute;right:-40px;bottom:0;height:88%;opacity:.13;filter:grayscale(1);pointer-events:none}
+.plan > *:not(.bg){position:relative}
+.plan .tg{align-self:flex-start;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;padding:5px 11px;border-radius:999px;background:var(--acc);color:var(--ink)}
+.plan h3{font-size:26px;font-weight:800}
+.plan ul{list-style:none;padding:0;margin:0;font-size:14.5px}
+.plan li{display:flex;gap:9px;margin:6px 0}
+.plan li::before{content:"✓";color:var(--acc);font-weight:800}
+.price{margin-top:auto}
+.price .de{font-size:14px;color:var(--mut)}
+.price .de s{text-decoration-thickness:2px}
+.price .v{font-size:44px;font-weight:800;line-height:1;color:var(--acc)}
+.price .v small{font-size:18px;color:var(--tx);margin-right:4px}
+.price .per{font-size:13px;color:var(--mut);margin-top:4px}
+.plan .btn{background:var(--acc);color:var(--ink)}
+
+/* nutris */
+.nutri{display:flex;gap:18px;background:var(--s1);border:1px solid var(--line);border-radius:20px;padding:18px;align-items:flex-start;flex-wrap:wrap}
+.nutri img{width:140px;height:160px;object-fit:cover;object-position:60% 20%;border-radius:14px;border:2px solid var(--lime)}
+.nutri .info{flex:1;min-width:230px}
+.nutri h3{font-size:22px}
+.nutri .role{color:var(--lime);font-weight:600;font-size:14px}
+.nutri ul{margin:8px 0 0;padding-left:18px;font-size:14px;color:var(--mut)}
+.soon{border:1.5px dashed var(--line);border-radius:20px;padding:22px;text-align:center;color:var(--mut)}
+
+/* steps */
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media(max-width:800px){.steps{grid-template-columns:1fr 1fr}}
+.step{background:var(--s1);border:1px solid var(--line);border-radius:16px;padding:16px}
+.step b{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:var(--lime);color:var(--lime-ink);margin-bottom:10px}
+.step p{margin:4px 0 0;font-size:14px;color:var(--mut)}
+
+/* sheet */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:50;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--s1);border:1px solid var(--line);border-radius:22px 22px 0 0;width:100%;max-width:560px;max-height:92vh;overflow:auto;padding:20px 18px 26px}
+@media(min-width:700px){.ov{align-items:center}.sheet{border-radius:22px}}
+.sheet .top{display:flex;align-items:flex-start;gap:10px;margin-bottom:6px}
+.sheet h3{font-size:24px;font-weight:800;flex:1}
+.x{background:var(--s2);border:0;width:36px;height:36px;border-radius:10px;font-size:18px}
+.fld{margin-top:16px}
+.fld > label,.fld > .lb{display:block;font-size:13px;font-weight:600;color:var(--mut);margin-bottom:6px}
+.opts{display:grid;gap:8px}
+.opt{display:flex;align-items:center;gap:12px;background:var(--s2);border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;cursor:pointer}
+.opt input{accent-color:var(--acc,var(--lime));width:18px;height:18px;flex:none}
+.opt .t{flex:1}
+.opt .t b{display:block;font-size:15px}
+.opt .t span{font-size:13px;color:var(--mut)}
+.opt .p{font-weight:700;white-space:nowrap}
+.opt:has(input:checked){border-color:var(--acc,var(--lime))}
+input[type=text],input[type=tel],input[type=date],input[type=number],select{width:100%;background:var(--s2);border:1.5px solid var(--line);border-radius:12px;padding:12px 14px}
+.sum{margin-top:18px;background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:14px}
+.sum .row{display:flex;justify-content:space-between;gap:10px;font-size:14px;margin:4px 0}
+.sum .tot{display:flex;justify-content:space-between;align-items:baseline;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.sum .tot b{font-size:30px;color:var(--acc,var(--lime))}
+.note{font-size:12.5px;color:var(--mut);margin-top:10px}
+.err{color:#ff8a80;font-size:13px;margin-top:6px}
+
+/* admin */
+.admin{background:var(--s1);border:1px solid var(--line);border-radius:20px;padding:18px;margin:30px 0}
+.admin .g{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:560px){.admin .g{grid-template-columns:1fr}}
+.admin h4{margin:18px 0 4px;font-size:15px}
+footer{border-top:1px solid var(--line);margin-top:56px;padding:26px 0 40px;color:var(--mut);font-size:13px}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <a class="logo" href="#"><i>FR</i>FAMÍLIA FR</a>
+  <nav><a href="#planos">Planos</a><a class="hm" href="#nutris">Nutris</a><a class="hm" href="#como">Como funciona</a></nav>
+</div></header>
+
+<div class="hero"><div class="glow"></div><div class="wrap">
+  <div class="tx">
+    <span class="tag" id="hero-tag">Consultoria online</span>
+    <h1>Treino e nutrição <em>do seu jeito</em>, com a equipe FR.</h1>
+    <p>Escolha o seu plano, monte com as vantagens que você quer e mande o resumo direto no nosso WhatsApp.</p>
+    <div class="ctas"><a class="btn" href="#planos">Escolher meu plano</a><a class="btn line" href="#como">Como funciona</a></div>
+    <div class="promo-line" id="promo-line"></div>
+  </div>
+  <img class="ph" src="img/fr-barra.webp" alt="">
+</div></div>
+
+<section id="planos"><div class="wrap">
+  <div class="sh"><h2>Planos de consultoria</h2><p>Acompanhamento online com treino no app MFIT. Ciclos de 60 dias.</p></div>
+  <div class="grid" id="g-consult"></div>
+</div></section>
+
+<section id="avulsos"><div class="wrap">
+  <div class="sh"><span class="tag or">Programas femininos</span><h2 style="margin-top:12px">Comece por um programa de 30 dias</h2><p>Pagamento único, sem mensalidade. Quem faz o programa ganha desconto na primeira consultoria.</p></div>
+  <div class="grid" id="g-avulso"></div>
+</div></section>
+
+<section id="nutris"><div class="wrap">
+  <div class="sh"><h2>Nutricionistas parceiras</h2><p>Você escolhe com quem quer fazer o seu plano alimentar.</p></div>
+  <div style="display:grid;gap:14px" id="g-nutris"></div>
+</div></section>
+
+<section id="como"><div class="wrap">
+  <div class="sh"><h2>Como funciona</h2></div>
+  <div class="steps">
+    <div class="step"><b>1</b><strong>Escolha o plano</strong><p>Monte com nutri, guia alimentar ou só o treino.</p></div>
+    <div class="step"><b>2</b><strong>Mande no WhatsApp</strong><p>O resumo vai pronto. A gente confirma e envia o Pix.</p></div>
+    <div class="step"><b>3</b><strong>Avaliação e anamnese</strong><p>Pontos positivos e negativos, objetivo, rotina e tempo de treino.</p></div>
+    <div class="step"><b>4</b><strong>Treino no MFIT</strong><p>Seu treino no app e, se escolher, o plano da nutri.</p></div>
+  </div>
+</div></section>
+
+
+<footer><div class="wrap">Família FR · Consultoria online de treino e nutrição. Valores sujeitos a confirmação no WhatsApp.
+  <span style="float:right"><a href="admin.html" style="color:var(--mut)">Área do FR</a></span></div></footer>
+
+<div class="ov hidden" id="ov"><div class="sheet" id="sheet"></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+/* ===== Valores padrão (usados quando o painel ainda não foi salvo ou não carrega) ===== */
+const DEFAULTS = {
+  consultoria: 200, consultoriaPromo: 150,
+  nutri: 250, comboPromo: 250,
+  convite: 200, conviteAte: "2026-12-31",
+  promoNome: "Black Friday", promoAte: "2026-12-31",
+  avulso: 67, avulsoGuia: 80,
+  descConsult: 20, descCombo: 30,
+  whatsapp: ""
+};
+const NUTRIS = [{id:"fabiola", nome:"Fabíola Amorim", foto:"img/fabiola.jpg",
+  bio:"Atuação em emagrecimento, hipertrofia, nutrição clínica e esportiva, com estratégias individualizadas e baseadas em evidências científicas. Foco em resultados, composição corporal, desempenho físico e saúde.",
+  formacao:["Graduada em Nutrição","Pós-graduada em Nutrição Clínica em Patologias","Mestranda em Saúde Coletiva pela UFJF"]}];
+const AVULSOS = [
+  {id:"gluteo", nome:"Base de Glúteo", desc:"Glúteos e posteriores, com progressão de carga em 4 semanas."},
+  {id:"abdomen", nome:"Base de Abdômen", desc:"Core e abdômen: estabilidade, força e definição."},
+  {id:"metabolica", nome:"Base Metabólica + HIIT", desc:"Corpo inteiro com HIIT para gastar mais e ganhar fôlego."}];
+
+let C = {...DEFAULTS};
+let db = null, cfgVersion = null;
+const brl = n => "R$ " + Number(n).toLocaleString("pt-BR",{minimumFractionDigits: n%1?2:0, maximumFractionDigits:2});
+const fmtD = s => s ? s.split("-").reverse().slice(0,2).join("/") : "";
+const ativo = ate => { if(!ate) return false; const e = new Date(ate+"T23:59:59"); return new Date() <= e; };
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ===== Vitrine ===== */
+function render(){
+  const promo = ativo(C.promoAte), conv = ativo(C.conviteAte);
+  const combo = C.consultoria + C.nutri;
+  document.getElementById("hero-tag").textContent = promo ? `${C.promoNome} · até ${fmtD(C.promoAte)}` : "Consultoria online";
+  document.getElementById("promo-line").innerHTML = promo ? `Alunos que renovam até ${fmtD(C.promoAte)}: consultoria por <b>${brl(C.consultoriaPromo)}</b> e com nutri por <b>${brl(C.comboPromo)}</b>.` : "";
+
+  const card = (o) => `<div class="plan ${o.cls}">${o.bg?`<img class="bg" src="${o.bg}" alt="">`:""}
+    <span class="tg">${o.tag}</span><h3>${o.nome}</h3><ul>${o.itens.map(i=>`<li>${i}</li>`).join("")}</ul>
+    <div class="price">${o.de?`<div class="de">De <s>${brl(o.de)}</s> por</div>`:`<div class="de">${o.pre||"&nbsp;"}</div>`}
+    <div class="v"><small>R$</small>${Number(o.v).toLocaleString("pt-BR")}</div><div class="per">${o.per}</div></div>
+    <button class="btn block" data-open="${o.id}">${o.cta||"Montar meu plano"}</button></div>`;
+
+  const cards = [
+    {id:"consultoria", cls:"lime", bg:"img/fr-frente.webp", tag: promo? C.promoNome+" · alunos" : "Consultoria", nome:"Consultoria Online",
+     itens:["Treino montado pra você no app MFIT","Avaliação online e anamnese completas","Suporte e correção no WhatsApp"],
+     de: promo? C.consultoria:null, v: promo? C.consultoriaPromo : C.consultoria, pre: promo?null:"A partir de", per: promo? `renovando até ${fmtD(C.promoAte)} · ciclo de 60 dias` : "por ciclo de 60 dias"},
+    {id:"combo", cls:"lime", bg:"img/fr-barra.webp", tag: promo? C.promoNome+" · alunos" : "Mais completo", nome:"Consultoria + Nutri",
+     itens:["Tudo da consultoria","Plano alimentar com a nutricionista que você escolher","2 atualizações do plano alimentar no ciclo"],
+     de: combo, v: promo? C.comboPromo : combo, per: promo? `renovando até ${fmtD(C.promoAte)} · ciclo de 60 dias` : `R$ ${C.consultoria} da consultoria + R$ ${C.nutri} da nutri`},
+  ];
+  if(conv) cards.push({id:"convite", cls:"or", bg:"img/fr-barra.webp", tag:"Convite de aluno", nome:"Consultoria + Nutri Online",
+     itens:["Para quem foi indicado por um aluno","Avaliação e anamnese completas, treino e plano alimentar","100% online, sem avaliação presencial"],
+     de: combo, v: C.convite, per:`1º ciclo de 60 dias · convite até ${fmtD(C.conviteAte)}`, cta:"Tenho um convite"});
+  document.getElementById("g-consult").innerHTML = cards.map(card).join("");
+
+  document.getElementById("g-avulso").innerHTML = AVULSOS.map(a => card({id:"av-"+a.id, cls:"or", bg:"img/fr-palco.webp", tag:"Programa · 30 dias", nome:a.nome,
+     itens:[a.desc,"Opcional: guia alimentar da nutri", `Até ${Math.max(C.descConsult,C.descCombo)}% off na 1ª consultoria`],
+     pre:"Por apenas", v:C.avulso, per:`só treino · ${brl(C.avulsoGuia)} com guia alimentar`, cta:"Quero este programa"})).join("");
+
+  document.getElementById("g-nutris").innerHTML = NUTRIS.map(n => `<div class="nutri"><img src="${n.foto}" alt="${n.nome}">
+    <div class="info"><h3>${n.nome}</h3><div class="role">Nutricionista parceira</div><p class="mut" style="margin:8px 0 0;font-size:14px">${n.bio}</p>
+    <ul>${n.formacao.map(f=>`<li>${f}</li>`).join("")}</ul></div></div>`).join("") + `<div class="soon">Novas nutricionistas parceiras em breve</div>`;
+}
+
+/* ===== Montar o plano ===== */
+let S = {};
+function open(id){
+  S = {id, aluno: id==="combo"||id==="consultoria" ? "sim" : "", nutri: NUTRIS[0].id, guia: false, comNutri: id==="combo"||id==="convite"};
+  if(id.startsWith("av-")) S.programa = id.slice(3);
+  drawSheet(); document.getElementById("ov").classList.remove("hidden"); document.body.style.overflow="hidden";
+}
+function close(){ document.getElementById("ov").classList.add("hidden"); document.body.style.overflow=""; }
+
+function calc(){
+  const promo = ativo(C.promoAte), combo = C.consultoria + C.nutri;
+  if(S.id==="consultoria"||S.id==="combo"){
+    const renova = promo && S.aluno==="sim";
+    if(S.comNutri) return {nome:"Consultoria + Nutri"+(renova?` (${C.promoNome})`:""), v: renova? C.comboPromo : combo, de: combo, per:"por ciclo de 60 dias"};
+    return {nome:"Consultoria Online"+(renova?` (${C.promoNome})`:""), v: renova? C.consultoriaPromo : C.consultoria, de: renova? C.consultoria:null, per:"por ciclo de 60 dias"};
+  }
+  if(S.id==="convite") return {nome:"Consultoria + Nutri Online (convite de aluno)", v:C.convite, de:combo, per:"1º ciclo de 60 dias"};
+  const a = AVULSOS.find(x=>x.id===S.programa);
+  return {nome:a.nome+(S.guia?" + guia alimentar":""), v: S.guia? C.avulsoGuia : C.avulso, de:null, per:"programa de 30 dias"};
+}
+
+function drawSheet(){
+  const promo = ativo(C.promoAte), isAv = S.id.startsWith("av-"), combo = C.consultoria + C.nutri;
+  const acc = (isAv||S.id==="convite") ? "var(--or)" : "var(--lime)";
+  const r = calc();
+  const nutriOpts = NUTRIS.map(n=>`<label class="opt"><input type="radio" name="nutri" value="${n.id}" ${S.nutri===n.id?"checked":""}><span class="t"><b>${n.nome}</b><span>Nutricionista parceira</span></span></label>`).join("");
+  let h = `<div class="top"><h3>Monte o seu plano</h3><button class="x" data-close aria-label="Fechar">✕</button></div>`;
+
+  if(S.id==="consultoria"||S.id==="combo"){
+    if(promo) h += `<div class="fld"><span class="lb">Você já é aluno da consultoria?</span><div class="opts">
+      <label class="opt"><input type="radio" name="aluno" value="sim" ${S.aluno==="sim"?"checked":""}><span class="t"><b>Sim, vou renovar</b><span>${C.promoNome} para pagamentos até ${fmtD(C.promoAte)}</span></span></label>
+      <label class="opt"><input type="radio" name="aluno" value="nao" ${S.aluno==="nao"?"checked":""}><span class="t"><b>Não, quero começar</b><span>Valor normal do plano</span></span></label></div></div>`;
+    const renova = promo && S.aluno==="sim";
+    h += `<div class="fld"><span class="lb">Plano</span><div class="opts">
+      <label class="opt"><input type="radio" name="comNutri" value="0" ${!S.comNutri?"checked":""}><span class="t"><b>Só consultoria</b><span>Treino no MFIT + suporte</span></span><span class="p">${brl(renova?C.consultoriaPromo:C.consultoria)}</span></label>
+      <label class="opt"><input type="radio" name="comNutri" value="1" ${S.comNutri?"checked":""}><span class="t"><b>Consultoria + Nutri</b><span>Plano alimentar com 2 atualizações</span></span><span class="p">${brl(renova?C.comboPromo:combo)}</span></label></div></div>`;
+    if(S.comNutri) h += `<div class="fld"><span class="lb">Nutricionista</span><div class="opts">${nutriOpts}</div></div>`;
+  }
+  if(S.id==="convite"){
+    h += `<div class="fld"><label for="f-ind">Quem te indicou?</label><input type="text" id="f-ind" placeholder="Nome do aluno" value="${esc(S.indicado||"")}"></div>
+      <div class="fld"><span class="lb">Nutricionista</span><div class="opts">${nutriOpts}</div></div>`;
+  }
+  if(isAv){
+    h += `<div class="fld"><span class="lb">Programa</span><div class="opts">${AVULSOS.map(a=>`<label class="opt"><input type="radio" name="programa" value="${a.id}" ${S.programa===a.id?"checked":""}><span class="t"><b>${a.nome}</b><span>${a.desc}</span></span></label>`).join("")}</div></div>
+      <div class="fld"><span class="lb">Guia alimentar</span><div class="opts">
+      <label class="opt"><input type="radio" name="guia" value="0" ${!S.guia?"checked":""}><span class="t"><b>Só o treino</b></span><span class="p">${brl(C.avulso)}</span></label>
+      <label class="opt"><input type="radio" name="guia" value="1" ${S.guia?"checked":""}><span class="t"><b>Treino + guia alimentar</b><span>Guia da nutricionista parceira</span></span><span class="p">${brl(C.avulsoGuia)}</span></label></div></div>`;
+    if(S.guia) h += `<div class="fld"><span class="lb">Nutricionista do guia</span><div class="opts">${nutriOpts}</div></div>`;
+  }
+  h += `<div class="fld"><label for="f-nome">Seu nome</label><input type="text" id="f-nome" autocomplete="name" value="${esc(S.nome||"")}"></div>
+    <div class="fld"><label for="f-obj">Seu objetivo</label><select id="f-obj">${["","Emagrecimento","Hipertrofia","Definição","Condicionamento","Saúde e qualidade de vida"].map(o=>`<option ${S.obj===o?"selected":""} value="${o}">${o||"Escolha"}</option>`).join("")}</select></div>`;
+
+  const nutriNome = NUTRIS.find(n=>n.id===S.nutri)?.nome;
+  const showNutri = S.comNutri || S.id==="convite" || (isAv && S.guia);
+  h += `<div class="sum" style="--acc:${acc}"><div class="row"><span class="mut">Plano</span><b style="text-align:right">${r.nome}</b></div>
+    ${showNutri?`<div class="row"><span class="mut">Nutricionista</span><span>${nutriNome}</span></div>`:""}
+    <div class="tot"><span class="mut">${r.de&&r.de>r.v?`<s>${brl(r.de)}</s>`:""} ${r.per}</span><b>${brl(r.v)}</b></div>
+    ${isAv?`<div class="note">🎁 Depois do programa: ${C.descConsult}% off na 1ª consultoria ou ${C.descCombo}% off na Consultoria + Nutri.</div>`:""}</div>
+    <div id="f-err" class="err"></div>
+    <button class="btn block ${isAv||S.id==="convite"?"or":""}" style="margin-top:14px" data-send>Enviar resumo no WhatsApp</button>
+    <div class="note">O WhatsApp abre com a mensagem pronta. É só tocar em enviar.</div>`;
+  const sh = document.getElementById("sheet"); sh.style.setProperty("--acc",acc); sh.innerHTML = h;
+}
+
+function resumo(){
+  const r = calc(), isAv = S.id.startsWith("av-");
+  const nutriNome = NUTRIS.find(n=>n.id===S.nutri)?.nome;
+  const showNutri = S.comNutri || S.id==="convite" || (isAv && S.guia);
+  let m = `Olá, FR! Vim pela vitrine da Família FR 💪\n\n*Plano:* ${r.nome}\n`;
+  if(showNutri) m += `*Nutricionista:* ${nutriNome}\n`;
+  m += `*Valor:* ${brl(r.v)} (${r.per})\n`;
+  if(S.id==="consultoria"||S.id==="combo") m += `*Já sou aluno:* ${S.aluno==="sim"?"Sim, quero renovar":"Não, quero começar"}\n`;
+  if(S.id==="convite") m += `*Indicado por:* ${S.indicado}\n`;
+  m += `*Nome:* ${S.nome}\n`;
+  if(S.obj) m += `*Objetivo:* ${S.obj}\n`;
+  m += `\nQuero fechar! Pode me mandar o Pix?`;
+  return m;
+}
+
+document.addEventListener("click", e => {
+  const o = e.target.closest("[data-open]"); if(o){ open(o.dataset.open); return; }
+  if(e.target.closest("[data-close]") || e.target.id==="ov"){ close(); return; }
+  if(e.target.closest("[data-send]")){
+    const err = document.getElementById("f-err");
+    if(!S.nome || !S.nome.trim()){ err.textContent="Coloque o seu nome."; return; }
+    if(S.id==="convite" && !(S.indicado||"").trim()){ err.textContent="Diga quem te indicou."; return; }
+    const num = String(C.whatsapp||"").replace(/\D/g,"");
+    if(!num){ err.textContent="O WhatsApp ainda não foi configurado."; return; }
+    const tel = num.startsWith("55") ? num : "55"+num;
+    salvarPedido();
+    const a = document.createElement("a"); a.href = `https://wa.me/${tel}?text=${encodeURIComponent(resumo())}`; a.target="_blank"; a.rel="noopener";
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+});
+document.addEventListener("change", e => {
+  const t = e.target; if(!t.closest("#sheet")) return;
+  if(t.name==="aluno") S.aluno=t.value;
+  if(t.name==="comNutri") S.comNutri = t.value==="1";
+  if(t.name==="nutri") S.nutri=t.value;
+  if(t.name==="programa") S.programa=t.value;
+  if(t.name==="guia") S.guia = t.value==="1";
+  if(t.id==="f-obj") S.obj=t.value;
+  if(["aluno","comNutri","programa","guia","nutri"].includes(t.name)) drawSheet();
+});
+document.addEventListener("input", e => {
+  if(e.target.id==="f-nome") S.nome=e.target.value;
+  if(e.target.id==="f-ind") S.indicado=e.target.value;
+});
+document.addEventListener("keydown", e => { if(e.key==="Escape") close(); });
+
+/* ===== Supabase: valores e pedidos ===== */
+const sb = (window.supabase && window.FR_CONFIG) ? window.supabase.createClient(FR_CONFIG.url, FR_CONFIG.key) : null;
+async function salvarPedido(){
+  if(!sb) return;
+  const r = calc(), isAv = S.id.startsWith("av-");
+  const showNutri = S.comNutri || S.id==="convite" || (isAv && S.guia);
+  try{ await sb.from("fr_pedidos").insert({plano:r.nome, valor:r.v, nutri: showNutri ? (NUTRIS.find(n=>n.id===S.nutri)?.nome||null) : null,
+    nome:(S.nome||"").trim().slice(0,120), objetivo:S.obj||null, aluno: S.aluno||null, indicado:(S.indicado||"").trim().slice(0,120)||null, resumo: resumo().slice(0,2000)}); }catch(e){}
+}
+render();
+(async () => {
+  if(!sb) return;
+  try{
+    const { data, error } = await sb.from("fr_config").select("dados").eq("id",1).maybeSingle();
+    if(!error && data && data.dados){ C = {...DEFAULTS, ...data.dados}; render(); }
+  }catch(e){}
+})();
+</script>
+</body>
+</html>

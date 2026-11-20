@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Área do FR · Família FR</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0f100d;--s1:#171914;--s2:#20231c;--line:#2c3026;--tx:#f3f4ef;--mut:#a4a99c;--lime:#d4ff3a;--ink:#141a00}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 Poppins,system-ui,sans-serif}
+.wrap{max-width:760px;margin:0 auto;padding:20px 16px 60px}
+h1{font-size:24px;margin:0}h2{font-size:18px;margin:26px 0 8px}
+.mut{color:var(--mut)}.card{background:var(--s1);border:1px solid var(--line);border-radius:16px;padding:16px;margin-top:14px}
+input{width:100%;background:var(--s2);border:1.5px solid var(--line);border-radius:10px;padding:11px 12px;color:var(--tx);font:inherit}
+label{font-size:13px;color:var(--mut);display:block;margin:10px 0 4px}
+.g{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}@media(max-width:560px){.g{grid-template-columns:1fr}}
+.btn{border:0;border-radius:10px;padding:12px 18px;font:inherit;font-weight:700;background:var(--lime);color:var(--ink);cursor:pointer}
+.btn.line{background:transparent;color:var(--tx);box-shadow:inset 0 0 0 1.5px var(--line)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px}
+.top{display:flex;align-items:center;gap:10px}.top .sp{flex:1}
+.ped{border-top:1px solid var(--line);padding:10px 0}.ped:first-child{border-top:0}
+.ped b{display:block}.tag{display:inline-block;font-size:12px;background:var(--s2);border-radius:999px;padding:2px 8px;margin-right:4px}
+.hidden{display:none}
+</style>
+</head>
+<body><div class="wrap">
+  <div class="top"><h1>Área do FR</h1><span class="sp"></span><a class="mut" href="index.html">Ver vitrine</a></div>
+
+  <div id="v-login" class="card">
+    <p class="mut" style="margin:0">Entre com o e-mail de administrador.</p>
+    <label for="em">E-mail</label><input id="em" type="email" autocomplete="email">
+    <label for="pw">Senha</label><input id="pw" type="password" autocomplete="current-password">
+    <div class="row"><button class="btn" id="b-in">Entrar</button><button class="btn line" id="b-up">Criar meu acesso</button></div>
+    <p id="st-login" class="mut"></p>
+  </div>
+
+  <div id="v-app" class="hidden">
+    <div class="card"><div class="top"><span id="who" class="mut"></span><span class="sp"></span><button class="btn line" id="b-out">Sair</button></div></div>
+    <h2>Valores da vitrine</h2>
+    <div class="card" id="form"></div>
+    <div class="row"><button class="btn" id="b-save">Salvar valores</button><span id="st-save" class="mut"></span></div>
+    <h2>Pedidos recebidos</h2>
+    <div class="card" id="peds"><span class="mut">Carregando…</span></div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+const sb = window.supabase.createClient(FR_CONFIG.url, FR_CONFIG.key);
+const FIELDS = [
+  ["Consultoria",[["consultoria","Consultoria (valor normal)","number"],["nutri","Parte da nutri (valor normal)","number"]]],
+  ["Promoção para alunos",[["promoNome","Nome da promoção","text"],["promoAte","Vale até","date"],["consultoriaPromo","Consultoria na promoção","number"],["comboPromo","Consultoria + Nutri na promoção","number"]]],
+  ["Convite de aluno",[["convite","Valor do convite","number"],["conviteAte","Convite vale até","date"]]],
+  ["Programas femininos",[["avulso","Só treino","number"],["avulsoGuia","Com guia alimentar","number"],["descConsult","Desconto na consultoria (%)","number"],["descCombo","Desconto na Consultoria + Nutri (%)","number"]]],
+  ["Contato",[["whatsapp","WhatsApp que recebe os pedidos (com DDD)","tel"]]]];
+let C = {};
+const $ = id => document.getElementById(id);
+const esc = s => String(s??"").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const brl = n => "R$ " + Number(n).toLocaleString("pt-BR");
+
+async function show(session){
+  $("v-login").classList.toggle("hidden", !!session); $("v-app").classList.toggle("hidden", !session);
+  if(!session) return;
+  $("who").textContent = session.user.email;
+  const { data } = await sb.from("fr_config").select("dados").eq("id",1).maybeSingle();
+  C = data?.dados || {};
+  $("form").innerHTML = FIELDS.map(([t,fs])=>`<h3 style="font-size:15px;margin:14px 0 0">${t}</h3><div class="g">${fs.map(([k,l,ty])=>`<div><label for="a-${k}">${l}</label><input id="a-${k}" type="${ty}" ${ty==="number"?'step="0.01" min="0"':""} value="${esc(C[k])}"></div>`).join("")}</div>`).join("");
+  loadPeds();
+}
+async function loadPeds(){
+  const { data, error } = await sb.from("fr_pedidos").select("*").order("created_at",{ascending:false}).limit(100);
+  if(error){ $("peds").innerHTML = `<span class="mut">Sem permissão para ver os pedidos. Confira se este e-mail é de administrador.</span>`; return; }
+  if(!data.length){ $("peds").innerHTML = `<span class="mut">Nenhum pedido ainda.</span>`; return; }
+  $("peds").innerHTML = data.map(p=>`<div class="ped"><b>${esc(p.nome)} · ${brl(p.valor)}</b>
+    <span class="tag">${esc(p.plano)}</span>${p.nutri?`<span class="tag">${esc(p.nutri)}</span>`:""}${p.objetivo?`<span class="tag">${esc(p.objetivo)}</span>`:""}${p.indicado?`<span class="tag">Indicado por ${esc(p.indicado)}</span>`:""}
+    <div class="mut" style="font-size:13px">${new Date(p.created_at).toLocaleString("pt-BR")}</div></div>`).join("");
+}
+$("b-in").onclick = async () => {
+  $("st-login").textContent = "Entrando…";
+  const { error } = await sb.auth.signInWithPassword({ email: $("em").value.trim(), password: $("pw").value });
+  $("st-login").textContent = error ? "Não deu certo. Confira o e-mail e a senha (e se você já confirmou o e-mail)." : "";
+};
+$("b-up").onclick = async () => {
+  if($("pw").value.length < 8){ $("st-login").textContent = "Use uma senha com pelo menos 8 caracteres."; return; }
+  const { error } = await sb.auth.signUp({ email: $("em").value.trim(), password: $("pw").value, options:{ emailRedirectTo: location.href } });
+  $("st-login").textContent = error ? "Não deu para criar: " + error.message : "Pronto! Abra o e-mail de confirmação que chegou e depois volte aqui para entrar.";
+};
+$("b-out").onclick = () => sb.auth.signOut();
+$("b-save").onclick = async () => {
+  const next = {...C};
+  for(const [,fs] of FIELDS) for(const [k,,ty] of fs){ const v = $("a-"+k).value; next[k] = ty==="number" ? Number(v) : v.trim(); }
+  $("st-save").textContent = "Salvando…";
+  const { data, error } = await sb.from("fr_config").update({ dados: next, updated_at: new Date().toISOString() }).eq("id",1).select();
+  if(error || !data || !data.length){ $("st-save").textContent = "Não deu para salvar. Este e-mail não é de administrador."; return; }
+  C = next; $("st-save").textContent = "Salvo ✓ A vitrine já mostra os valores novos.";
+};
+sb.auth.onAuthStateChange((_e, session) => show(session));
+sb.auth.getSession().then(({data}) => show(data.session));
+</script>
+</body>
+</html>
