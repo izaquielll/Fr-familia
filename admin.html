@@ -32,7 +32,15 @@ label{font-size:13px;color:var(--mut);display:block;margin:10px 0 4px}
     <label for="em">E-mail</label><input id="em" type="email" autocomplete="email">
     <label for="pw">Senha</label><input id="pw" type="password" autocomplete="current-password">
     <div class="row"><button class="btn" id="b-in">Entrar</button><button class="btn line" id="b-up">Criar meu acesso</button></div>
+    <p style="margin:12px 0 0"><a href="#" id="b-forgot" style="color:var(--lime)">Esqueci minha senha</a></p>
     <p id="st-login" class="mut"></p>
+  </div>
+
+  <div id="v-reset" class="card hidden">
+    <p class="mut" style="margin:0">Crie uma senha nova para o seu acesso.</p>
+    <label for="pw2">Nova senha</label><input id="pw2" type="password" autocomplete="new-password">
+    <div class="row"><button class="btn" id="b-reset">Salvar nova senha</button></div>
+    <p id="st-reset" class="mut"></p>
   </div>
 
   <div id="v-app" class="hidden">
@@ -95,8 +103,26 @@ $("b-save").onclick = async () => {
   if(error || !data || !data.length){ $("st-save").textContent = "Não deu para salvar. Este e-mail não é de administrador."; return; }
   C = next; $("st-save").textContent = "Salvo ✓ A vitrine já mostra os valores novos.";
 };
-sb.auth.onAuthStateChange((_e, session) => show(session));
-sb.auth.getSession().then(({data}) => show(data.session));
+$("b-forgot").onclick = async (e) => {
+  e.preventDefault();
+  const email = $("em").value.trim();
+  if(!email){ $("st-login").textContent = "Digite o seu e-mail acima e toque de novo em Esqueci minha senha."; return; }
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+  $("st-login").textContent = error ? "Não deu para enviar: " + error.message : "Enviamos um link para o seu e-mail. Abra o link para criar uma senha nova.";
+};
+$("b-reset").onclick = async () => {
+  if($("pw2").value.length < 8){ $("st-reset").textContent = "Use pelo menos 8 caracteres."; return; }
+  const { error } = await sb.auth.updateUser({ password: $("pw2").value });
+  if(error){ $("st-reset").textContent = "Não deu certo: " + error.message; return; }
+  $("v-reset").classList.add("hidden"); recovering = false;
+  const { data } = await sb.auth.getSession(); show(data.session);
+};
+let recovering = false;
+sb.auth.onAuthStateChange((ev, session) => {
+  if(ev === "PASSWORD_RECOVERY"){ recovering = true; $("v-login").classList.add("hidden"); $("v-app").classList.add("hidden"); $("v-reset").classList.remove("hidden"); return; }
+  if(!recovering) show(session);
+});
+sb.auth.getSession().then(({data}) => { if(!recovering) show(data.session); });
 </script>
 </body>
 </html>
