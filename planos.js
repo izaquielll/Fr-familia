@@ -32,7 +32,7 @@ window.FRPlanos = (function(){
       ns = [{slug:"fabiola", nome:"Fabíola Amorim"}];
       try{ const { data } = await sb.from("fr_nutris").select("slug,nome").eq("status","aprovada").order("created_at");
         const nm = s => (s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
-        (data||[]).forEach(n => { if(!ns.some(x => x.slug === n.slug || nm(x.nome) === nm(n.nome))) ns.push(n); }); }catch(e){}
+        (data||[]).forEach(n => { ns = ns.filter(x => x.slug !== n.slug && nm(x.nome) !== nm(n.nome)); ns.push(n); }); }catch(e){}
     }
     // Na Área da Nutri: escolher o treinador que vai trabalhar com ela (nenhum vem marcado)
     if(ref){
@@ -48,7 +48,9 @@ window.FRPlanos = (function(){
       const combo = l.nome === "Consultoria + Nutri" || l.nome === "Consultoria Online";
       const add = l.nome === "Consultoria Online" ? "com plano alimentar da" : l.guia ? "com guia alimentar da" : "com a";
       l.opcoes = ns.map(n => ({nome: n.nome,
-        url: combo ? base + "combo/" + encodeURIComponent(n.slug) + "/" : l.url + (l.url.includes("?") ? "&" : "?") + "com=" + encodeURIComponent(n.slug),
+        url: combo ? base + "combo/" + encodeURIComponent(n.slug) + "/"
+           : (pl => pl ? base + pl + "/" + encodeURIComponent(n.slug) + "/" : l.url + (l.url.includes("?") ? "&" : "?") + "com=" + encodeURIComponent(n.slug))(
+               l.nome.startsWith("Convite") ? "convite" : (l.extra && ["gluteo","abdomen","metabolica"].includes(l.extra.slug) ? l.extra.slug : "")),
         txt: combo ? `Oi! 💪🥗 Treino + plano alimentar com a nutricionista ${n.nome}${promo ? `, de ${brl(combo_v)} por ${brl(C.comboPromo)}` : ` por ${brl(combo_v)}`}. Monte o seu plano aqui:`
                    : l.nome === "Consultoria Online" ? `Oi! 💪🥗 Treino + plano alimentar com a nutricionista ${n.nome}${promo ? `, de ${brl(combo_v)} por ${brl(C.comboPromo)}` : ` por ${brl(combo_v)}`}. Monte o seu plano aqui:`
                    : l.extra ? `Oi! 💪🥗 ${l.extra.nome} com guia alimentar da nutricionista ${n.nome}: ${brl(l.extra.preco_guia)} (${l.extra.periodo||""}). Veja aqui:`

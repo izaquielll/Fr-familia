@@ -70,6 +70,7 @@ meta = open("combo/index.html", encoding="utf-8").read()
 desc_base = html.unescape(re.search(r'og:description" content="([^"]*)"', meta).group(1))
 
 combos = {"fabiola": {"nome": "Fabíola Amorim", "img": ARTE_BASE}}
+fotos = {}
 for n in nutris:
     slug = n.get("slug") or ""
     if slug not in validos:
@@ -86,6 +87,7 @@ for n in nutris:
     if not os.path.exists(destino) or open(destino, "rb").read() != dados:
         open(destino, "wb").write(dados)
     combos[slug] = {"nome": n.get("nome") or "Nutricionista", "img": destino}
+    fotos[slug] = (foto, l1, l2)
 
 for slug, c in combos.items():
     nome = html.escape(c["nome"])
@@ -122,12 +124,70 @@ for f in os.listdir("img/og"):
         os.remove(os.path.join("img/og", f))
 print("Combos:", sorted(combos))
 
-# ===== Link de cada plano enviado pela nutri: n/<slug>/<plano>/ com a arte do plano =====
-# (assim a prévia no WhatsApp sai igual à dos links do FR; no Consultoria + Nutri vai a arte com a foto dela)
-PLANOS = ["consultoria", "combo", "convite", "gluteo", "abdomen", "metabolica"]
+# ===== Arte de cada plano com a nutri: convite e programas, com o quadro da nutricionista =====
+LARANJA = (255, 122, 47)
+ESPACO = {"gluteo": (246, 334), "abdomen": (245, 311), "metabolica": (245, 311)}  # trecho livre em cada arte
+OUTROS = ["convite", "gluteo", "abdomen", "metabolica"]
+artes = {"combo": {s: c["img"] for s, c in combos.items()}}
+for plano in OUTROS:
+    artes[plano] = {}
+    if not os.path.exists(f"img/og/{plano}.jpg"):
+        continue
+    for slug, (foto, l1, l2) in fotos.items():
+        dados = arte_combo.gerar(f"img/og/{plano}.jpg", combos[slug]["nome"], l1, l2, foto, acc=LARANJA, espaco=ESPACO.get(plano))
+        destino = f"img/og/{plano}-{slug}.jpg"
+        if not os.path.exists(destino) or open(destino, "rb").read() != dados:
+            open(destino, "wb").write(dados)
+        artes[plano][slug] = destino
+
 def og(pagina, campo):
     m = re.search(rf'og:{campo}" content="([^"]*)"', pagina)
     return m.group(1) if m else ""
+
+def pagina(caminho, titulo, desc, img, url, destino_js, destino):
+    os.makedirs(caminho, exist_ok=True)
+    with open(f"{caminho}/index.html", "w", encoding="utf-8") as f:
+        f.write(f"""<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{titulo}</title>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Família FR">
+<meta property="og:title" content="{titulo}">
+<meta property="og:description" content="{desc}">
+<meta property="og:image" content="{img}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="{url}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="description" content="{desc}">
+<script>var p=new URLSearchParams(location.search);{destino_js}</script>
+<meta http-equiv="refresh" content="1; url={html.escape(destino)}">
+<style>body{{background:#0f100d;color:#f3f4ef;font-family:system-ui,sans-serif;display:grid;place-items:center;height:100vh;margin:0}}a{{color:#d4ff3a}}</style>
+</head><body><p>Abrindo o plano… <a href="{html.escape(destino)}">toque aqui se não abrir</a></p></body></html>
+""")
+
+# Links do FR com a nutri escolhida: <plano>/<slug>/ (o combo já tem combo/<slug>/ acima)
+for plano in OUTROS:
+    if not os.path.exists(f"{plano}/index.html"):
+        continue
+    pg = open(f"{plano}/index.html", encoding="utf-8").read()
+    for slug, img in artes[plano].items():
+        nome = combos[slug]["nome"]
+        titulo = html.escape(html.unescape(og(pg, "title")).replace(" · Família FR", f" com {nome} · Família FR"))
+        pagina(f"{plano}/{slug}", titulo, og(pg, "description"), BASE + img, f"{BASE}{plano}/{slug}/",
+               f'p.set("plano","{plano}");p.set("com","{slug}");location.replace("../../?"+p.toString());',
+               f"../../?plano={plano}&com={slug}")
+    for d in os.listdir(plano):
+        if os.path.isdir(os.path.join(plano, d)) and d not in artes[plano]:
+            shutil.rmtree(os.path.join(plano, d))
+for f in os.listdir("img/og"):
+    for plano in OUTROS:
+        if f.startswith(plano + "-") and f.endswith(".jpg") and f[len(plano) + 1:-4] not in artes[plano]:
+            os.remove(os.path.join("img/og", f))
+
+# ===== Link de cada plano enviado pela nutri: n/<slug>/<plano>/ com a arte do plano (e o quadro dela) =====
+PLANOS = ["consultoria", "combo", "convite", "gluteo", "abdomen", "metabolica"]
 for n in nutris:
     slug = n.get("slug") or ""
     if slug not in validos:
@@ -140,27 +200,11 @@ for n in nutris:
         if plano == "combo" and slug in combos:
             titulo = html.escape(f"Consultoria + Nutri com {combos[slug]['nome']} · Família FR")
             desc = html.escape(desc_base.replace("nutricionista parceira", "a nutricionista " + combos[slug]["nome"]))
-            img = BASE + combos[slug]["img"]
-        destino = f"../../../?plano={plano}&nutri={slug}"
-        os.makedirs(f"{PASTA}/{slug}/{plano}", exist_ok=True)
-        with open(f"{PASTA}/{slug}/{plano}/index.html", "w", encoding="utf-8") as f:
-            f.write(f"""<!DOCTYPE html>
-<html lang="pt-BR"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{titulo}</title>
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="Família FR">
-<meta property="og:title" content="{titulo}">
-<meta property="og:description" content="{desc}">
-<meta property="og:image" content="{img}">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta property="og:url" content="{BASE}{PASTA}/{slug}/{plano}/">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="description" content="{desc}">
-<script>var p=new URLSearchParams(location.search);p.set("plano","{plano}");p.set("nutri","{slug}");location.replace("../../../?"+p.toString());</script>
-<meta http-equiv="refresh" content="1; url={html.escape(destino)}">
-<style>body{{background:#0f100d;color:#f3f4ef;font-family:system-ui,sans-serif;display:grid;place-items:center;height:100vh;margin:0}}a{{color:#d4ff3a}}</style>
-</head><body><p>Abrindo o plano… <a href="{html.escape(destino)}">toque aqui se não abrir</a></p></body></html>
-""")
+        if slug in artes.get(plano, {}):
+            img = BASE + artes[plano][slug]
+            if plano != "combo":
+                titulo = html.escape(html.unescape(titulo).replace(" · Família FR", f" com {combos[slug]['nome']} · Família FR"))
+        pagina(f"{PASTA}/{slug}/{plano}", titulo, desc, img, f"{BASE}{PASTA}/{slug}/{plano}/",
+               f'p.set("plano","{plano}");p.set("nutri","{slug}");location.replace("../../../?"+p.toString());',
+               f"../../../?plano={plano}&nutri={slug}")
 print("Links por plano das nutris:", sorted(validos))
