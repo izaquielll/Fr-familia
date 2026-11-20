@@ -396,12 +396,12 @@ async function salvarPedido(){
   try{ await sb.from("fr_pedidos").insert({plano:r.nome, valor:r.v, nutri: showNutri ? (NUTRIS.find(n=>n.id===S.nutri)?.nome||null) : null, nutri_slug: showNutri ? S.nutri : null, ref_nutri: (REF && NUTRIS.some(n=>n.id===REF)) ? REF : null,
     nome:(S.nome||"").trim().slice(0,120), objetivo:S.obj||null, aluno: S.aluno||null, indicado:(S.indicado||"").trim().slice(0,120)||null, resumo: resumo().slice(0,2000)}); }catch(e){}
 }
-const REF = (new URLSearchParams(location.search).get("nutri")||"").toLowerCase().replace(/[^a-z0-9-]/g,"").slice(0,40) || null;
+let REF = (new URLSearchParams(location.search).get("nutri")||"").toLowerCase().replace(/[^a-z0-9-]/g,"").slice(0,40) || null;
 // ?com=<nutri>: link enviado pelo FR que já abre com essa nutri escolhida (não conta como indicação dela)
 // ?treinador=<slug>: treinador escolhido pela nutri no link dela
 const TREINO_Q = (new URLSearchParams(location.search).get("treinador")||"").toLowerCase().replace(/[^a-z0-9-]/g,"").slice(0,40) || null;
 const treinador = () => { const l = (Array.isArray(C.treinadores) && C.treinadores.length) ? C.treinadores : [{slug:"fr", nome:"Izaquiel Araújo"}]; return TREINO_Q ? l.find(t => t.slug === TREINO_Q) : null; };
-const COM = (new URLSearchParams(location.search).get("com")||"").toLowerCase().replace(/[^a-z0-9-]/g,"").slice(0,40) || null;
+let COM = (new URLSearchParams(location.search).get("com")||"").toLowerCase().replace(/[^a-z0-9-]/g,"").slice(0,40) || null;
 function refBanner(){
   const n = REF && NUTRIS.find(x=>x.id===REF); const el = document.getElementById("promo-line");
   if(n && el && !el.dataset.ref){ el.dataset.ref = 1; el.insertAdjacentHTML("afterend", `<div class="promo-line">🥗 Você veio pela indicação da nutricionista <b>${esc(n.nome)}</b>. Ela já fica escolhida no seu plano.</div>`); }
@@ -423,6 +423,10 @@ function abrirDoLink(){
     if(data && data.length){
       const extra = data.map(d => ({id:d.slug, nome:d.nome, foto:d.foto_url || "img/fabiola.jpg", bio: [d.especialidades, d.bio].filter(Boolean).join(". "), formacao: (d.formacao||"").split("\n").map(s=>s.trim()).filter(Boolean)}));
       const ids = new Set(extra.map(e=>e.id));
+      // mesma nutri já fixa no site com outro link (ex.: "fabiola" e "fabiola-amorim"): fica só a do cadastro
+      const nm = s => (s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
+      NUTRIS.forEach(n => { const d = extra.find(e => e.id !== n.id && nm(e.nome) === nm(n.nome)); if(!d) return;
+        ids.add(n.id); if(REF === n.id) REF = d.id; if(COM === n.id) COM = d.id; if(S.nutri === n.id) S.nutri = d.id; });
       NUTRIS = [...NUTRIS.filter(n=>!ids.has(n.id)), ...extra];
       render(); refBanner();
       if(S.id && !document.getElementById("ov").classList.contains("hidden")) drawSheet(); // janela já aberta: mostra as nutris novas

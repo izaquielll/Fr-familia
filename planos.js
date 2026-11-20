@@ -30,7 +30,8 @@ window.FRPlanos = (function(){
     if(!ref && C.mostrarCombo !== false){
       let ns = [{slug:"fabiola", nome:"Fabíola Amorim"}];
       try{ const { data } = await sb.from("fr_nutris").select("slug,nome").eq("status","aprovada").order("created_at");
-        (data||[]).forEach(n => { ns = ns.filter(x => x.slug !== n.slug); ns.push(n); }); }catch(e){}
+        const nm = s => (s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
+        (data||[]).forEach(n => { if(!ns.some(x => x.slug === n.slug || nm(x.nome) === nm(n.nome))) ns.push(n); }); }catch(e){}
       const it = lista.find(l => l.nome === "Consultoria + Nutri");
       if(it) it.opcoes = ns.map(n => ({nome: n.nome, url: base + "combo/" + encodeURIComponent(n.slug) + "/",
         txt: `Oi! 💪🥗 Treino + plano alimentar com a nutricionista ${n.nome}${promo ? `, de ${brl(combo)} por ${brl(C.comboPromo)}` : ` por ${brl(combo)}`}. Monte o seu plano aqui:`}));
