@@ -35,23 +35,37 @@ window.FRPlanos = (function(){
       if(it) it.opcoes = ns.map(n => ({nome: n.nome, url: base + "combo/" + encodeURIComponent(n.slug) + "/",
         txt: `Oi! 💪🥗 Treino + plano alimentar com a nutricionista ${n.nome}${promo ? `, de ${brl(combo)} por ${brl(C.comboPromo)}` : ` por ${brl(combo)}`}. Monte o seu plano aqui:`}));
     }
+    // Na Área da Nutri: escolher o treinador que vai trabalhar com ela (nenhum vem marcado)
+    if(ref){
+      const treinadores = (Array.isArray(C.treinadores) && C.treinadores.length) ? C.treinadores : [{slug:"fr", nome:"Personal FR"}];
+      lista.filter(l => l.nome === "Consultoria Online" || l.nome === "Consultoria + Nutri").forEach(l => l.treinos = treinadores);
+    }
     if(C.mostrarConvite !== false && ativo(C.conviteAte)) lista.push({nome:"Convite de aluno (amigo)", url: linkFor(base,"convite",ref),
       txt: `Oi! 🎁 Você ganhou um convite da Família FR: Consultoria + Nutri 100% online de ${brl(combo)} por ${brl(C.convite)}. Garanta o seu aqui:`});
     (extras||[]).filter(p => !p.nutri_id || p.fr_nutris).forEach(p => lista.push({nome: p.nome + (p.fr_nutris ? ` · ${p.fr_nutris.nome}` : ""), url: linkFor(base, p.slug, ref),
       txt: `Oi! 💪 ${p.nome}${p.fr_nutris ? ` com ${p.fr_nutris.nome}` : ""}: ${brl(p.preco)} (${p.periodo||""})${p.tem_guia && p.preco_guia ? `, ou ${brl(p.preco_guia)} com guia alimentar` : ""}. Veja aqui:`}));
     const wa = l => "https://wa.me/?text=" + encodeURIComponent(l.txt + "\n" + l.url);
+    const chips = (tipo, titulo, primeiro, ops) => `<div class="mut" style="font-size:13px;margin-top:8px">${titulo}</div><div class="row fr-nopts" style="margin-top:4px">
+        <button class="btn line" data-fr-${tipo}="-1" aria-pressed="true">${primeiro}</button>${ops.map((o, j) => `<button class="btn line" data-fr-${tipo}="${j}" aria-pressed="false">${esc(o.nome)}</button>`).join("")}</div>`;
     el.innerHTML = lista.map((l, i) => `<div class="ped" data-fr-item="${i}"><b>${esc(l.nome)}</b>
-      ${l.opcoes ? `<div class="mut" style="font-size:13px;margin-top:6px">Nutricionista parceira</div><div class="row fr-nopts" style="margin-top:4px">
-        <button class="btn line" data-fr-nutri="-1" aria-pressed="true">Cliente escolhe</button>${l.opcoes.map((o, j) => `<button class="btn line" data-fr-nutri="${j}" aria-pressed="false">${esc(o.nome)}</button>`).join("")}</div>` : ""}
-      <div class="row" style="margin-top:6px"><input readonly value="${esc(l.url)}" style="flex:1;min-width:0">
-        <a class="btn" href="${esc(wa(l))}" target="_blank" rel="noopener" style="text-decoration:none">Enviar no WhatsApp</a><button class="btn line" data-fr-copy="${esc(l.url)}">Copiar</button></div></div>`).join("");
-    el.querySelectorAll("[data-fr-nutri]").forEach(b => b.onclick = () => {
-      const box = b.closest("[data-fr-item]"), l = lista[+box.dataset.frItem], j = +b.dataset.frNutri;
-      const o = j < 0 ? l : l.opcoes[j];
-      box.querySelectorAll("[data-fr-nutri]").forEach(x => x.setAttribute("aria-pressed", x === b));
+      ${l.opcoes ? chips("nutri", "Nutricionista parceira", "Cliente escolhe", l.opcoes) : ""}
+      ${l.treinos ? chips("treino", "Treinador", "Sem definir", l.treinos) : ""}
+      <input readonly value="${esc(l.url)}" style="width:100%;margin-top:8px;font-size:13px">
+      <div class="row" style="margin-top:8px"><a class="btn" href="${esc(wa(l))}" target="_blank" rel="noopener" style="text-decoration:none;flex:1;text-align:center">Enviar no WhatsApp</a><button class="btn line" data-fr-copy="${esc(l.url)}">Copiar</button></div></div>`).join("");
+    const atualizar = box => {
+      const l = lista[+box.dataset.frItem];
+      const n = +(box.querySelector("[data-fr-nutri][aria-pressed=true]")?.dataset.frNutri ?? -1);
+      const t = +(box.querySelector("[data-fr-treino][aria-pressed=true]")?.dataset.frTreino ?? -1);
+      const o = n < 0 ? {url: l.url, txt: l.txt} : {...l.opcoes[n]};
+      if(t >= 0){ const tr = l.treinos[t]; o.url += (o.url.includes("?") ? "&" : "?") + "treinador=" + encodeURIComponent(tr.slug); }
       box.querySelector("input").value = o.url;
       box.querySelector("a.btn").href = wa(o);
       box.querySelector("[data-fr-copy]").dataset.frCopy = o.url;
+    };
+    el.querySelectorAll("[data-fr-nutri],[data-fr-treino]").forEach(b => b.onclick = () => {
+      const tipo = b.hasAttribute("data-fr-nutri") ? "nutri" : "treino", box = b.closest("[data-fr-item]");
+      box.querySelectorAll(`[data-fr-${tipo}]`).forEach(x => x.setAttribute("aria-pressed", x === b));
+      atualizar(box);
     });
     if(!document.getElementById("fr-nopts-css")) document.head.insertAdjacentHTML("beforeend",
       `<style id="fr-nopts-css">.fr-nopts .btn{padding:8px 12px;font-size:14px}.fr-nopts .btn[aria-pressed=true]{background:var(--lime);color:var(--ink);box-shadow:none}</style>`);

@@ -140,6 +140,7 @@ input[type=text],input[type=tel],input[type=date],input[type=number],select{widt
 .admin h4{margin:18px 0 4px;font-size:15px}
 footer{border-top:1px solid var(--line);margin-top:56px;padding:26px 0 40px;color:var(--mut);font-size:13px}
 </style>
+<script src="tema.js"></script>
 </head>
 <body>
 <header><div class="wrap">
@@ -327,6 +328,7 @@ function drawSheet(){
   const showNutri = S.comNutri || S.id==="convite" || (isAv && (S.guia || !!(plano(S.programa)||{}).nutri_slug));
   h += `<div class="sum" style="--acc:${acc}"><div class="row"><span class="mut">Plano</span><b style="text-align:right">${r.nome}</b></div>
     ${showNutri?`<div class="row"><span class="mut">Nutricionista</span><span>${esc(nutriNome)}</span></div>`:""}
+    ${treinador() && !isAv?`<div class="row"><span class="mut">Treinador</span><span>${esc(treinador().nome)}</span></div>`:""}
     <div class="tot"><span class="mut">${r.de&&r.de>r.v?`<s>${brl(r.de)}</s>`:""} ${r.per}</span><b>${brl(r.v)}</b></div>
     ${isAv && (plano(S.programa)||{}).secao!=="nutri"?`<div class="note">🎁 Depois do programa: ${C.descConsult}% off na 1ª consultoria ou ${C.descCombo}% off na Consultoria + Nutri.</div>`:""}</div>
     <div id="f-err" class="err"></div>
@@ -341,6 +343,7 @@ function resumo(){
   const showNutri = S.comNutri || S.id==="convite" || (isAv && (S.guia || !!(plano(S.programa)||{}).nutri_slug));
   let m = `Olá, FR! Vim pela vitrine da Família FR 💪\n\n*Plano:* ${r.nome}\n`;
   if(showNutri) m += `*Nutricionista:* ${nutriNome}\n`;
+  if(treinador() && !isAv) m += `*Treinador:* ${treinador().nome}\n`;
   m += `*Valor:* ${brl(r.v)} (${r.per})\n`;
   if(S.id==="consultoria"||S.id==="combo") m += `*Já sou aluno:* ${S.aluno==="sim"?"Sim, quero renovar":"Não, quero começar"}\n`;
   if(S.id==="convite") m += `*Indicado por:* ${S.indicado}\n`;
@@ -395,6 +398,9 @@ async function salvarPedido(){
 }
 const REF = (new URLSearchParams(location.search).get("nutri")||"").toLowerCase().replace(/[^a-z0-9-]/g,"").slice(0,40) || null;
 // ?com=<nutri>: link enviado pelo FR que já abre com essa nutri escolhida (não conta como indicação dela)
+// ?treinador=<slug>: treinador escolhido pela nutri no link dela
+const TREINO_Q = (new URLSearchParams(location.search).get("treinador")||"").toLowerCase().replace(/[^a-z0-9-]/g,"").slice(0,40) || null;
+const treinador = () => { const l = (Array.isArray(C.treinadores) && C.treinadores.length) ? C.treinadores : [{slug:"fr", nome:"Personal FR"}]; return TREINO_Q ? l.find(t => t.slug === TREINO_Q) : null; };
 const COM = (new URLSearchParams(location.search).get("com")||"").toLowerCase().replace(/[^a-z0-9-]/g,"").slice(0,40) || null;
 function refBanner(){
   const n = REF && NUTRIS.find(x=>x.id===REF); const el = document.getElementById("promo-line");

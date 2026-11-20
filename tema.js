@@ -2,6 +2,7 @@
    Cada área guarda a sua escolha neste aparelho. */
 (function(){
   const AREA = (location.pathname.split("/").pop() || "index").replace(/\.html$/, "");
+  const VITRINE = AREA === "index"; // vitrine dos clientes: só os enfeites, sem troca de cor
   const KEY = "fr-tema-" + AREA;
   const TEMAS = {
     verde:   {nome:"Verde",   lime:"#d4ff3a", ink:"#141a00", bg:"#0f100d", s1:"#171914", s2:"#20231c", line:"#2c3026"},
@@ -15,9 +16,10 @@
   const salvar = o => { try{ localStorage.setItem(KEY, JSON.stringify(o)); }catch(e){} };
   let pref = Object.assign({tema:"verde", enfeites:true}, ler());
 
+  if(VITRINE) pref = {tema:"verde", enfeites:true};
   function aplicar(){
     const t = TEMAS[pref.tema] || TEMAS.verde, r = document.documentElement.style;
-    ["lime","ink","bg","s1","s2","line"].forEach(k => r.setProperty("--"+k, t[k]));
+    if(!VITRINE) ["lime","ink","bg","s1","s2","line"].forEach(k => r.setProperty("--"+k, t[k]));
     document.documentElement.classList.toggle("fr-sem-enfeite", !pref.enfeites);
     document.querySelectorAll("[data-fr-tema]").forEach(b => b.setAttribute("aria-pressed", b.dataset.frTema === pref.tema));
     const chk = document.getElementById("fr-enf"); if(chk) chk.checked = !!pref.enfeites;
@@ -25,7 +27,7 @@
   aplicar(); // antes de desenhar, para não piscar
 
   const css = `
-  body{background:radial-gradient(130% 55% at 50% -8%, color-mix(in srgb, var(--lime) 26%, transparent), transparent 72%) no-repeat, var(--bg);min-height:100vh}
+  html:not(.fr-vitrine) body{background:radial-gradient(130% 55% at 50% -8%, color-mix(in srgb, var(--lime) 26%, transparent), transparent 72%) no-repeat, var(--bg);min-height:100vh}
   .fr-pick{position:fixed;right:14px;bottom:14px;z-index:60;font:14px/1.4 Poppins,system-ui,sans-serif}
   .fr-pick>button{width:48px;height:48px;border-radius:50%;border:1.5px solid var(--line);background:var(--s1);font-size:22px;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.4)}
   .fr-pan{position:absolute;right:0;bottom:58px;width:230px;background:var(--s1);border:1px solid var(--line);border-radius:16px;padding:14px;color:var(--tx,#f3f4ef);box-shadow:0 12px 30px rgba(0,0,0,.5)}
@@ -49,6 +51,7 @@
   @keyframes fr-corre{from{transform:translateX(-80px)}to{transform:translateX(calc(100vw + 20px))}}
   @keyframes fr-pula{from{transform:translateY(0)}to{transform:translateY(-4px)}}
   @keyframes fr-perna{from{transform:rotate(-28deg)}to{transform:rotate(28deg)}}
+  .fr-vitrine .fr-dvd{z-index:40;opacity:.55}.fr-vitrine .fr-bicho{z-index:40}
   .fr-sem-enfeite .fr-dvd,.fr-sem-enfeite .fr-bicho{display:none}
   @media (prefers-reduced-motion: reduce){.fr-dvd{display:none}.fr-bicho .corpo,.fr-bicho .pe1,.fr-bicho .pe2{animation:none}.fr-bicho{display:none}}`;
 
@@ -80,15 +83,16 @@
       <rect x="20" y="25" width="12" height="12" rx="4" fill="var(--lime)"/><path d="M22 37 l-3 10 M30 37 l3 10" stroke="#79828b" stroke-width="4" stroke-linecap="round"/></svg>`
   ];
   function dvd(qtd){
-    const lista = AREA === "nutri" ? LEGUMES : TREINO;
+    const lista = AREA === "nutri" ? LEGUMES : AREA === "admin" ? TREINO : [...LEGUMES, ...TREINO];
+    const sorteia = atual => { let n; do { n = Math.floor(Math.random() * lista.length); } while(lista.length > 1 && n === atual); return n; };
     const itens = [];
     for(let i = 0; i < qtd; i++){
       const el = document.createElement("div"); el.className = "fr-dvd"; el.setAttribute("aria-hidden", "true");
-      const it = {el, n: (i * 2) % lista.length, x: 30 + Math.random() * Math.max(10, innerWidth - 110), y: 60 + Math.random() * Math.max(10, innerHeight - 170),
-        vx: (i % 2 ? -1 : 1) * (38 + Math.random() * 14), vy: (i % 2 ? 1 : -1) * (30 + Math.random() * 14)};
+      const it = {el, n: sorteia(itens[0] ? itens[0].n : -1), x: 30 + Math.random() * Math.max(10, innerWidth - 110), y: 60 + Math.random() * Math.max(10, innerHeight - 170),
+        vx: (Math.random() < .5 ? -1 : 1) * (32 + Math.random() * 22), vy: (Math.random() < .5 ? -1 : 1) * (26 + Math.random() * 22)};
       el.innerHTML = lista[it.n]; document.body.appendChild(el); itens.push(it);
     }
-    const troca = it => { it.n = (it.n + 1) % lista.length; it.el.innerHTML = lista[it.n]; };
+    const troca = it => { it.n = sorteia(it.n); it.el.innerHTML = lista[it.n]; };
     let ant = null;
     function passo(t){
       const dt = ant == null ? 0 : Math.min(0.05, (t - ant) / 1000); ant = t;
@@ -127,14 +131,17 @@
 
   function montar(){
     const st = document.createElement("style"); st.textContent = css; document.head.appendChild(st);
+    if(VITRINE) document.documentElement.classList.add("fr-vitrine");
     dvd(2);
 
     document.body.insertAdjacentHTML("beforeend", BICHO);
     const bicho = document.querySelector(".fr-bicho");
     const corre = () => { if(!pref.enfeites || document.hidden) return; bicho.classList.remove("vai"); void bicho.offsetWidth; bicho.classList.add("vai"); };
     bicho.addEventListener("animationend", e => { if(e.animationName === "fr-corre") bicho.classList.remove("vai"); });
-    setTimeout(corre, 2500); setInterval(corre, 35000);
+    const agenda = () => setTimeout(() => { corre(); agenda(); }, 20000 + Math.random() * 40000);
+    setTimeout(corre, 1500 + Math.random() * 4000); agenda();
 
+    if(VITRINE) return; // na vitrine não tem troca de cor
     const box = document.createElement("div"); box.className = "fr-pick";
     box.innerHTML = `<button type="button" aria-label="Cores e enfeites" aria-expanded="false">🎨</button>
       <div class="fr-pan" hidden><b>Cor da sua área</b><div class="fr-cores">${Object.entries(TEMAS).map(([k,t]) =>
