@@ -400,7 +400,7 @@ const REF = (new URLSearchParams(location.search).get("nutri")||"").toLowerCase(
 // ?com=<nutri>: link enviado pelo FR que já abre com essa nutri escolhida (não conta como indicação dela)
 // ?treinador=<slug>: treinador escolhido pela nutri no link dela
 const TREINO_Q = (new URLSearchParams(location.search).get("treinador")||"").toLowerCase().replace(/[^a-z0-9-]/g,"").slice(0,40) || null;
-const treinador = () => { const l = (Array.isArray(C.treinadores) && C.treinadores.length) ? C.treinadores : [{slug:"fr", nome:"Personal FR"}]; return TREINO_Q ? l.find(t => t.slug === TREINO_Q) : null; };
+const treinador = () => { const l = (Array.isArray(C.treinadores) && C.treinadores.length) ? C.treinadores : [{slug:"fr", nome:"Izaquiel Araújo"}]; return TREINO_Q ? l.find(t => t.slug === TREINO_Q) : null; };
 const COM = (new URLSearchParams(location.search).get("com")||"").toLowerCase().replace(/[^a-z0-9-]/g,"").slice(0,40) || null;
 function refBanner(){
   const n = REF && NUTRIS.find(x=>x.id===REF); const el = document.getElementById("promo-line");

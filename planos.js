@@ -37,7 +37,7 @@ window.FRPlanos = (function(){
     }
     // Na Área da Nutri: escolher o treinador que vai trabalhar com ela (nenhum vem marcado)
     if(ref){
-      const treinadores = (Array.isArray(C.treinadores) && C.treinadores.length) ? C.treinadores : [{slug:"fr", nome:"Personal FR"}];
+      const treinadores = (Array.isArray(C.treinadores) && C.treinadores.length) ? C.treinadores : [{slug:"fr", nome:"Izaquiel Araújo"}];
       lista.filter(l => l.nome === "Consultoria Online" || l.nome === "Consultoria + Nutri").forEach(l => l.treinos = treinadores);
     }
     if(C.mostrarConvite !== false && ativo(C.conviteAte)) lista.push({nome:"Convite de aluno (amigo)", url: linkFor(base,"convite",ref),
