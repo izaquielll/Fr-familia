@@ -26,6 +26,14 @@ window.FRPlanos = (function(){
       txt: promo ? `Oi! 💪 Chegou a ${C.promoNome||"promoção"} da Família FR: renovando agora, a consultoria sai por ${brl(C.consultoriaPromo)} o ciclo de 60 dias. Monte o seu plano aqui:` : `Oi! 💪 Consultoria online da Família FR por ${brl(C.consultoria||200)} o ciclo de 60 dias. Monte o seu plano aqui:`});
     if(C.mostrarCombo !== false) lista.push({nome:"Consultoria + Nutri", url: linkFor(base,"combo",ref),
       txt: `Oi! 💪🥗 Treino + plano alimentar com nutricionista parceira${promo ? `, de ${brl(combo)} por ${brl(C.comboPromo)}` : ` por ${brl(combo)}`}. Monte o seu plano aqui:`});
+    // Na Área do FR: um link do Consultoria + Nutri já com cada nutri escolhida
+    if(!ref && C.mostrarCombo !== false){
+      let ns = [{slug:"fabiola", nome:"Fabíola Amorim"}];
+      try{ const { data } = await sb.from("fr_nutris").select("slug,nome").eq("status","aprovada").order("created_at");
+        (data||[]).forEach(n => { ns = ns.filter(x => x.slug !== n.slug); ns.push(n); }); }catch(e){}
+      ns.forEach(n => lista.push({nome:`Consultoria + Nutri · com ${n.nome}`, url: base + "combo/?com=" + encodeURIComponent(n.slug),
+        txt: `Oi! 💪🥗 Treino + plano alimentar com a nutricionista ${n.nome}${promo ? `, de ${brl(combo)} por ${brl(C.comboPromo)}` : ` por ${brl(combo)}`}. Monte o seu plano aqui:`}));
+    }
     if(C.mostrarConvite !== false && ativo(C.conviteAte)) lista.push({nome:"Convite de aluno (amigo)", url: linkFor(base,"convite",ref),
       txt: `Oi! 🎁 Você ganhou um convite da Família FR: Consultoria + Nutri 100% online de ${brl(combo)} por ${brl(C.convite)}. Garanta o seu aqui:`});
     (extras||[]).filter(p => !p.nutri_id || p.fr_nutris).forEach(p => lista.push({nome: p.nome + (p.fr_nutris ? ` · ${p.fr_nutris.nome}` : ""), url: linkFor(base, p.slug, ref),

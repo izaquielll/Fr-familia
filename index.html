@@ -270,7 +270,8 @@ function render(){
 /* ===== Montar o plano ===== */
 let S = {};
 function open(id){
-  S = {id, aluno: id==="combo"||id==="consultoria" ? "sim" : "", nutri: (REF && NUTRIS.some(n=>n.id===REF)) ? REF : NUTRIS[0].id, guia: false, comNutri: id==="combo"||id==="convite"};
+  const pre = [REF, COM].find(x => x && NUTRIS.some(n=>n.id===x));
+  S = {id, aluno: id==="combo"||id==="consultoria" ? "sim" : "", nutri: pre || NUTRIS[0].id, guia: false, comNutri: id==="combo"||id==="convite"};
   if(id.startsWith("pl-")){ S.programa = id.slice(3); const p = plano(S.programa); if(p && p.nutri_slug) S.nutri = p.nutri_slug; }
   drawSheet(); document.getElementById("ov").classList.remove("hidden"); document.body.style.overflow="hidden";
 }
@@ -393,6 +394,8 @@ async function salvarPedido(){
     nome:(S.nome||"").trim().slice(0,120), objetivo:S.obj||null, aluno: S.aluno||null, indicado:(S.indicado||"").trim().slice(0,120)||null, resumo: resumo().slice(0,2000)}); }catch(e){}
 }
 const REF = (new URLSearchParams(location.search).get("nutri")||"").toLowerCase().replace(/[^a-z0-9-]/g,"").slice(0,40) || null;
+// ?com=<nutri>: link enviado pelo FR que já abre com essa nutri escolhida (não conta como indicação dela)
+const COM = (new URLSearchParams(location.search).get("com")||"").toLowerCase().replace(/[^a-z0-9-]/g,"").slice(0,40) || null;
 function refBanner(){
   const n = REF && NUTRIS.find(x=>x.id===REF); const el = document.getElementById("promo-line");
   if(n && el && !el.dataset.ref){ el.dataset.ref = 1; el.insertAdjacentHTML("afterend", `<div class="promo-line">🥗 Você veio pela indicação da nutricionista <b>${esc(n.nome)}</b>. Ela já fica escolhida no seu plano.</div>`); }
