@@ -54,7 +54,7 @@
   @keyframes fr-amassa{0%{transform:scale(1.15,.8)}100%{transform:scale(1,1)}}
   @keyframes fr-pula{from{transform:translateY(0)}to{transform:translateY(-4px)}}
   @keyframes fr-perna{from{transform:rotate(-28deg)}to{transform:rotate(28deg)}}
-  .fr-obs{position:fixed;bottom:8px;z-index:54;pointer-events:none;transform-origin:50% 100%;animation:fr-surge .35s cubic-bezier(.3,1.6,.5,1);transition:transform .45s ease-in,opacity .45s;filter:drop-shadow(0 3px 5px rgba(0,0,0,.35))}
+  .fr-obs{position:fixed;top:0;z-index:54;pointer-events:none;transform-origin:50% 100%;animation:fr-surge .35s cubic-bezier(.3,1.6,.5,1);transition:transform .45s ease-in,opacity .45s;filter:drop-shadow(0 3px 5px rgba(0,0,0,.35))}
   .fr-obs svg{width:100%;height:100%;display:block}
   .fr-obs.cai{transform:rotate(80deg) translateX(10px)}
   .fr-obs.some{opacity:0;transform:scale(.4)}
@@ -183,79 +183,102 @@
     document.body.insertAdjacentHTML("beforeend", BICHO);
     const bicho = document.querySelector(".fr-bicho"), SZ = 54, G = 1500;
     let run = null, ant = null;
-    const chao = () => innerHeight - 8 - SZ;
-    const poe = (tipo, x, svg, w, h, cls) => {
+    const poe = (tipo, x, piso, svg, w, h, cls) => {
       const el = document.createElement("div"); el.className = "fr-obs" + (cls ? " " + cls : ""); el.setAttribute("aria-hidden", "true");
-      el.style.cssText = `left:${x - w / 2}px;width:${w}px;height:${h}px`; el.innerHTML = svg; document.body.appendChild(el);
+      el.style.cssText = `left:${x - w / 2}px;top:${piso - h}px;width:${w}px;height:${h}px`; el.innerHTML = svg; document.body.appendChild(el);
       return {tipo, x, w, h, el, passou: false};
     };
+    // andares da pista: o chão e mais 2 ou 3 níveis pela tela, encostando no topo de botões e campos quando dá
+    function andares(){
+      const H = innerHeight, n = H > 620 ? 3 : 2, pisos = [H - 8];
+      const cands = [...document.querySelectorAll("button,input,a.btn,.card,.ped,h2,select")].map(el => el.getBoundingClientRect())
+        .filter(r => r.width > 90 && r.top > 70 && r.top < H - 90);
+      for(let i = 1; i <= n; i++){
+        const alvo = H - 8 - (H - 120) * i / n;
+        const perto = cands.filter(r => Math.abs(r.top - alvo) < 55).sort((a, b) => Math.abs(a.top - alvo) - Math.abs(b.top - alvo))[0];
+        pisos.push(Math.round(perto ? perto.top : alvo));
+      }
+      return pisos; // de baixo para cima
+    }
     function nova(){
       if(run || !pref.enfeites || document.hidden) return;
-      const W = innerWidth, dir = Math.random() < .5 ? 1 : -1, base = 150 + Math.random() * 70;
-      const tipos = Object.keys(OBS), n = Math.max(2, Math.min(5, Math.floor(W / 150)));
-      const obs = [];
-      for(let i = 0; i < n; i++){
-        const t = tipos[Math.floor(Math.random() * tipos.length)], o = OBS[t];
-        let x = W * (0.16 + 0.62 * (i + 0.2 + Math.random() * 0.6) / n);
-        if(dir < 0) x = W - x;
-        obs.push(poe(t, x, o.svg, o.w, o.h));
-      }
-      obs.push(poe("bandeira", dir > 0 ? W - 74 : 30, BANDEIRA, 30, 46, "ban")); // longe do botão 🎨 no canto
-      run = {x: dir > 0 ? -SZ - 10 : W + 10, y: chao(), vy: 0, dir, base, vel: base, obs, noChao: true, giro: 0, gira: 0, caido: 0};
+      const W = innerWidth, sobe = Math.random() < .6;
+      let pisos = andares(); if(!sobe) pisos = pisos.reverse();
+      const dir = Math.random() < .5 ? 1 : -1, base = 160 + Math.random() * 60, tipos = Object.keys(OBS), obs = [];
+      const porAndar = Math.max(1, Math.min(3, Math.floor(W / 180)));
+      pisos.forEach((piso, a) => {
+        const d = a % 2 ? -dir : dir;
+        for(let i = 0; i < porAndar; i++){
+          const t = tipos[Math.floor(Math.random() * tipos.length)], o = OBS[t];
+          let x = W * (0.24 + 0.52 * (i + 0.2 + Math.random() * 0.6) / porAndar); if(d < 0) x = W - x;
+          obs.push(Object.assign(poe(t, x, piso, o.svg, o.w, o.h), {andar: a}));
+        }
+      });
+      const ult = pisos.length - 1, dUlt = ult % 2 ? -dir : dir;
+      obs.push(Object.assign(poe("bandeira", dUlt > 0 ? W - 74 : 30, pisos[ult], BANDEIRA, 30, 46, "ban"), {andar: ult}));
+      run = {pisos, andar: 0, sobe, x: dir > 0 ? -SZ - 10 : W + 10, y: pisos[0] - SZ, vy: 0, dir, base, vel: base, obs,
+        noChao: true, giro: 0, gira: 0, caido: 0, modo: "corre", parede: 0};
       bicho.classList.add("vai");
     }
-    const pula = (forca, gira) => { if(!run || !run.noChao) return; run.vy = -forca; run.noChao = false; run.gira = gira || 0; bicho.classList.add("ar"); };
+    const pula = (forca, gira) => { if(!run || !run.noChao || run.modo !== "corre") return; run.vy = -forca; run.noChao = false; run.gira = gira || 0; bicho.classList.add("ar"); };
     function fim(){
       run.obs.forEach(o => { o.el.classList.add("some"); setTimeout(() => o.el.remove(), 500); });
       run = null; bicho.classList.remove("vai", "ar", "caido");
     }
     function passo(t){
       const dt = ant == null ? 0 : Math.min(0.05, (t - ant) / 1000); ant = t;
+      if(run && !pref.enfeites) fim();
       if(run){
-        if(!pref.enfeites){ fim(); }
-        else {
-          const r = run, cx = () => r.x + SZ / 2;
-          r.vel = r.base + (r.vel - r.base) * Math.exp(-dt * 1.2);
-          if(r.caido > 0){ // tropeçou: rola no chão e levanta
-            r.caido -= dt; r.x += r.dir * r.base * 0.35 * dt; r.giro = r.dir * Math.min(90, (0.9 - r.caido) * 400);
-            if(r.caido <= 0){ r.giro = 0; bicho.classList.remove("caido"); pula(380); }
-          } else {
-            r.x += r.dir * r.vel * dt;
-            // obstáculos do chão
-            r.obs.forEach(o => {
-              const d = (o.x - cx()) * r.dir;
-              if(!o.passou && r.noChao && d > 0 && d < 46 + o.w / 2 + r.vel * 0.06){
-                o.passou = true;
-                if(o.tipo === "bandeira") pula(560, 1);            // chegada: pulo comemorando com giro
-                else if(!OBS[o.tipo].alto && Math.random() < .12){ // às vezes tropeça e derruba o obstáculo
-                  r.caido = 0.9; bicho.classList.add("caido"); setTimeout(() => o.el.classList.add("cai"), 120);
-                }
-                else pula(OBS[o.tipo].alto ? 640 : 520, OBS[o.tipo].alto && Math.random() < .5 ? 1 : 0);
-              }
-            });
-            // bichinhos voando que chegam perto do chão também são obstáculos
-            (voando || []).forEach(v => {
-              const d = (v.x + 26 - cx()) * r.dir;
-              if(r.noChao && d > 0 && d < 80 && v.y + 52 > chao() - 10) pula(700, 1);
-            });
+        const r = run, W = innerWidth, piso = () => r.pisos[r.andar] - SZ, cx = () => r.x + SZ / 2;
+        r.vel = r.base + (r.vel - r.base) * Math.exp(-dt * 1.2);
+        let rot = 0;
+        if(r.modo === "escala"){ // subindo pela parede até o próximo andar
+          r.y -= r.vel * 0.85 * dt; rot = -90;
+          if(r.y <= piso()){ r.y = piso(); r.modo = "corre"; r.dir = -r.dir; bicho.classList.remove("ar"); pula(420, 0); }
+        } else if(r.caido > 0){ // tropeçou: rola no chão e levanta
+          r.caido -= dt; r.x += r.dir * r.base * 0.35 * dt; r.giro = Math.min(90, (0.9 - r.caido) * 400);
+          if(r.caido <= 0){ r.giro = 0; bicho.classList.remove("caido"); pula(380); }
+        } else {
+          r.x += r.dir * r.vel * dt;
+          r.obs.forEach(o => {
+            if(o.andar !== r.andar) return;
+            const d = (o.x - cx()) * r.dir;
+            if(!o.passou && r.noChao && d > 0 && d < 46 + o.w / 2 + r.vel * 0.06){
+              o.passou = true;
+              if(o.tipo === "bandeira") pula(560, 1);
+              else if(!OBS[o.tipo].alto && Math.random() < .12){ r.caido = 0.9; bicho.classList.add("caido"); setTimeout(() => o.el.classList.add("cai"), 120); }
+              else pula(OBS[o.tipo].alto ? 640 : 520, OBS[o.tipo].alto && Math.random() < .5 ? 1 : 0);
+            }
+          });
+          (voando || []).forEach(v => {
+            const d = (v.x + 26 - cx()) * r.dir;
+            if(r.noChao && d > 0 && d < 80 && Math.abs(v.y + 52 - r.pisos[r.andar]) < 40) pula(700, 1);
+          });
+          // chegou na parede: sobe para o andar de cima ou pula para o de baixo
+          const naParede = r.dir > 0 ? r.x >= W - SZ - 2 : r.x <= 2;
+          if(naParede && r.noChao && r.andar < r.pisos.length - 1){
+            r.x = r.dir > 0 ? W - SZ - 2 : 2; r.andar++;
+            if(r.sobe){ r.modo = "escala"; r.giro = 0; }
+            else { r.dir = -r.dir; r.noChao = false; r.vy = -380; r.gira = 1; bicho.classList.add("ar"); }
           }
-          if(!r.noChao){
-            r.vy += G * dt; r.y += r.vy * dt;
-            if(r.gira) r.giro += r.dir * 620 * dt;
-            if(r.y >= chao()){ r.y = chao(); r.vy = 0; r.noChao = true; r.gira = 0; r.giro = 0;
-              bicho.classList.remove("ar"); bicho.classList.remove("pousa"); void bicho.offsetWidth; bicho.classList.add("pousa"); }
-          } else if(!r.caido) r.y = chao();
-          bicho.style.transform = `translate(${r.x}px,${r.y}px) scaleX(${r.dir}) rotate(${r.giro * r.dir}deg)`;
-          if(r.x > innerWidth + SZ + 20 || r.x < -SZ - 30) fim();
         }
+        if(r.modo === "corre" && !r.noChao){
+          r.vy += G * dt; r.y += r.vy * dt;
+          if(r.gira) r.giro += 620 * dt;
+          if(r.vy > 0 && r.y >= piso()){ r.y = piso(); r.vy = 0; r.noChao = true; r.gira = 0; r.giro = 0;
+            bicho.classList.remove("ar", "pousa"); void bicho.offsetWidth; bicho.classList.add("pousa"); }
+        } else if(r.modo === "corre" && !r.caido) r.y = piso();
+        const ang = r.modo === "escala" ? rot : r.giro;
+        bicho.style.transform = `translate(${r.x}px,${r.y}px) scaleX(${r.dir}) rotate(${ang}deg)`;
+        if(r.x > W + SZ + 20 || r.x < -SZ - 30) fim();
       }
       requestAnimationFrame(passo);
     }
-    bicho.addEventListener("animationend", e => { if(e.animationName === "fr-amassa") bicho.classList.remove("pousa"); });
     requestAnimationFrame(passo);
+    bicho.addEventListener("animationend", e => { if(e.animationName === "fr-amassa") bicho.classList.remove("pousa"); });
     // encostou (ou passou perto) do abacatinho: pulo alto com giro e dispara correndo
     const assusta = (e, forte) => {
-      if(!run || run.caido > 0) return;
+      if(!run || run.caido > 0 || run.modo !== "corre") return;
       const d = Math.hypot(e.clientX - (run.x + SZ / 2), e.clientY - (run.y + SZ / 2));
       if(d < (forte ? 90 : 70)){ pula(forte ? 760 : 560, 1); run.vel = run.base * (forte ? 2 : 1.5); }
     };
