@@ -175,7 +175,7 @@ footer{border-top:1px solid var(--line);margin-top:56px;padding:26px 0 40px;colo
 
 
 <footer><div class="wrap">Família FR · Consultoria online de treino e nutrição. Valores sujeitos a confirmação no WhatsApp.
-  <span style="float:right"><a href="admin.html" style="color:var(--mut)">Área do FR</a></span></div></footer>
+  <span style="float:right"><a href="nutri.html" style="color:var(--mut)">Sou nutricionista</a> · <a href="admin.html" style="color:var(--mut)">Área do FR</a></span></div></footer>
 
 <div class="ov hidden" id="ov"><div class="sheet" id="sheet"></div></div>
 
@@ -192,7 +192,7 @@ const DEFAULTS = {
   descConsult: 20, descCombo: 30,
   whatsapp: ""
 };
-const NUTRIS = [{id:"fabiola", nome:"Fabíola Amorim", foto:"img/fabiola.jpg",
+let NUTRIS = [{id:"fabiola", nome:"Fabíola Amorim", foto:"img/fabiola.jpg",
   bio:"Atuação em emagrecimento, hipertrofia, nutrição clínica e esportiva, com estratégias individualizadas e baseadas em evidências científicas. Foco em resultados, composição corporal, desempenho físico e saúde.",
   formacao:["Graduada em Nutrição","Pós-graduada em Nutrição Clínica em Patologias","Mestranda em Saúde Coletiva pela UFJF"]}];
 const AVULSOS = [
@@ -237,15 +237,15 @@ function render(){
      itens:[a.desc,"Opcional: guia alimentar da nutri", `Até ${Math.max(C.descConsult,C.descCombo)}% off na 1ª consultoria`],
      pre:"Por apenas", v:C.avulso, per:`só treino · ${brl(C.avulsoGuia)} com guia alimentar`, cta:"Quero este programa"})).join("");
 
-  document.getElementById("g-nutris").innerHTML = NUTRIS.map(n => `<div class="nutri"><img src="${n.foto}" alt="${n.nome}">
-    <div class="info"><h3>${n.nome}</h3><div class="role">Nutricionista parceira</div><p class="mut" style="margin:8px 0 0;font-size:14px">${n.bio}</p>
-    <ul>${n.formacao.map(f=>`<li>${f}</li>`).join("")}</ul></div></div>`).join("") + `<div class="soon">Novas nutricionistas parceiras em breve</div>`;
+  document.getElementById("g-nutris").innerHTML = NUTRIS.map(n => `<div class="nutri"><img src="${esc(n.foto)}" alt="${esc(n.nome)}">
+    <div class="info"><h3>${esc(n.nome)}</h3><div class="role">Nutricionista parceira</div><p class="mut" style="margin:8px 0 0;font-size:14px">${esc(n.bio)}</p>
+    <ul>${n.formacao.map(f=>`<li>${esc(f)}</li>`).join("")}</ul></div></div>`).join("") + `<a class="soon" href="nutri.html" style="display:block;text-decoration:none">É nutricionista? Seja parceira da Família FR →</a>`;
 }
 
 /* ===== Montar o plano ===== */
 let S = {};
 function open(id){
-  S = {id, aluno: id==="combo"||id==="consultoria" ? "sim" : "", nutri: NUTRIS[0].id, guia: false, comNutri: id==="combo"||id==="convite"};
+  S = {id, aluno: id==="combo"||id==="consultoria" ? "sim" : "", nutri: (REF && NUTRIS.some(n=>n.id===REF)) ? REF : NUTRIS[0].id, guia: false, comNutri: id==="combo"||id==="convite"};
   if(id.startsWith("av-")) S.programa = id.slice(3);
   drawSheet(); document.getElementById("ov").classList.remove("hidden"); document.body.style.overflow="hidden";
 }
@@ -267,7 +267,7 @@ function drawSheet(){
   const promo = ativo(C.promoAte), isAv = S.id.startsWith("av-"), combo = C.consultoria + C.nutri;
   const acc = (isAv||S.id==="convite") ? "var(--or)" : "var(--lime)";
   const r = calc();
-  const nutriOpts = NUTRIS.map(n=>`<label class="opt"><input type="radio" name="nutri" value="${n.id}" ${S.nutri===n.id?"checked":""}><span class="t"><b>${n.nome}</b><span>Nutricionista parceira</span></span></label>`).join("");
+  const nutriOpts = NUTRIS.map(n=>`<label class="opt"><input type="radio" name="nutri" value="${n.id}" ${S.nutri===n.id?"checked":""}><span class="t"><b>${esc(n.nome)}</b><span>Nutricionista parceira</span></span></label>`).join("");
   let h = `<div class="top"><h3>Monte o seu plano</h3><button class="x" data-close aria-label="Fechar">✕</button></div>`;
 
   if(S.id==="consultoria"||S.id==="combo"){
@@ -297,7 +297,7 @@ function drawSheet(){
   const nutriNome = NUTRIS.find(n=>n.id===S.nutri)?.nome;
   const showNutri = S.comNutri || S.id==="convite" || (isAv && S.guia);
   h += `<div class="sum" style="--acc:${acc}"><div class="row"><span class="mut">Plano</span><b style="text-align:right">${r.nome}</b></div>
-    ${showNutri?`<div class="row"><span class="mut">Nutricionista</span><span>${nutriNome}</span></div>`:""}
+    ${showNutri?`<div class="row"><span class="mut">Nutricionista</span><span>${esc(nutriNome)}</span></div>`:""}
     <div class="tot"><span class="mut">${r.de&&r.de>r.v?`<s>${brl(r.de)}</s>`:""} ${r.per}</span><b>${brl(r.v)}</b></div>
     ${isAv?`<div class="note">🎁 Depois do programa: ${C.descConsult}% off na 1ª consultoria ou ${C.descCombo}% off na Consultoria + Nutri.</div>`:""}</div>
     <div id="f-err" class="err"></div>
@@ -317,6 +317,8 @@ function resumo(){
   if(S.id==="convite") m += `*Indicado por:* ${S.indicado}\n`;
   m += `*Nome:* ${S.nome}\n`;
   if(S.obj) m += `*Objetivo:* ${S.obj}\n`;
+  const refN = REF && NUTRIS.find(n=>n.id===REF);
+  if(refN) m += `*Indicação da nutri:* ${refN.nome}\n`;
   m += `\nQuero fechar! Pode me mandar o Pix?`;
   return m;
 }
@@ -358,12 +360,26 @@ async function salvarPedido(){
   if(!sb) return;
   const r = calc(), isAv = S.id.startsWith("av-");
   const showNutri = S.comNutri || S.id==="convite" || (isAv && S.guia);
-  try{ await sb.from("fr_pedidos").insert({plano:r.nome, valor:r.v, nutri: showNutri ? (NUTRIS.find(n=>n.id===S.nutri)?.nome||null) : null,
+  try{ await sb.from("fr_pedidos").insert({plano:r.nome, valor:r.v, nutri: showNutri ? (NUTRIS.find(n=>n.id===S.nutri)?.nome||null) : null, nutri_slug: showNutri ? S.nutri : null, ref_nutri: (REF && NUTRIS.some(n=>n.id===REF)) ? REF : null,
     nome:(S.nome||"").trim().slice(0,120), objetivo:S.obj||null, aluno: S.aluno||null, indicado:(S.indicado||"").trim().slice(0,120)||null, resumo: resumo().slice(0,2000)}); }catch(e){}
 }
-render();
+const REF = (new URLSearchParams(location.search).get("nutri")||"").toLowerCase().replace(/[^a-z0-9-]/g,"").slice(0,40) || null;
+function refBanner(){
+  const n = REF && NUTRIS.find(x=>x.id===REF); const el = document.getElementById("promo-line");
+  if(n && el && !el.dataset.ref){ el.dataset.ref = 1; el.insertAdjacentHTML("afterend", `<div class="promo-line">🥗 Você veio pela indicação da nutricionista <b>${esc(n.nome)}</b>. Ela já fica escolhida no seu plano.</div>`); }
+}
+render(); refBanner();
 (async () => {
   if(!sb) return;
+  try{
+    const { data } = await sb.from("fr_nutris").select("slug,nome,foto_url,bio,especialidades,formacao").eq("status","aprovada").order("created_at");
+    if(data && data.length){
+      const extra = data.map(d => ({id:d.slug, nome:d.nome, foto:d.foto_url || "img/fabiola.jpg", bio: [d.especialidades, d.bio].filter(Boolean).join(". "), formacao: (d.formacao||"").split("\n").map(s=>s.trim()).filter(Boolean)}));
+      const ids = new Set(extra.map(e=>e.id));
+      NUTRIS = [...NUTRIS.filter(n=>!ids.has(n.id)), ...extra];
+      render(); refBanner();
+    }
+  }catch(e){}
   try{
     const { data, error } = await sb.from("fr_config").select("dados").eq("id",1).maybeSingle();
     if(!error && data && data.dados){ C = {...DEFAULTS, ...data.dados}; render(); }

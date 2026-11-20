@@ -48,6 +48,9 @@ label{font-size:13px;color:var(--mut);display:block;margin:10px 0 4px}
     <h2>Valores da vitrine</h2>
     <div class="card" id="form"></div>
     <div class="row"><button class="btn" id="b-save">Salvar valores</button><span id="st-save" class="mut"></span></div>
+    <h2>Nutricionistas parceiras</h2>
+    <p class="mut" style="margin:0">Elas se cadastram em <b>nutri.html</b>. Só aparecem na vitrine depois que você aprovar.</p>
+    <div class="card" id="nutris"><span class="mut">Carregando…</span></div>
     <h2>Pedidos recebidos</h2>
     <div class="card" id="peds"><span class="mut">Carregando…</span></div>
   </div>
@@ -74,16 +77,35 @@ async function show(session){
   const { data } = await sb.from("fr_config").select("dados").eq("id",1).maybeSingle();
   C = data?.dados || {};
   $("form").innerHTML = FIELDS.map(([t,fs])=>`<h3 style="font-size:15px;margin:14px 0 0">${t}</h3><div class="g">${fs.map(([k,l,ty])=>`<div><label for="a-${k}">${l}</label><input id="a-${k}" type="${ty}" ${ty==="number"?'step="0.01" min="0"':""} value="${esc(C[k])}"></div>`).join("")}</div>`).join("");
-  loadPeds();
+  loadPeds(); loadNutris();
 }
 async function loadPeds(){
   const { data, error } = await sb.from("fr_pedidos").select("*").order("created_at",{ascending:false}).limit(100);
   if(error){ $("peds").innerHTML = `<span class="mut">Sem permissão para ver os pedidos. Confira se este e-mail é de administrador.</span>`; return; }
   if(!data.length){ $("peds").innerHTML = `<span class="mut">Nenhum pedido ainda.</span>`; return; }
   $("peds").innerHTML = data.map(p=>`<div class="ped"><b>${esc(p.nome)} · ${brl(p.valor)}</b>
-    <span class="tag">${esc(p.plano)}</span>${p.nutri?`<span class="tag">${esc(p.nutri)}</span>`:""}${p.objetivo?`<span class="tag">${esc(p.objetivo)}</span>`:""}${p.indicado?`<span class="tag">Indicado por ${esc(p.indicado)}</span>`:""}
+    <span class="tag">${esc(p.plano)}</span>${p.nutri?`<span class="tag">${esc(p.nutri)}</span>`:""}${p.objetivo?`<span class="tag">${esc(p.objetivo)}</span>`:""}${p.indicado?`<span class="tag">Indicado por ${esc(p.indicado)}</span>`:""}${p.ref_nutri?`<span class="tag">Link da nutri: ${esc(p.ref_nutri)}</span>`:""}
     <div class="mut" style="font-size:13px">${new Date(p.created_at).toLocaleString("pt-BR")}</div></div>`).join("");
 }
+async function loadNutris(){
+  const { data, error } = await sb.from("fr_nutris").select("id,slug,nome,whatsapp,especialidades,foto_url,status,created_at").order("created_at",{ascending:false});
+  if(error){ $("nutris").innerHTML = `<span class="mut">Não deu para carregar.</span>`; return; }
+  if(!data.length){ $("nutris").innerHTML = `<span class="mut">Nenhuma nutricionista cadastrada ainda. Mande o link <b>${esc(location.origin + location.pathname.replace(/admin\.html$/,""))}nutri.html</b> para elas.</span>`; return; }
+  const lbl = {pendente:"Em análise", aprovada:"Aprovada", pausada:"Pausada"};
+  $("nutris").innerHTML = data.map(n=>`<div class="ped" style="display:flex;gap:12px;align-items:flex-start">
+    ${n.foto_url?`<img src="${esc(n.foto_url)}" alt="" style="width:56px;height:56px;border-radius:12px;object-fit:cover">`:""}
+    <div style="flex:1"><b>${esc(n.nome)}</b><span class="tag">${lbl[n.status]}</span>
+    <div class="mut" style="font-size:13px">${esc(n.especialidades||"")}${n.whatsapp?` · WhatsApp ${esc(n.whatsapp)}`:""}</div>
+    <div class="mut" style="font-size:13px">Link: ?nutri=${esc(n.slug)}</div>
+    <div class="row" style="margin-top:8px">${n.status!=="aprovada"?`<button class="btn" data-nst="aprovada" data-id="${n.id}">Aprovar</button>`:""}${n.status!=="pausada"?`<button class="btn line" data-nst="pausada" data-id="${n.id}">Pausar</button>`:""}</div></div></div>`).join("");
+}
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-nst]"); if(!b) return;
+  b.disabled = true;
+  const { error } = await sb.from("fr_nutris").update({ status: b.dataset.nst }).eq("id", b.dataset.id);
+  if(error) console.warn(error);
+  loadNutris();
+});
 $("b-in").onclick = async () => {
   $("st-login").textContent = "Entrando…";
   const { error } = await sb.auth.signInWithPassword({ email: $("em").value.trim(), password: $("pw").value });

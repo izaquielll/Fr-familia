@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Área da Nutri · Família FR</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0f100d;--s1:#171914;--s2:#20231c;--line:#2c3026;--tx:#f3f4ef;--mut:#a4a99c;--lime:#d4ff3a;--ink:#141a00;--or:#ff7a2f}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 Poppins,system-ui,sans-serif}
+.wrap{max-width:720px;margin:0 auto;padding:20px 16px 60px}
+h1{font-size:24px;margin:0}h2{font-size:18px;margin:26px 0 8px}
+.mut{color:var(--mut)}.card{background:var(--s1);border:1px solid var(--line);border-radius:16px;padding:16px;margin-top:14px}
+input,textarea{width:100%;background:var(--s2);border:1.5px solid var(--line);border-radius:10px;padding:11px 12px;color:var(--tx);font:inherit}
+textarea{min-height:90px;resize:vertical}
+label{font-size:13px;color:var(--mut);display:block;margin:12px 0 4px}
+.btn{border:0;border-radius:10px;padding:12px 18px;font:inherit;font-weight:700;background:var(--lime);color:var(--ink);cursor:pointer}
+.btn.line{background:transparent;color:var(--tx);box-shadow:inset 0 0 0 1.5px var(--line)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px}
+.top{display:flex;align-items:center;gap:10px}.top .sp{flex:1}
+.st{display:inline-block;font-size:12px;font-weight:700;border-radius:999px;padding:3px 10px}
+.st.pendente{background:rgba(255,122,47,.15);color:var(--or)}.st.aprovada{background:rgba(212,255,58,.15);color:var(--lime)}.st.pausada{background:var(--s2);color:var(--mut)}
+.link{word-break:break-all;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:14px}
+.foto{width:110px;height:130px;border-radius:12px;object-fit:cover;border:2px solid var(--lime);background:var(--s2)}
+.ped{border-top:1px solid var(--line);padding:10px 0}.ped:first-child{border-top:0}
+.tag{display:inline-block;font-size:12px;background:var(--s2);border-radius:999px;padding:2px 8px;margin-right:4px}
+.hidden{display:none}
+</style>
+</head>
+<body><div class="wrap">
+  <div class="top"><h1>Área da Nutri</h1><span class="sp"></span><a class="mut" href="index.html">Ver vitrine</a></div>
+  <p class="mut">Nutricionistas parceiras da Família FR: faça o seu cadastro, apareça na vitrine e tenha o seu link para enviar aos seus clientes.</p>
+
+  <div id="v-login" class="card">
+    <label for="em">E-mail</label><input id="em" type="email" autocomplete="email">
+    <label for="pw">Senha</label><input id="pw" type="password" autocomplete="current-password">
+    <div class="row"><button class="btn" id="b-in">Entrar</button><button class="btn line" id="b-up">Criar meu cadastro</button></div>
+    <p style="margin:12px 0 0"><a href="#" id="b-forgot" style="color:var(--lime)">Esqueci minha senha</a></p>
+    <p id="st-login" class="mut"></p>
+  </div>
+
+  <div id="v-reset" class="card hidden">
+    <label for="pw2">Nova senha</label><input id="pw2" type="password" autocomplete="new-password">
+    <div class="row"><button class="btn" id="b-reset">Salvar nova senha</button></div>
+    <p id="st-reset" class="mut"></p>
+  </div>
+
+  <div id="v-app" class="hidden">
+    <div class="card"><div class="top"><span id="who" class="mut"></span><span class="sp"></span><button class="btn line" id="b-out">Sair</button></div></div>
+
+    <div id="box-link" class="card hidden">
+      <div class="top"><b>Seu link</b><span class="sp"></span><span id="st" class="st"></span></div>
+      <p class="mut" id="st-txt" style="margin:6px 0 10px"></p>
+      <div class="link" id="meu-link"></div>
+      <div class="row"><button class="btn" id="b-copy">Copiar link</button><a class="btn line" id="b-share" target="_blank" rel="noopener">Enviar no WhatsApp</a></div>
+    </div>
+
+    <h2>Seu perfil</h2>
+    <div class="card">
+      <div style="display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap">
+        <img id="foto-prev" class="foto" alt="">
+        <div><label for="foto" style="margin-top:0">Foto (JPG ou PNG, até 3 MB)</label><input id="foto" type="file" accept="image/jpeg,image/png,image/webp"></div>
+      </div>
+      <label for="f-nome">Nome como vai aparecer</label><input id="f-nome" maxlength="80" placeholder="Ex.: Fabíola Amorim">
+      <label for="f-zap">Seu WhatsApp (com DDD)</label><input id="f-zap" type="tel" maxlength="20">
+      <label for="f-esp">Especialidades</label><input id="f-esp" maxlength="200" placeholder="Ex.: Emagrecimento · Hipertrofia · Nutrição esportiva">
+      <label for="f-form">Formação (uma por linha)</label><textarea id="f-form" maxlength="600" placeholder="Graduada em Nutrição&#10;Pós-graduada em ..."></textarea>
+      <label for="f-bio">Apresentação</label><textarea id="f-bio" maxlength="600"></textarea>
+      <div class="row"><button class="btn" id="b-save">Salvar perfil</button><span id="st-save" class="mut"></span></div>
+    </div>
+
+    <h2>Pedidos com você</h2>
+    <div class="card" id="peds"><span class="mut">Salve o seu perfil para começar.</span></div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+const sb = window.supabase.createClient(FR_CONFIG.url, FR_CONFIG.key);
+const $ = id => document.getElementById(id);
+const esc = s => String(s??"").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const brl = n => "R$ " + Number(n).toLocaleString("pt-BR");
+const base = location.origin + location.pathname.replace(/nutri\.html$/,"");
+const slugify = s => s.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,32);
+let user = null, perfil = null, fotoUrl = null, recovering = false;
+
+async function show(session){
+  user = session?.user || null;
+  $("v-login").classList.toggle("hidden", !!user); $("v-app").classList.toggle("hidden", !user);
+  if(!user) return;
+  $("who").textContent = user.email;
+  const { data } = await sb.from("fr_nutris").select("*").eq("user_id", user.id).maybeSingle();
+  perfil = data; fotoUrl = data?.foto_url || null;
+  $("f-nome").value = data?.nome || ""; $("f-zap").value = data?.whatsapp || "";
+  $("f-esp").value = data?.especialidades || ""; $("f-form").value = data?.formacao || ""; $("f-bio").value = data?.bio || "";
+  $("foto-prev").src = fotoUrl || "";
+  drawLink(); loadPeds();
+}
+function drawLink(){
+  if(!perfil){ $("box-link").classList.add("hidden"); return; }
+  $("box-link").classList.remove("hidden");
+  const link = base + "?nutri=" + perfil.slug;
+  $("meu-link").textContent = link;
+  const txt = {pendente:"Seu cadastro está em análise pela equipe FR. Assim que for aprovado, você aparece na vitrine e o seu link passa a funcionar.",
+    aprovada:"Você já aparece na vitrine. Quem entrar pelo seu link chega com você escolhida como nutricionista.",
+    pausada:"Seu cadastro está pausado. Fale com a equipe FR."}[perfil.status];
+  $("st").textContent = {pendente:"Em análise",aprovada:"Aprovada",pausada:"Pausada"}[perfil.status];
+  $("st").className = "st " + perfil.status; $("st-txt").textContent = txt;
+  $("b-share").href = "https://wa.me/?text=" + encodeURIComponent(`Oi! Agora eu faço parte da equipe da Família FR 🥗💪\nTreino + plano alimentar comigo, tudo online. Escolha o seu plano aqui: ${link}`);
+}
+async function loadPeds(){
+  if(!perfil) return;
+  const { data, error } = await sb.from("fr_pedidos").select("created_at,plano,valor,nome,objetivo,ref_nutri,nutri_slug").order("created_at",{ascending:false}).limit(100);
+  if(error){ $("peds").innerHTML = `<span class="mut">Não deu para carregar os pedidos.</span>`; return; }
+  if(!data.length){ $("peds").innerHTML = `<span class="mut">Nenhum pedido com você ainda.</span>`; return; }
+  $("peds").innerHTML = data.map(p=>`<div class="ped"><b>${esc(p.nome)} · ${brl(p.valor)}</b>
+    <span class="tag">${esc(p.plano)}</span>${p.ref_nutri===perfil.slug?`<span class="tag">Veio pelo seu link</span>`:""}${p.objetivo?`<span class="tag">${esc(p.objetivo)}</span>`:""}
+    <div class="mut" style="font-size:13px">${new Date(p.created_at).toLocaleString("pt-BR")}</div></div>`).join("");
+}
+
+$("foto").onchange = async () => {
+  const f = $("foto").files[0]; if(!f || !user) return;
+  if(f.size > 3*1024*1024){ $("st-save").textContent = "A foto passa de 3 MB."; return; }
+  $("st-save").textContent = "Enviando foto…";
+  const ext = (f.name.split(".").pop()||"jpg").toLowerCase().replace(/[^a-z]/g,"");
+  const path = `${user.id}/${Date.now()}.${ext}`;
+  const { error } = await sb.storage.from("fr-fotos").upload(path, f, { contentType: f.type });
+  if(error){ $("st-save").textContent = "Não deu para enviar a foto."; return; }
+  fotoUrl = sb.storage.from("fr-fotos").getPublicUrl(path).data.publicUrl;
+  $("foto-prev").src = fotoUrl; $("st-save").textContent = "Foto pronta. Toque em Salvar perfil.";
+};
+
+$("b-save").onclick = async () => {
+  const nome = $("f-nome").value.trim();
+  if(nome.length < 2){ $("st-save").textContent = "Coloque o seu nome."; return; }
+  const dados = { nome, whatsapp: $("f-zap").value.replace(/\D/g,"").slice(0,20) || null, especialidades: $("f-esp").value.trim() || null,
+    formacao: $("f-form").value.trim() || null, bio: $("f-bio").value.trim() || null, foto_url: fotoUrl };
+  $("st-save").textContent = "Salvando…";
+  let res;
+  if(perfil){ res = await sb.from("fr_nutris").update(dados).eq("id", perfil.id).select().single(); }
+  else {
+    let slug = slugify(nome); if(slug.length < 3) slug = "nutri-" + slug;
+    res = await sb.from("fr_nutris").insert({ ...dados, user_id: user.id, slug }).select().single();
+    if(res.error && /duplicate|unique/i.test(res.error.message)) res = await sb.from("fr_nutris").insert({ ...dados, user_id: user.id, slug: (slug+"-"+Math.random().toString(36).slice(2,5)).slice(0,40) }).select().single();
+  }
+  if(res.error){ $("st-save").textContent = "Não deu para salvar: " + res.error.message; return; }
+  perfil = res.data; $("st-save").textContent = "Salvo ✓"; drawLink(); loadPeds();
+};
+$("b-copy").onclick = async () => { try{ await navigator.clipboard.writeText($("meu-link").textContent); $("b-copy").textContent = "Copiado ✓"; }catch(e){ $("b-copy").textContent = "Segure o link para copiar"; } setTimeout(()=>$("b-copy").textContent="Copiar link",1800); };
+
+$("b-in").onclick = async () => {
+  $("st-login").textContent = "Entrando…";
+  const { error } = await sb.auth.signInWithPassword({ email: $("em").value.trim(), password: $("pw").value });
+  $("st-login").textContent = error ? "Não deu certo. Confira o e-mail e a senha (e se você já confirmou o e-mail)." : "";
+};
+$("b-up").onclick = async () => {
+  if($("pw").value.length < 8){ $("st-login").textContent = "Use uma senha com pelo menos 8 caracteres."; return; }
+  const { data, error } = await sb.auth.signUp({ email: $("em").value.trim(), password: $("pw").value, options:{ emailRedirectTo: location.origin + location.pathname } });
+  if(error){ $("st-login").textContent = /registered/i.test(error.message) ? "Este e-mail já tem cadastro. Toque em Entrar." : "Não deu para criar: " + error.message; return; }
+  $("st-login").textContent = data.session ? "" : "Pronto! Abra o e-mail de confirmação que chegou e depois volte aqui para entrar.";
+};
+$("b-forgot").onclick = async (e) => {
+  e.preventDefault();
+  const email = $("em").value.trim();
+  if(!email){ $("st-login").textContent = "Digite o seu e-mail acima e toque de novo em Esqueci minha senha."; return; }
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+  $("st-login").textContent = error ? "Não deu para enviar: " + error.message : "Enviamos um link para o seu e-mail.";
+};
+$("b-reset").onclick = async () => {
+  if($("pw2").value.length < 8){ $("st-reset").textContent = "Use pelo menos 8 caracteres."; return; }
+  const { error } = await sb.auth.updateUser({ password: $("pw2").value });
+  if(error){ $("st-reset").textContent = "Não deu certo: " + error.message; return; }
+  $("v-reset").classList.add("hidden"); recovering = false;
+  const { data } = await sb.auth.getSession(); show(data.session);
+};
+$("b-out").onclick = () => sb.auth.signOut();
+sb.auth.onAuthStateChange((ev, session) => {
+  if(ev === "PASSWORD_RECOVERY"){ recovering = true; $("v-login").classList.add("hidden"); $("v-app").classList.add("hidden"); $("v-reset").classList.remove("hidden"); return; }
+  if(!recovering) show(session);
+});
+sb.auth.getSession().then(({data}) => { if(!recovering) show(data.session); });
+</script>
+</body>
+</html>
