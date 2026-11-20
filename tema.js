@@ -50,6 +50,8 @@
   .fr-bicho .pe2{animation:fr-perna .18s linear infinite alternate-reverse;transform-origin:32px 40px}
   @keyframes fr-corre{from{transform:translateX(-80px)}to{transform:translateX(calc(100vw + 20px))}}
   @keyframes fr-pula{from{transform:translateY(0)}to{transform:translateY(-4px)}}
+  .fr-bicho.pulo .corpo{animation:fr-pulao .55s cubic-bezier(.3,1.6,.5,1)}
+  @keyframes fr-pulao{0%{transform:translateY(0) rotate(0)}40%{transform:translateY(-20px) rotate(-12deg)}100%{transform:translateY(0) rotate(0)}}
   @keyframes fr-perna{from{transform:rotate(-28deg)}to{transform:rotate(28deg)}}
   .fr-vitrine .fr-dvd{z-index:40;opacity:.55}.fr-vitrine .fr-bicho{z-index:40}
   .fr-sem-enfeite .fr-dvd,.fr-sem-enfeite .fr-bicho{display:none}
@@ -93,12 +95,42 @@
       el.innerHTML = lista[it.n]; document.body.appendChild(el); itens.push(it);
     }
     const troca = it => { it.n = sorteia(it.n); it.el.innerHTML = lista[it.n]; };
+    itens.forEach(it => { it.base = Math.hypot(it.vx, it.vy); it.vel = it.base; });
+    // sensível ao toque: foge do dedo/mouse e do que for tocado (sem bloquear os cliques)
+    const foge = (it, px, py, forca) => {
+      const cx = it.x + 26, cy = it.y + 26;
+      let dx = cx - px, dy = cy - py; const d = Math.hypot(dx, dy) || 1;
+      dx /= d; dy /= d;
+      const ang = Math.atan2(dy, dx) + (Math.random() - .5) * .6; // rumo novo, um pouco variado
+      it.vel = Math.max(it.vel, it.base * forca);
+      it.vx = Math.cos(ang); it.vy = Math.sin(ang);
+    };
+    const perto = (it, px, py, raio) => Math.hypot(it.x + 26 - px, it.y + 26 - py) < raio;
+    let ultimoMove = 0;
+    addEventListener("pointermove", e => {
+      if(!pref.enfeites || e.timeStamp - ultimoMove < 40) return; ultimoMove = e.timeStamp;
+      itens.forEach(it => { if(perto(it, e.clientX, e.clientY, 110)) foge(it, e.clientX, e.clientY, 4); });
+    }, {passive: true});
+    addEventListener("pointerdown", e => {
+      if(!pref.enfeites) return;
+      const alvo = e.target.closest && e.target.closest("button,a,input,select,textarea,label,[role=button]");
+      const r = alvo && alvo.getBoundingClientRect();
+      itens.forEach(it => {
+        const emCima = r && it.x + 52 > r.left - 30 && it.x < r.right + 30 && it.y + 52 > r.top - 30 && it.y < r.bottom + 30;
+        if(perto(it, e.clientX, e.clientY, 140) || emCima){
+          foge(it, r && emCima ? (r.left + r.right) / 2 : e.clientX, r && emCima ? (r.top + r.bottom) / 2 : e.clientY, 6);
+          if(perto(it, e.clientX, e.clientY, 60)) troca(it); // encostou nele: troca de bichinho
+        }
+      });
+    }, {passive: true});
     let ant = null;
     function passo(t){
       const dt = ant == null ? 0 : Math.min(0.05, (t - ant) / 1000); ant = t;
       if(pref.enfeites){
         const W = innerWidth - 52, H = innerHeight - 52;
         itens.forEach(it => {
+          it.vel = it.base + (it.vel - it.base) * Math.exp(-dt * 1.6); // o susto passa e volta ao ritmo normal
+          const m = Math.hypot(it.vx, it.vy) || 1; it.vx = it.vx / m * it.vel; it.vy = it.vy / m * it.vel;
           it.x += it.vx * dt; it.y += it.vy * dt; let bateu = false;
           if(it.x <= 0){ it.x = 0; it.vx = Math.abs(it.vx); bateu = true; }
           if(it.x >= W){ it.x = W; it.vx = -Math.abs(it.vx); bateu = true; }
@@ -137,7 +169,13 @@
     document.body.insertAdjacentHTML("beforeend", BICHO);
     const bicho = document.querySelector(".fr-bicho");
     const corre = () => { if(!pref.enfeites || document.hidden) return; bicho.classList.remove("vai"); void bicho.offsetWidth; bicho.classList.add("vai"); };
-    bicho.addEventListener("animationend", e => { if(e.animationName === "fr-corre") bicho.classList.remove("vai"); });
+    bicho.addEventListener("animationend", e => { if(e.animationName === "fr-corre") bicho.classList.remove("vai"); if(e.animationName === "fr-pulao") bicho.classList.remove("pulo"); });
+    // encostou (ou passou perto) do abacatinho: ele dá um pulo
+    const assusta = e => { if(!bicho.classList.contains("vai") || bicho.classList.contains("pulo")) return;
+      const r = bicho.getBoundingClientRect();
+      if(Math.hypot(e.clientX - (r.left + r.width / 2), e.clientY - (r.top + r.height / 2)) < 90) bicho.classList.add("pulo"); };
+    addEventListener("pointerdown", assusta, {passive: true});
+    addEventListener("pointermove", assusta, {passive: true});
     const agenda = () => setTimeout(() => { corre(); agenda(); }, 20000 + Math.random() * 40000);
     setTimeout(corre, 1500 + Math.random() * 4000); agenda();
 
