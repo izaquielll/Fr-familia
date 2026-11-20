@@ -26,23 +26,35 @@ window.FRPlanos = (function(){
       txt: promo ? `Oi! 💪 Chegou a ${C.promoNome||"promoção"} da Família FR: renovando agora, a consultoria sai por ${brl(C.consultoriaPromo)} o ciclo de 60 dias. Monte o seu plano aqui:` : `Oi! 💪 Consultoria online da Família FR por ${brl(C.consultoria||200)} o ciclo de 60 dias. Monte o seu plano aqui:`});
     if(C.mostrarCombo !== false) lista.push({nome:"Consultoria + Nutri", url: linkFor(base,"combo",ref),
       txt: `Oi! 💪🥗 Treino + plano alimentar com nutricionista parceira${promo ? `, de ${brl(combo)} por ${brl(C.comboPromo)}` : ` por ${brl(combo)}`}. Monte o seu plano aqui:`});
-    // Na Área do FR: um link do Consultoria + Nutri já com cada nutri escolhida
+    // Na Área do FR: o Consultoria + Nutri ganha a escolha da nutricionista (nenhuma vem marcada)
     if(!ref && C.mostrarCombo !== false){
       let ns = [{slug:"fabiola", nome:"Fabíola Amorim"}];
       try{ const { data } = await sb.from("fr_nutris").select("slug,nome").eq("status","aprovada").order("created_at");
         (data||[]).forEach(n => { ns = ns.filter(x => x.slug !== n.slug); ns.push(n); }); }catch(e){}
-      ns.forEach(n => lista.push({nome:`Consultoria + Nutri · com ${n.nome}`, url: base + "combo/" + encodeURIComponent(n.slug) + "/",
+      const it = lista.find(l => l.nome === "Consultoria + Nutri");
+      if(it) it.opcoes = ns.map(n => ({nome: n.nome, url: base + "combo/" + encodeURIComponent(n.slug) + "/",
         txt: `Oi! 💪🥗 Treino + plano alimentar com a nutricionista ${n.nome}${promo ? `, de ${brl(combo)} por ${brl(C.comboPromo)}` : ` por ${brl(combo)}`}. Monte o seu plano aqui:`}));
     }
     if(C.mostrarConvite !== false && ativo(C.conviteAte)) lista.push({nome:"Convite de aluno (amigo)", url: linkFor(base,"convite",ref),
       txt: `Oi! 🎁 Você ganhou um convite da Família FR: Consultoria + Nutri 100% online de ${brl(combo)} por ${brl(C.convite)}. Garanta o seu aqui:`});
     (extras||[]).filter(p => !p.nutri_id || p.fr_nutris).forEach(p => lista.push({nome: p.nome + (p.fr_nutris ? ` · ${p.fr_nutris.nome}` : ""), url: linkFor(base, p.slug, ref),
       txt: `Oi! 💪 ${p.nome}${p.fr_nutris ? ` com ${p.fr_nutris.nome}` : ""}: ${brl(p.preco)} (${p.periodo||""})${p.tem_guia && p.preco_guia ? `, ou ${brl(p.preco_guia)} com guia alimentar` : ""}. Veja aqui:`}));
-    el.innerHTML = lista.map(l => {
-      const wa = "https://wa.me/?text=" + encodeURIComponent(l.txt + "\n" + l.url);
-      return `<div class="ped"><b>${esc(l.nome)}</b><div class="row" style="margin-top:6px"><input readonly value="${esc(l.url)}" style="flex:1;min-width:0">
-        <a class="btn" href="${esc(wa)}" target="_blank" rel="noopener" style="text-decoration:none">Enviar no WhatsApp</a><button class="btn line" data-fr-copy="${esc(l.url)}">Copiar</button></div></div>`;
-    }).join("");
+    const wa = l => "https://wa.me/?text=" + encodeURIComponent(l.txt + "\n" + l.url);
+    el.innerHTML = lista.map((l, i) => `<div class="ped" data-fr-item="${i}"><b>${esc(l.nome)}</b>
+      ${l.opcoes ? `<div class="mut" style="font-size:13px;margin-top:6px">Nutricionista parceira</div><div class="row fr-nopts" style="margin-top:4px">
+        <button class="btn line" data-fr-nutri="-1" aria-pressed="true">Cliente escolhe</button>${l.opcoes.map((o, j) => `<button class="btn line" data-fr-nutri="${j}" aria-pressed="false">${esc(o.nome)}</button>`).join("")}</div>` : ""}
+      <div class="row" style="margin-top:6px"><input readonly value="${esc(l.url)}" style="flex:1;min-width:0">
+        <a class="btn" href="${esc(wa(l))}" target="_blank" rel="noopener" style="text-decoration:none">Enviar no WhatsApp</a><button class="btn line" data-fr-copy="${esc(l.url)}">Copiar</button></div></div>`).join("");
+    el.querySelectorAll("[data-fr-nutri]").forEach(b => b.onclick = () => {
+      const box = b.closest("[data-fr-item]"), l = lista[+box.dataset.frItem], j = +b.dataset.frNutri;
+      const o = j < 0 ? l : l.opcoes[j];
+      box.querySelectorAll("[data-fr-nutri]").forEach(x => x.setAttribute("aria-pressed", x === b));
+      box.querySelector("input").value = o.url;
+      box.querySelector("a.btn").href = wa(o);
+      box.querySelector("[data-fr-copy]").dataset.frCopy = o.url;
+    });
+    if(!document.getElementById("fr-nopts-css")) document.head.insertAdjacentHTML("beforeend",
+      `<style id="fr-nopts-css">.fr-nopts .btn{padding:8px 12px;font-size:14px}.fr-nopts .btn[aria-pressed=true]{background:var(--lime);color:var(--ink);box-shadow:none}</style>`);
   }
   document.addEventListener("click", async e => {
     const b = e.target.closest("[data-fr-copy]"); if(!b) return;
