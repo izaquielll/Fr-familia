@@ -158,7 +158,8 @@ $("b-save").onclick = async () => {
   if(nome.length < 2){ $("st-save").textContent = "Coloque o seu nome."; return; }
   const dados = { nome, whatsapp: $("f-zap").value.replace(/\D/g,"").slice(0,20) || null, especialidades: $("f-esp").value.trim() || null,
     formacao: $("f-form").value.trim() || null, bio: $("f-bio").value.trim() || null, foto_url: fotoUrl };
-  $("st-save").textContent = "Salvando…";
+  $("st-save").textContent = "Salvando…"; $("b-save").disabled = true;
+  const lento = setTimeout(() => { $("st-save").textContent = "Está demorando… confira a internet e toque em Salvar perfil de novo."; $("b-save").disabled = false; }, 15000);
   let res;
   if(perfil){ res = await sb.from("fr_nutris").update(dados).eq("id", perfil.id).select().single(); }
   else {
@@ -166,6 +167,7 @@ $("b-save").onclick = async () => {
     res = await sb.from("fr_nutris").insert({ ...dados, user_id: user.id, slug }).select().single();
     if(res.error && /duplicate|unique/i.test(res.error.message)) res = await sb.from("fr_nutris").insert({ ...dados, user_id: user.id, slug: (slug+"-"+Math.random().toString(36).slice(2,5)).slice(0,40) }).select().single();
   }
+  clearTimeout(lento); $("b-save").disabled = false;
   if(res.error){ $("st-save").textContent = "Não deu para salvar: " + res.error.message; return; }
   perfil = res.data; $("st-save").textContent = "Salvo ✓"; drawLink(); loadPeds();
 };
@@ -193,15 +195,23 @@ $("b-reset").onclick = async () => {
   if($("pw2").value.length < 8){ $("st-reset").textContent = "Use pelo menos 8 caracteres."; return; }
   const { error } = await sb.auth.updateUser({ password: $("pw2").value });
   if(error){ $("st-reset").textContent = "Não deu certo: " + error.message; return; }
-  $("v-reset").classList.add("hidden"); recovering = false;
-  const { data } = await sb.auth.getSession(); show(data.session);
+  $("v-reset").classList.add("hidden"); recovering = false; shownId = undefined;
+  const { data } = await sb.auth.getSession(); maybeShow(data.session);
 };
 $("b-out").onclick = () => sb.auth.signOut();
+// Só redesenha quando a pessoa logada muda. O iPhone dispara eventos de login ao voltar
+// da galeria de fotos; antes isso apagava o formulário e podia travar o Salvar.
+let shownId;
+function maybeShow(session){
+  const id = session?.user?.id || null;
+  if(recovering || id === shownId) return;
+  shownId = id; show(session);
+}
 sb.auth.onAuthStateChange((ev, session) => {
   if(ev === "PASSWORD_RECOVERY"){ recovering = true; $("v-login").classList.add("hidden"); $("v-app").classList.add("hidden"); $("v-reset").classList.remove("hidden"); return; }
-  if(!recovering) show(session);
+  setTimeout(() => maybeShow(session), 0); // fora do callback: chamar o banco aqui dentro trava o cliente
 });
-sb.auth.getSession().then(({data}) => { if(!recovering) show(data.session); });
+sb.auth.getSession().then(({data}) => maybeShow(data.session));
 </script>
 </body>
 </html>

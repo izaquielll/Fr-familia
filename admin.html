@@ -161,7 +161,7 @@ $("b-reset").onclick = async () => {
 let recovering = false;
 sb.auth.onAuthStateChange((ev, session) => {
   if(ev === "PASSWORD_RECOVERY"){ recovering = true; $("v-login").classList.add("hidden"); $("v-app").classList.add("hidden"); $("v-reset").classList.remove("hidden"); return; }
-  if(!recovering) show(session);
+  setTimeout(() => { if(!recovering) show(session); }, 0); // fora do callback para não travar o cliente
 });
 sb.auth.getSession().then(({data}) => { if(!recovering) show(data.session); });
 </script>
