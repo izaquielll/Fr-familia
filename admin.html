@@ -48,8 +48,11 @@ label{font-size:13px;color:var(--mut);display:block;margin:10px 0 4px}
     <h2>Valores da vitrine</h2>
     <div class="card" id="form"></div>
     <div class="row"><button class="btn" id="b-save">Salvar valores</button><span id="st-save" class="mut"></span></div>
+    <h2>Planos da vitrine</h2>
+    <p class="mut" style="margin:0">Crie, edite, oculte ou exclua programas. Os planos que as nutris criarem aparecem aqui para você aprovar.</p>
+    <div class="card" id="planos"></div>
     <h2>Links dos planos</h2>
-    <p class="mut" style="margin:0">Toque em <b>Enviar no WhatsApp</b>, escolha o contato e a mensagem já vai pronta com o link (e a arte do plano aparece na prévia).</p>
+    <p class="mut" style="margin:0">Toque em <b>Enviar no WhatsApp</b>, escolha o contato e a mensagem já vai pronta com o link.</p>
     <div class="card" id="links"></div>
     <h2>Nutricionistas parceiras</h2>
     <p class="mut" style="margin:0">Elas se cadastram em <b>nutri.html</b>. Só aparecem na vitrine depois que você aprovar.</p>
@@ -60,13 +63,15 @@ label{font-size:13px;color:var(--mut);display:block;margin:10px 0 4px}
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
+<script src="planos.js"></script>
 <script>
 const sb = window.supabase.createClient(FR_CONFIG.url, FR_CONFIG.key);
 const FIELDS = [
   ["Consultoria",[["consultoria","Consultoria (valor normal)","number"],["nutri","Parte da nutri (valor normal)","number"]]],
   ["Promoção para alunos",[["promoNome","Nome da promoção","text"],["promoAte","Vale até","date"],["consultoriaPromo","Consultoria na promoção","number"],["comboPromo","Consultoria + Nutri na promoção","number"]]],
   ["Convite de aluno",[["convite","Valor do convite","number"],["conviteAte","Convite vale até","date"]]],
-  ["Programas femininos",[["avulso","Só treino","number"],["avulsoGuia","Com guia alimentar","number"],["descConsult","Desconto na consultoria (%)","number"],["descCombo","Desconto na Consultoria + Nutri (%)","number"]]],
+  ["Planos fixos na vitrine",[["mostrarConsultoria","Mostrar Consultoria Online","check"],["mostrarCombo","Mostrar Consultoria + Nutri","check"],["mostrarConvite","Mostrar Convite de aluno","check"]]],
+  ["Desconto para quem faz um programa",[["descConsult","Na 1ª consultoria (%)","number"],["descCombo","Na 1ª Consultoria + Nutri (%)","number"]]],
   ["Contato",[["whatsapp","WhatsApp que recebe os pedidos (com DDD)","tel"]]]];
 let C = {};
 const $ = id => document.getElementById(id);
@@ -79,8 +84,9 @@ async function show(session){
   $("who").textContent = session.user.email;
   const { data } = await sb.from("fr_config").select("dados").eq("id",1).maybeSingle();
   C = data?.dados || {};
-  $("form").innerHTML = FIELDS.map(([t,fs])=>`<h3 style="font-size:15px;margin:14px 0 0">${t}</h3><div class="g">${fs.map(([k,l,ty])=>`<div><label for="a-${k}">${l}</label><input id="a-${k}" type="${ty}" ${ty==="number"?'step="0.01" min="0"':""} value="${esc(C[k])}"></div>`).join("")}</div>`).join("");
+  $("form").innerHTML = FIELDS.map(([t,fs])=>`<h3 style="font-size:15px;margin:14px 0 0">${t}</h3><div class="g">${fs.map(([k,l,ty])=>`${ty==="check" ? `<label style="display:flex;gap:8px;align-items:center;margin-top:14px"><input id="a-${k}" type="checkbox" style="width:auto" ${C[k]!==false?"checked":""}> ${l}</label>` : `<div><label for="a-${k}">${l}</label><input id="a-${k}" type="${ty}" ${ty==="number"?'step="0.01" min="0"':""} value="${esc(C[k])}"></div>`}`).join("")}</div>`).join("");
   loadPeds(); loadNutris(); drawLinks();
+  if(!planosUI) planosUI = FRPlanos.mountPlanos($("planos"), { sb, admin: true, onChange: drawLinks }); else planosUI.reload();
 }
 async function loadPeds(){
   const { data, error } = await sb.from("fr_pedidos").select("*").order("created_at",{ascending:false}).limit(100);
@@ -109,23 +115,11 @@ document.addEventListener("click", async e => {
   if(error) console.warn(error);
   loadNutris();
 });
-const PLANOS = [
-  ["consultoria","Consultoria Online","Oi! 💪 Chegou a Black Friday da Família FR: renovando agora, a consultoria sai por R$ 150 o ciclo de 60 dias. Monte o seu plano aqui:"],
-  ["combo","Consultoria + Nutri","Oi! 💪🥗 Treino + plano alimentar com a nossa nutricionista parceira, de R$ 450 por R$ 250 na Black Friday. Monte o seu plano aqui:"],
-  ["convite","Convite de aluno (amigo)","Oi! 🎁 Você ganhou um convite da Família FR: Consultoria + Nutri 100% online de R$ 450 por R$ 200. Garanta o seu aqui:"],
-  ["gluteo","Base de Glúteo","Oi! 🍑 Programa Base de Glúteo: 30 dias de treino no app por R$ 67 (ou R$ 80 com guia alimentar da nutri). Veja aqui:"],
-  ["abdomen","Base de Abdômen","Oi! 🔥 Programa Base de Abdômen: 30 dias de treino no app por R$ 67 (ou R$ 80 com guia alimentar da nutri). Veja aqui:"],
-  ["metabolica","Base Metabólica + HIIT","Oi! ⚡ Programa Base Metabólica + HIIT: 30 dias de treino no app por R$ 67 (ou R$ 80 com guia alimentar da nutri). Veja aqui:"]];
-function linkRow(nome, url, txt){
-  const wa = "https://wa.me/?text=" + encodeURIComponent(txt + "\n" + url);
-  return `<div class="ped"><b>${nome}</b><div class="row" style="margin-top:6px"><input readonly value="${esc(url)}" style="flex:1;min-width:0">
-    <a class="btn" href="${esc(wa)}" target="_blank" rel="noopener" style="text-decoration:none">Enviar no WhatsApp</a><button class="btn line" data-copy="${esc(url)}">Copiar</button></div></div>`;
-}
 function drawLinks(){
   const base = location.origin + location.pathname.replace(/admin\.html$/,"");
-  $("links").innerHTML = linkRow("Vitrine completa", base, "Oi! 💪 Conheça os planos da Família FR: treino e nutrição do seu jeito. Escolha o seu aqui:") +
-    PLANOS.map(([k,n,t]) => linkRow(n, base + k + "/", t)).join("");
+  FRPlanos.mountLinks($("links"), { sb, base });
 }
+let planosUI = null;
 document.addEventListener("click", async e => {
   const b = e.target.closest("[data-copy]"); if(!b) return;
   try{ await navigator.clipboard.writeText(b.dataset.copy); b.textContent = "Copiado ✓"; }catch(err){ b.textContent = "Segure o link"; }
@@ -144,7 +138,7 @@ $("b-up").onclick = async () => {
 $("b-out").onclick = () => sb.auth.signOut();
 $("b-save").onclick = async () => {
   const next = {...C};
-  for(const [,fs] of FIELDS) for(const [k,,ty] of fs){ const v = $("a-"+k).value; next[k] = ty==="number" ? Number(v) : v.trim(); }
+  for(const [,fs] of FIELDS) for(const [k,,ty] of fs){ if(ty==="check"){ next[k] = $("a-"+k).checked; continue; } const v = $("a-"+k).value; next[k] = ty==="number" ? Number(v) : v.trim(); }
   $("st-save").textContent = "Salvando…";
   const { data, error } = await sb.from("fr_config").update({ dados: next, updated_at: new Date().toISOString() }).eq("id",1).select();
   if(error || !data || !data.length){ $("st-save").textContent = "Não deu para salvar. Este e-mail não é de administrador."; return; }

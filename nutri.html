@@ -25,6 +25,8 @@ label{font-size:13px;color:var(--mut);display:block;margin:12px 0 4px}
 .foto{width:110px;height:130px;border-radius:12px;object-fit:cover;border:2px solid var(--lime);background:var(--s2)}
 .ped{border-top:1px solid var(--line);padding:10px 0}.ped:first-child{border-top:0}
 .tag{display:inline-block;font-size:12px;background:var(--s2);border-radius:999px;padding:2px 8px;margin-right:4px}
+.g{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}@media(max-width:560px){.g{grid-template-columns:1fr}}
+select{font:inherit}
 .hidden{display:none}
 </style>
 </head>
@@ -70,12 +72,22 @@ label{font-size:13px;color:var(--mut);display:block;margin:12px 0 4px}
       <div class="row"><button class="btn" id="b-save">Salvar perfil</button><span id="st-save" class="mut"></span></div>
     </div>
 
+    <div id="box-nutri-extra" class="hidden">
+      <h2>Links para enviar</h2>
+      <p class="mut" style="margin:0">Todos os links já vão com a sua indicação. Toque em <b>Enviar no WhatsApp</b> e escolha o contato.</p>
+      <div class="card" id="links"></div>
+      <h2>Meus planos</h2>
+      <p class="mut" style="margin:0">Crie os seus próprios planos (ex.: plano alimentar avulso, acompanhamento mensal). Os pedidos deles chegam no seu WhatsApp.</p>
+      <div class="card" id="planos"></div>
+    </div>
+
     <h2>Pedidos com você</h2>
     <div class="card" id="peds"><span class="mut">Salve o seu perfil para começar.</span></div>
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
+<script src="planos.js"></script>
 <script>
 const sb = window.supabase.createClient(FR_CONFIG.url, FR_CONFIG.key);
 const $ = id => document.getElementById(id);
@@ -97,7 +109,17 @@ async function show(session){
   $("foto-prev").src = fotoUrl || "";
   drawLink(); loadPeds();
 }
+let planosUI = null;
+function drawExtras(){
+  const ok = perfil && perfil.status === "aprovada";
+  $("box-nutri-extra").classList.toggle("hidden", !perfil);
+  if(!perfil) return;
+  if(ok) FRPlanos.mountLinks($("links"), { sb, base, ref: perfil.slug });
+  else $("links").innerHTML = `<span class="mut">Os links ficam disponíveis assim que a equipe FR aprovar o seu cadastro.</span>`;
+  if(!planosUI) planosUI = FRPlanos.mountPlanos($("planos"), { sb, admin: false, nutriId: perfil.id, onChange: () => ok && FRPlanos.mountLinks($("links"), { sb, base, ref: perfil.slug }) });
+}
 function drawLink(){
+  drawExtras();
   if(!perfil){ $("box-link").classList.add("hidden"); return; }
   $("box-link").classList.remove("hidden");
   const link = base + "?nutri=" + perfil.slug;
