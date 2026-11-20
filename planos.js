@@ -19,22 +19,20 @@ window.FRPlanos = (function(){
     try{ const { data } = await sb.from("fr_config").select("dados").eq("id",1).maybeSingle(); C = data?.dados || {}; }catch(e){}
     const { data: extras } = await sb.from("fr_planos").select("slug,nome,preco,preco_guia,tem_guia,periodo,secao,ordem,ativo,aprovado,nutri_id,fr_nutris(nome)").eq("ativo",true).eq("aprovado",true).order("ordem");
     const promo = ativo(C.promoAte);
-    const combo = (C.consultoria||200) + (C.nutri||250);
+    const combo = (C.consultoria||200) + (C.nutri||250), combo_v = combo;
     const lista = [];
     lista.push({nome:"Vitrine completa", url: ref ? linkFor(base, "", ref) : base, txt:"Oi! 💪 Conheça os planos da Família FR: treino e nutrição do seu jeito. Escolha o seu aqui:"});
     if(C.mostrarConsultoria !== false) lista.push({nome:"Consultoria Online", url: linkFor(base,"consultoria",ref),
       txt: promo ? `Oi! 💪 Chegou a ${C.promoNome||"promoção"} da Família FR: renovando agora, a consultoria sai por ${brl(C.consultoriaPromo)} o ciclo de 60 dias. Monte o seu plano aqui:` : `Oi! 💪 Consultoria online da Família FR por ${brl(C.consultoria||200)} o ciclo de 60 dias. Monte o seu plano aqui:`});
     if(C.mostrarCombo !== false) lista.push({nome:"Consultoria + Nutri", url: linkFor(base,"combo",ref),
       txt: `Oi! 💪🥗 Treino + plano alimentar com nutricionista parceira${promo ? `, de ${brl(combo)} por ${brl(C.comboPromo)}` : ` por ${brl(combo)}`}. Monte o seu plano aqui:`});
-    // Na Área do FR: o Consultoria + Nutri ganha a escolha da nutricionista (nenhuma vem marcada)
-    if(!ref && C.mostrarCombo !== false){
-      let ns = [{slug:"fabiola", nome:"Fabíola Amorim"}];
+    // Na Área do FR: todos os planos ganham a escolha da nutricionista (nenhuma vem marcada)
+    let ns = [];
+    if(!ref){
+      ns = [{slug:"fabiola", nome:"Fabíola Amorim"}];
       try{ const { data } = await sb.from("fr_nutris").select("slug,nome").eq("status","aprovada").order("created_at");
         const nm = s => (s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
         (data||[]).forEach(n => { if(!ns.some(x => x.slug === n.slug || nm(x.nome) === nm(n.nome))) ns.push(n); }); }catch(e){}
-      const it = lista.find(l => l.nome === "Consultoria + Nutri");
-      if(it) it.opcoes = ns.map(n => ({nome: n.nome, url: base + "combo/" + encodeURIComponent(n.slug) + "/",
-        txt: `Oi! 💪🥗 Treino + plano alimentar com a nutricionista ${n.nome}${promo ? `, de ${brl(combo)} por ${brl(C.comboPromo)}` : ` por ${brl(combo)}`}. Monte o seu plano aqui:`}));
     }
     // Na Área da Nutri: escolher o treinador que vai trabalhar com ela (nenhum vem marcado)
     if(ref){
@@ -43,8 +41,19 @@ window.FRPlanos = (function(){
     }
     if(C.mostrarConvite !== false && ativo(C.conviteAte)) lista.push({nome:"Convite de aluno (amigo)", url: linkFor(base,"convite",ref),
       txt: `Oi! 🎁 Você ganhou um convite da Família FR: Consultoria + Nutri 100% online de ${brl(combo)} por ${brl(C.convite)}. Garanta o seu aqui:`});
-    (extras||[]).filter(p => !p.nutri_id || p.fr_nutris).forEach(p => lista.push({nome: p.nome + (p.fr_nutris ? ` · ${p.fr_nutris.nome}` : ""), url: linkFor(base, p.slug, ref),
+    (extras||[]).filter(p => !p.nutri_id || p.fr_nutris).forEach(p => lista.push({fixa: !!p.nutri_id, extra: p, guia: !!(p.tem_guia && p.preco_guia), nome: p.nome + (p.fr_nutris ? ` · ${p.fr_nutris.nome}` : ""), url: linkFor(base, p.slug, ref),
       txt: `Oi! 💪 ${p.nome}${p.fr_nutris ? ` com ${p.fr_nutris.nome}` : ""}: ${brl(p.preco)} (${p.periodo||""})${p.tem_guia && p.preco_guia ? `, ou ${brl(p.preco_guia)} com guia alimentar` : ""}. Veja aqui:`}));
+    if(ns.length) lista.forEach(l => {
+      if(l.fixa || (l.extra && !l.guia)) return;
+      const combo = l.nome === "Consultoria + Nutri" || l.nome === "Consultoria Online";
+      const add = l.nome === "Consultoria Online" ? "com plano alimentar da" : l.guia ? "com guia alimentar da" : "com a";
+      l.opcoes = ns.map(n => ({nome: n.nome,
+        url: combo ? base + "combo/" + encodeURIComponent(n.slug) + "/" : l.url + (l.url.includes("?") ? "&" : "?") + "com=" + encodeURIComponent(n.slug),
+        txt: combo ? `Oi! 💪🥗 Treino + plano alimentar com a nutricionista ${n.nome}${promo ? `, de ${brl(combo_v)} por ${brl(C.comboPromo)}` : ` por ${brl(combo_v)}`}. Monte o seu plano aqui:`
+                   : l.nome === "Consultoria Online" ? `Oi! 💪🥗 Treino + plano alimentar com a nutricionista ${n.nome}${promo ? `, de ${brl(combo_v)} por ${brl(C.comboPromo)}` : ` por ${brl(combo_v)}`}. Monte o seu plano aqui:`
+                   : l.extra ? `Oi! 💪🥗 ${l.extra.nome} com guia alimentar da nutricionista ${n.nome}: ${brl(l.extra.preco_guia)} (${l.extra.periodo||""}). Veja aqui:`
+                   : l.txt.replace(/\. (Veja|Monte|Escolha|Garanta) /, ` (${add} nutricionista ${n.nome}). $1 `)}));
+    });
     const wa = l => "https://wa.me/?text=" + encodeURIComponent(l.txt + "\n" + l.url);
     const chips = (tipo, titulo, primeiro, ops) => `<div class="mut" style="font-size:13px;margin-top:8px">${titulo}</div><div class="row fr-nopts" style="margin-top:4px">
         <button class="btn line" data-fr-${tipo}="-1" aria-pressed="true">${primeiro}</button>${ops.map((o, j) => `<button class="btn line" data-fr-${tipo}="${j}" aria-pressed="false">${esc(o.nome)}</button>`).join("")}</div>`;

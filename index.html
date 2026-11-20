@@ -274,6 +274,8 @@ function open(id){
   const pre = [REF, COM].find(x => x && NUTRIS.some(n=>n.id===x));
   S = {id, aluno: id==="combo"||id==="consultoria" ? "sim" : "", nutri: pre || NUTRIS[0].id, guia: false, comNutri: id==="combo"||id==="convite"};
   if(id.startsWith("pl-")){ S.programa = id.slice(3); const p = plano(S.programa); if(p && p.nutri_slug) S.nutri = p.nutri_slug; }
+  // link do FR com nutri escolhida (?com=): o plano já abre com a nutri incluída
+  if(COM && pre === COM && !REF){ if(id==="consultoria") S.comNutri = true; if(id.startsWith("pl-")) S.guia = true; }
   drawSheet(); document.getElementById("ov").classList.remove("hidden"); document.body.style.overflow="hidden";
 }
 function close(){ document.getElementById("ov").classList.add("hidden"); document.body.style.overflow=""; }
