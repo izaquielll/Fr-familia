@@ -233,62 +233,80 @@
       </g>`},
   };
 
-  // corrida: personagens surgem em alturas aleatórias da tela e correm até o outro lado
+  // corrida: personagens surgem em lugares aleatórios da tela e correm até o outro lado,
+  // na horizontal (esquerda/direita) ou na vertical (de baixo para cima e de cima para baixo, "correndo na parede")
   function corrida(voando){
     const SZ = 54, G = 1500, nomes = Object.keys(CORREDORES), lista = [];
     let ant = null;
-    function alturas(){
-      const H = innerHeight, cands = [...document.querySelectorAll("button,input,a.btn,.card,.ped,h2,select,textarea")]
-        .map(el => el.getBoundingClientRect()).filter(r => r.width > 90 && r.top > 70 && r.top < H - 20).map(r => Math.round(r.top));
-      return cands;
-    }
+    const rects = () => [...document.querySelectorAll("button,input,a.btn,.card,.ped,h2,select,textarea")]
+      .map(el => el.getBoundingClientRect()).filter(r => r.width > 60 && r.bottom > 60 && r.top < innerHeight - 20);
     function nova(){
       if(!pref.enfeites || document.hidden || lista.length >= 3) return;
       const W = innerWidth, H = innerHeight, nome = nomes[Math.floor(Math.random() * nomes.length)], c = CORREDORES[nome];
-      const cands = alturas();
-      // às vezes em cima de um botão/campo, às vezes numa altura qualquer, às vezes no chão
-      const sorte = Math.random();
-      let piso = sorte < .5 && cands.length ? cands[Math.floor(Math.random() * cands.length)] : sorte < .8 ? 110 + Math.random() * (H - 130) : H - 8;
-      if(lista.some(o => Math.abs(o.piso - piso) < 50)) piso = Math.max(110, Math.min(H - 8, piso + (Math.random() < .5 ? -70 : 70)));
-      const dir = Math.random() < .5 ? 1 : -1, base = (140 + Math.random() * 60) * c.vel;
+      const rs = rects(), sorte = Math.random(), base = (140 + Math.random() * 60) * c.vel;
+      let r;
+      if(Math.random() < .5){ // horizontal: o "chão" é uma linha na altura sorteada
+        let piso = sorte < .5 && rs.length ? Math.round(rs[Math.floor(Math.random() * rs.length)].top) : sorte < .8 ? 110 + Math.random() * (H - 130) : H - 8;
+        piso = Math.max(110, Math.min(H - 8, piso));
+        if(lista.some(o => o.eixo === "h" && Math.abs(o.piso - piso) < 50)) piso = Math.max(110, Math.min(H - 8, piso + (Math.random() < .5 ? -70 : 70)));
+        const dir = Math.random() < .5 ? 1 : -1;
+        r = {eixo: "h", piso, dir, s: dir > 0 ? -SZ - 10 : W + 10};
+      } else { // vertical: o "chão" é uma parede (borda da tela ou lateral de um botão/campo)
+        const sobe = Math.random() < .5; // sobe: pés na parede da direita; desce: pés na parede da esquerda
+        let piso;
+        if(sorte < .45 && rs.length){ const q = rs[Math.floor(Math.random() * rs.length)]; piso = sobe ? q.left : q.right; }
+        else if(sorte < .7) piso = sobe ? W - 2 : 2;
+        else piso = 70 + Math.random() * (W - 140);
+        piso = sobe ? Math.max(SZ + 4, Math.min(W - 2, piso)) : Math.max(2, Math.min(W - SZ - 4, piso));
+        if(lista.some(o => o.eixo === "v" && Math.abs(o.piso - piso) < 50)) piso = sobe ? Math.max(SZ + 4, piso - 70) : Math.min(W - SZ - 4, piso + 70);
+        r = {eixo: "v", piso, dir: sobe ? -1 : 1, s: sobe ? H + 10 : -SZ - 10};
+      }
       const el = document.createElementNS("http://www.w3.org/2000/svg", "svg");
       el.setAttribute("class", "fr-bicho vai"); el.setAttribute("viewBox", "0 0 54 54"); el.setAttribute("aria-hidden", "true");
       el.innerHTML = c.svg; document.body.appendChild(el);
       el.addEventListener("animationend", e => { if(e.animationName === "fr-amassa") el.classList.remove("pousa"); });
-      lista.push({el, piso, x: dir > 0 ? -SZ - 10 : W + 10, y: piso - SZ, vy: 0, dir, base, vel: base, noChao: true, giro: 0, gira: 0, caido: 0, prox: 1 + Math.random() * 2});
+      lista.push(Object.assign(r, {el, base, vel: base, a: 0, va: 0, noChao: true, giro: 0, gira: 0, caido: 0, prox: 1 + Math.random() * 2}));
     }
-    const pula = (r, forca, gira) => { if(!r.noChao || r.caido > 0) return; r.vy = -forca; r.noChao = false; r.gira = gira || 0; r.el.classList.add("ar"); };
+    // posição na tela a partir do avanço (s) e da altura do pulo (a)
+    const xy = r => r.eixo === "h" ? [r.s, r.piso - SZ - r.a] : (r.dir < 0 ? [r.piso - SZ - r.a, r.s] : [r.piso + r.a, r.s]);
+    const pula = (r, forca, gira) => { if(!r.noChao || r.caido > 0) return; r.va = forca; r.noChao = false; r.gira = gira || 0; r.el.classList.add("ar"); };
     function passo(t){
       const dt = ant == null ? 0 : Math.min(0.05, (t - ant) / 1000); ant = t;
       for(let i = lista.length - 1; i >= 0; i--){
-        const r = lista[i], W = innerWidth, cx = r.x + SZ / 2;
+        const r = lista[i], W = innerWidth, H = innerHeight;
         if(!pref.enfeites){ r.el.remove(); lista.splice(i, 1); continue; }
         r.vel = r.base + (r.vel - r.base) * Math.exp(-dt * 1.2);
         if(r.caido > 0){ // tropeçou: rola e levanta
-          r.caido -= dt; r.x += r.dir * r.base * 0.35 * dt; r.giro = Math.min(90, (0.9 - r.caido) * 400);
+          r.caido -= dt; r.s += r.dir * r.base * 0.35 * dt; r.giro = Math.min(90, (0.9 - r.caido) * 400);
           if(r.caido <= 0){ r.giro = 0; r.el.classList.remove("caido"); pula(r, 380); }
         } else {
-          r.x += r.dir * r.vel * dt;
-          // de vez em quando: pulinho, mortal ou tropeço
+          r.s += r.dir * (r.eixo === "v" ? 0.9 : 1) * r.vel * dt;
           r.prox -= dt;
           if(r.prox <= 0 && r.noChao){
             const s = Math.random();
             if(s < .55) pula(r, 450); else if(s < .85) pula(r, 640, 1); else { r.caido = 0.9; r.el.classList.add("caido"); }
             r.prox = 1.2 + Math.random() * 2.2;
           }
+          const [x, y] = xy(r), c = [x + SZ / 2, y + SZ / 2];
           // pula os bichinhos voando e os outros corredores que vêm de frente
-          (voando || []).forEach(v => { const d = (v.x + 26 - cx) * r.dir; if(r.noChao && d > 0 && d < 80 && Math.abs(v.y + 52 - r.piso) < 40) pula(r, 700, 1); });
-          lista.forEach(o => { if(o === r || o.dir === r.dir) return; const d = (o.x - r.x) * r.dir;
+          (voando || []).forEach(v => {
+            const vc = [v.x + 26, v.y + 26], k = r.eixo === "h" ? 0 : 1;
+            const d = (vc[k] - c[k]) * r.dir;
+            if(r.noChao && d > 0 && d < 80 && Math.abs(vc[1 - k] - c[1 - k]) < 45) pula(r, 700, 1);
+          });
+          lista.forEach(o => { if(o === r || o.eixo !== r.eixo || o.dir === r.dir) return; const d = (o.s - r.s) * r.dir;
             if(r.noChao && d > 0 && d < 90 && Math.abs(o.piso - r.piso) < 30) pula(r, 620, Math.random() < .5 ? 1 : 0); });
         }
         if(!r.noChao){
-          r.vy += G * dt; r.y += r.vy * dt;
+          r.va -= G * dt; r.a += r.va * dt;
           if(r.gira) r.giro += 620 * dt;
-          if(r.vy > 0 && r.y >= r.piso - SZ){ r.y = r.piso - SZ; r.vy = 0; r.noChao = true; r.gira = 0; r.giro = 0;
+          if(r.va < 0 && r.a <= 0){ r.a = 0; r.va = 0; r.noChao = true; r.gira = 0; r.giro = 0;
             r.el.classList.remove("ar", "pousa"); void r.el.getBoundingClientRect(); r.el.classList.add("pousa"); }
-        } else if(!r.caido) r.y = r.piso - SZ;
-        r.el.style.transform = `translate(${r.x}px,${r.y}px) scaleX(${r.dir}) rotate(${r.giro}deg)`;
-        if(r.x > W + SZ + 20 || r.x < -SZ - 30){ r.el.remove(); lista.splice(i, 1); }
+        } else if(!r.caido) r.a = 0;
+        const [x, y] = xy(r), base = r.eixo === "h" ? 0 : (r.dir < 0 ? -90 : 90);
+        r.el.style.transform = r.eixo === "h" ? `translate(${x}px,${y}px) scaleX(${r.dir}) rotate(${r.giro}deg)` : `translate(${x}px,${y}px) rotate(${base + r.giro}deg)`;
+        const fora = r.eixo === "h" ? (r.s > W + SZ + 20 || r.s < -SZ - 30) : (r.s > H + SZ + 20 || r.s < -SZ - 30);
+        if(fora){ r.el.remove(); lista.splice(i, 1); }
       }
       requestAnimationFrame(passo);
     }
@@ -296,7 +314,8 @@
     // encostou (ou passou perto): pulo alto com giro e dispara correndo
     const assusta = (e, forte) => lista.forEach(r => {
       if(r.caido > 0) return;
-      if(Math.hypot(e.clientX - (r.x + SZ / 2), e.clientY - (r.y + SZ / 2)) < (forte ? 90 : 70)){ pula(r, forte ? 760 : 560, 1); r.vel = r.base * (forte ? 2 : 1.5); }
+      const [x, y] = xy(r);
+      if(Math.hypot(e.clientX - (x + SZ / 2), e.clientY - (y + SZ / 2)) < (forte ? 90 : 70)){ pula(r, forte ? 760 : 560, 1); r.vel = r.base * (forte ? 2 : 1.5); }
     });
     addEventListener("pointerdown", e => assusta(e, true), {passive: true});
     addEventListener("pointermove", e => assusta(e, false), {passive: true});
