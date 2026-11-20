@@ -49,7 +49,7 @@ label{font-size:13px;color:var(--mut);display:block;margin:10px 0 4px}
     <div class="card" id="form"></div>
     <div class="row"><button class="btn" id="b-save">Salvar valores</button><span id="st-save" class="mut"></span></div>
     <h2>Links dos planos</h2>
-    <p class="mut" style="margin:0">Cada link abre a vitrine já com o plano escolhido. É só copiar e mandar para o cliente.</p>
+    <p class="mut" style="margin:0">Toque em <b>Enviar no WhatsApp</b>, escolha o contato e a mensagem já vai pronta com o link (e a arte do plano aparece na prévia).</p>
     <div class="card" id="links"></div>
     <h2>Nutricionistas parceiras</h2>
     <p class="mut" style="margin:0">Elas se cadastram em <b>nutri.html</b>. Só aparecem na vitrine depois que você aprovar.</p>
@@ -109,11 +109,22 @@ document.addEventListener("click", async e => {
   if(error) console.warn(error);
   loadNutris();
 });
-const PLANOS = [["consultoria","Consultoria Online"],["combo","Consultoria + Nutri"],["convite","Convite de aluno (amigo)"],["gluteo","Base de Glúteo"],["abdomen","Base de Abdômen"],["metabolica","Base Metabólica + HIIT"]];
+const PLANOS = [
+  ["consultoria","Consultoria Online","Oi! 💪 Chegou a Black Friday da Família FR: renovando agora, a consultoria sai por R$ 150 o ciclo de 60 dias. Monte o seu plano aqui:"],
+  ["combo","Consultoria + Nutri","Oi! 💪🥗 Treino + plano alimentar com a nossa nutricionista parceira, de R$ 450 por R$ 250 na Black Friday. Monte o seu plano aqui:"],
+  ["convite","Convite de aluno (amigo)","Oi! 🎁 Você ganhou um convite da Família FR: Consultoria + Nutri 100% online de R$ 450 por R$ 200. Garanta o seu aqui:"],
+  ["gluteo","Base de Glúteo","Oi! 🍑 Programa Base de Glúteo: 30 dias de treino no app por R$ 67 (ou R$ 80 com guia alimentar da nutri). Veja aqui:"],
+  ["abdomen","Base de Abdômen","Oi! 🔥 Programa Base de Abdômen: 30 dias de treino no app por R$ 67 (ou R$ 80 com guia alimentar da nutri). Veja aqui:"],
+  ["metabolica","Base Metabólica + HIIT","Oi! ⚡ Programa Base Metabólica + HIIT: 30 dias de treino no app por R$ 67 (ou R$ 80 com guia alimentar da nutri). Veja aqui:"]];
+function linkRow(nome, url, txt){
+  const wa = "https://wa.me/?text=" + encodeURIComponent(txt + "\n" + url);
+  return `<div class="ped"><b>${nome}</b><div class="row" style="margin-top:6px"><input readonly value="${esc(url)}" style="flex:1;min-width:0">
+    <a class="btn" href="${esc(wa)}" target="_blank" rel="noopener" style="text-decoration:none">Enviar no WhatsApp</a><button class="btn line" data-copy="${esc(url)}">Copiar</button></div></div>`;
+}
 function drawLinks(){
   const base = location.origin + location.pathname.replace(/admin\.html$/,"");
-  $("links").innerHTML = `<div class="ped"><b>Vitrine completa</b><div class="row" style="margin-top:6px"><input readonly value="${esc(base)}" style="flex:1;min-width:0"><button class="btn line" data-copy="${esc(base)}">Copiar</button></div></div>` +
-    PLANOS.map(([k,n])=>{ const u = base + k + "/"; return `<div class="ped"><b>${n}</b><div class="row" style="margin-top:6px"><input readonly value="${esc(u)}" style="flex:1;min-width:0"><button class="btn line" data-copy="${esc(u)}">Copiar</button></div></div>`; }).join("");
+  $("links").innerHTML = linkRow("Vitrine completa", base, "Oi! 💪 Conheça os planos da Família FR: treino e nutrição do seu jeito. Escolha o seu aqui:") +
+    PLANOS.map(([k,n,t]) => linkRow(n, base + k + "/", t)).join("");
 }
 document.addEventListener("click", async e => {
   const b = e.target.closest("[data-copy]"); if(!b) return;
