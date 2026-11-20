@@ -43,19 +43,27 @@
   @keyframes fr-troca{from{transform:scale(.6)}to{transform:scale(1)}}
   .fr-dvd .sobe{animation:fr-supino 1.1s ease-in-out infinite alternate;transform-origin:center}
   @keyframes fr-supino{from{transform:translateY(5px)}to{transform:translateY(-3px)}}
-  .fr-bicho{position:fixed;left:0;bottom:8px;width:54px;height:54px;z-index:55;pointer-events:none;transform:translateX(-80px);visibility:hidden}
-  .fr-bicho.vai{visibility:visible;animation:fr-corre 7s linear forwards}
+  .fr-bicho{position:fixed;left:0;top:0;width:54px;height:54px;z-index:55;pointer-events:none;visibility:hidden;will-change:transform}
+  .fr-bicho.vai{visibility:visible}
   .fr-bicho .corpo{animation:fr-pula .36s ease-in-out infinite alternate;transform-origin:50% 100%}
   .fr-bicho .pe1{animation:fr-perna .18s linear infinite alternate;transform-origin:22px 40px}
   .fr-bicho .pe2{animation:fr-perna .18s linear infinite alternate-reverse;transform-origin:32px 40px}
-  @keyframes fr-corre{from{transform:translateX(-80px)}to{transform:translateX(calc(100vw + 20px))}}
+  .fr-bicho.ar .pe1,.fr-bicho.ar .pe2,.fr-bicho.ar .corpo,.fr-bicho.caido .pe1,.fr-bicho.caido .pe2{animation-play-state:paused}
+  .fr-bicho.ar .pe1{transform:rotate(-35deg)}.fr-bicho.ar .pe2{transform:rotate(30deg)}
+  .fr-bicho.pousa .corpo{animation:fr-amassa .22s ease-out}
+  @keyframes fr-amassa{0%{transform:scale(1.15,.8)}100%{transform:scale(1,1)}}
   @keyframes fr-pula{from{transform:translateY(0)}to{transform:translateY(-4px)}}
-  .fr-bicho.pulo .corpo{animation:fr-pulao .55s cubic-bezier(.3,1.6,.5,1)}
-  @keyframes fr-pulao{0%{transform:translateY(0) rotate(0)}40%{transform:translateY(-20px) rotate(-12deg)}100%{transform:translateY(0) rotate(0)}}
   @keyframes fr-perna{from{transform:rotate(-28deg)}to{transform:rotate(28deg)}}
-  .fr-vitrine .fr-dvd{z-index:40;opacity:.55}.fr-vitrine .fr-bicho{z-index:40}
-  .fr-sem-enfeite .fr-dvd,.fr-sem-enfeite .fr-bicho{display:none}
-  @media (prefers-reduced-motion: reduce){.fr-dvd{display:none}.fr-bicho .corpo,.fr-bicho .pe1,.fr-bicho .pe2{animation:none}.fr-bicho{display:none}}`;
+  .fr-obs{position:fixed;bottom:8px;z-index:54;pointer-events:none;transform-origin:50% 100%;animation:fr-surge .35s cubic-bezier(.3,1.6,.5,1);transition:transform .45s ease-in,opacity .45s;filter:drop-shadow(0 3px 5px rgba(0,0,0,.35))}
+  .fr-obs svg{width:100%;height:100%;display:block}
+  .fr-obs.cai{transform:rotate(80deg) translateX(10px)}
+  .fr-obs.some{opacity:0;transform:scale(.4)}
+  .fr-obs.ban svg{animation:fr-bandeira .5s ease-in-out infinite alternate;transform-origin:10% 100%}
+  @keyframes fr-bandeira{from{transform:skewY(-4deg)}to{transform:skewY(4deg)}}
+  @keyframes fr-surge{from{transform:scale(0)}to{transform:scale(1)}}
+  .fr-vitrine .fr-dvd{z-index:40;opacity:.55}.fr-vitrine .fr-bicho{z-index:40}.fr-vitrine .fr-obs{z-index:39}
+  .fr-sem-enfeite .fr-dvd,.fr-sem-enfeite .fr-bicho,.fr-sem-enfeite .fr-obs{display:none}
+  @media (prefers-reduced-motion: reduce){.fr-dvd{display:none}.fr-bicho .corpo,.fr-bicho .pe1,.fr-bicho .pe2{animation:none}.fr-bicho,.fr-obs{display:none}}`;
 
   // desenhos que batem nas bordas, estilo logo do DVD (trocam a cada batida)
   const LEGUMES = [
@@ -143,6 +151,7 @@
       requestAnimationFrame(passo);
     }
     requestAnimationFrame(passo);
+    return itens;
   }
 
   // abacatinho correndo (personagem próprio da Família FR)
@@ -161,24 +170,107 @@
       <path d="M41 27 q5 2 7 -2" stroke="#3d5a17" stroke-width="2.6" fill="none" stroke-linecap="round"/>
     </g></svg>`;
 
+  // corrida de obstáculos do abacatinho: cones, barreira, caixa e anilha no chão, pula os bichinhos que passam
+  const OBS = {
+    cone: {w:28, h:32, alto:false, svg:`<svg viewBox="0 0 30 34"><path d="M15 2 L26 30 H4Z" fill="#ff7a2f"/><path d="M11 13h8l2 6H9z" fill="#fff"/><rect x="1" y="29" width="28" height="4.5" rx="1.5" fill="#c4521a"/></svg>`},
+    barreira: {w:40, h:40, alto:true, svg:`<svg viewBox="0 0 40 40"><rect x="5" y="10" width="3.2" height="29" rx="1" fill="#cfd3c8"/><rect x="31.8" y="10" width="3.2" height="29" rx="1" fill="#cfd3c8"/><rect x="1" y="36" width="11" height="3" rx="1" fill="#8b8f86"/><rect x="28" y="36" width="11" height="3" rx="1" fill="#8b8f86"/><rect x="1" y="7" width="38" height="8" rx="2" fill="#d4ff3a"/><path d="M9 7h6l-4 8H5zM23 7h6l-4 8h-6z" fill="#141a00" opacity=".55"/></svg>`},
+    caixa: {w:32, h:30, alto:false, svg:`<svg viewBox="0 0 32 30"><rect x="1" y="1" width="30" height="28" rx="2.5" fill="#a8743f"/><rect x="1" y="1" width="30" height="28" rx="2.5" fill="none" stroke="#7a4f24" stroke-width="2.5"/><path d="M3 3 L29 27 M29 3 L3 27" stroke="#7a4f24" stroke-width="2.5"/></svg>`},
+    anilha: {w:30, h:30, alto:false, svg:`<svg viewBox="0 0 30 30"><circle cx="15" cy="15" r="14" fill="#2b2e27"/><circle cx="15" cy="15" r="14" fill="none" stroke="#d4ff3a" stroke-width="2"/><circle cx="15" cy="15" r="8.5" fill="none" stroke="#4a4e44" stroke-width="2"/><circle cx="15" cy="15" r="3.2" fill="#8b8f86"/></svg>`},
+  };
+  const BANDEIRA = `<svg viewBox="0 0 30 46"><rect x="3" y="2" width="2.6" height="43" rx="1" fill="#cfd3c8"/><path d="M5.6 3h22v15h-22z" fill="#fff"/><path d="M5.6 3h5.5v5h-5.5zM16.6 3h5.5v5h-5.5zM11.1 8h5.5v5h-5.5zM22.1 8h5.5v5h-5.5zM5.6 13h5.5v5h-5.5zM16.6 13h5.5v5h-5.5z" fill="#141a00"/></svg>`;
+
+  function corrida(voando){
+    document.body.insertAdjacentHTML("beforeend", BICHO);
+    const bicho = document.querySelector(".fr-bicho"), SZ = 54, G = 1500;
+    let run = null, ant = null;
+    const chao = () => innerHeight - 8 - SZ;
+    const poe = (tipo, x, svg, w, h, cls) => {
+      const el = document.createElement("div"); el.className = "fr-obs" + (cls ? " " + cls : ""); el.setAttribute("aria-hidden", "true");
+      el.style.cssText = `left:${x - w / 2}px;width:${w}px;height:${h}px`; el.innerHTML = svg; document.body.appendChild(el);
+      return {tipo, x, w, h, el, passou: false};
+    };
+    function nova(){
+      if(run || !pref.enfeites || document.hidden) return;
+      const W = innerWidth, dir = Math.random() < .5 ? 1 : -1, base = 150 + Math.random() * 70;
+      const tipos = Object.keys(OBS), n = Math.max(2, Math.min(5, Math.floor(W / 150)));
+      const obs = [];
+      for(let i = 0; i < n; i++){
+        const t = tipos[Math.floor(Math.random() * tipos.length)], o = OBS[t];
+        let x = W * (0.16 + 0.62 * (i + 0.2 + Math.random() * 0.6) / n);
+        if(dir < 0) x = W - x;
+        obs.push(poe(t, x, o.svg, o.w, o.h));
+      }
+      obs.push(poe("bandeira", dir > 0 ? W - 74 : 30, BANDEIRA, 30, 46, "ban")); // longe do botão 🎨 no canto
+      run = {x: dir > 0 ? -SZ - 10 : W + 10, y: chao(), vy: 0, dir, base, vel: base, obs, noChao: true, giro: 0, gira: 0, caido: 0};
+      bicho.classList.add("vai");
+    }
+    const pula = (forca, gira) => { if(!run || !run.noChao) return; run.vy = -forca; run.noChao = false; run.gira = gira || 0; bicho.classList.add("ar"); };
+    function fim(){
+      run.obs.forEach(o => { o.el.classList.add("some"); setTimeout(() => o.el.remove(), 500); });
+      run = null; bicho.classList.remove("vai", "ar", "caido");
+    }
+    function passo(t){
+      const dt = ant == null ? 0 : Math.min(0.05, (t - ant) / 1000); ant = t;
+      if(run){
+        if(!pref.enfeites){ fim(); }
+        else {
+          const r = run, cx = () => r.x + SZ / 2;
+          r.vel = r.base + (r.vel - r.base) * Math.exp(-dt * 1.2);
+          if(r.caido > 0){ // tropeçou: rola no chão e levanta
+            r.caido -= dt; r.x += r.dir * r.base * 0.35 * dt; r.giro = r.dir * Math.min(90, (0.9 - r.caido) * 400);
+            if(r.caido <= 0){ r.giro = 0; bicho.classList.remove("caido"); pula(380); }
+          } else {
+            r.x += r.dir * r.vel * dt;
+            // obstáculos do chão
+            r.obs.forEach(o => {
+              const d = (o.x - cx()) * r.dir;
+              if(!o.passou && r.noChao && d > 0 && d < 46 + o.w / 2 + r.vel * 0.06){
+                o.passou = true;
+                if(o.tipo === "bandeira") pula(560, 1);            // chegada: pulo comemorando com giro
+                else if(!OBS[o.tipo].alto && Math.random() < .12){ // às vezes tropeça e derruba o obstáculo
+                  r.caido = 0.9; bicho.classList.add("caido"); setTimeout(() => o.el.classList.add("cai"), 120);
+                }
+                else pula(OBS[o.tipo].alto ? 640 : 520, OBS[o.tipo].alto && Math.random() < .5 ? 1 : 0);
+              }
+            });
+            // bichinhos voando que chegam perto do chão também são obstáculos
+            (voando || []).forEach(v => {
+              const d = (v.x + 26 - cx()) * r.dir;
+              if(r.noChao && d > 0 && d < 80 && v.y + 52 > chao() - 10) pula(700, 1);
+            });
+          }
+          if(!r.noChao){
+            r.vy += G * dt; r.y += r.vy * dt;
+            if(r.gira) r.giro += r.dir * 620 * dt;
+            if(r.y >= chao()){ r.y = chao(); r.vy = 0; r.noChao = true; r.gira = 0; r.giro = 0;
+              bicho.classList.remove("ar"); bicho.classList.remove("pousa"); void bicho.offsetWidth; bicho.classList.add("pousa"); }
+          } else if(!r.caido) r.y = chao();
+          bicho.style.transform = `translate(${r.x}px,${r.y}px) scaleX(${r.dir}) rotate(${r.giro * r.dir}deg)`;
+          if(r.x > innerWidth + SZ + 20 || r.x < -SZ - 30) fim();
+        }
+      }
+      requestAnimationFrame(passo);
+    }
+    bicho.addEventListener("animationend", e => { if(e.animationName === "fr-amassa") bicho.classList.remove("pousa"); });
+    requestAnimationFrame(passo);
+    // encostou (ou passou perto) do abacatinho: pulo alto com giro e dispara correndo
+    const assusta = (e, forte) => {
+      if(!run || run.caido > 0) return;
+      const d = Math.hypot(e.clientX - (run.x + SZ / 2), e.clientY - (run.y + SZ / 2));
+      if(d < (forte ? 90 : 70)){ pula(forte ? 760 : 560, 1); run.vel = run.base * (forte ? 2 : 1.5); }
+    };
+    addEventListener("pointerdown", e => assusta(e, true), {passive: true});
+    addEventListener("pointermove", e => assusta(e, false), {passive: true});
+    const agenda = () => setTimeout(() => { nova(); agenda(); }, 8000 + Math.random() * 10000);
+    setTimeout(nova, 1200 + Math.random() * 2500); agenda();
+    return nova;
+  }
+
   function montar(){
     const st = document.createElement("style"); st.textContent = css; document.head.appendChild(st);
     if(VITRINE) document.documentElement.classList.add("fr-vitrine");
-    dvd(2);
-
-    document.body.insertAdjacentHTML("beforeend", BICHO);
-    const bicho = document.querySelector(".fr-bicho");
-    const corre = () => { if(!pref.enfeites || document.hidden) return; bicho.classList.remove("vai"); void bicho.offsetWidth; bicho.classList.add("vai"); };
-    bicho.addEventListener("animationend", e => { if(e.animationName === "fr-corre") bicho.classList.remove("vai"); if(e.animationName === "fr-pulao") bicho.classList.remove("pulo"); });
-    // encostou (ou passou perto) do abacatinho: ele dá um pulo
-    const assusta = e => { if(!bicho.classList.contains("vai") || bicho.classList.contains("pulo")) return;
-      const r = bicho.getBoundingClientRect();
-      if(Math.hypot(e.clientX - (r.left + r.width / 2), e.clientY - (r.top + r.height / 2)) < 90) bicho.classList.add("pulo"); };
-    addEventListener("pointerdown", assusta, {passive: true});
-    addEventListener("pointermove", assusta, {passive: true});
-    const agenda = () => setTimeout(() => { corre(); agenda(); }, 20000 + Math.random() * 40000);
-    setTimeout(corre, 1500 + Math.random() * 4000); agenda();
-
+    const voando = dvd(2);
+    const corre = corrida(voando);
     if(VITRINE) return; // na vitrine não tem troca de cor
     const box = document.createElement("div"); box.className = "fr-pick";
     box.innerHTML = `<button type="button" aria-label="Cores e enfeites" aria-expanded="false">🎨</button>
