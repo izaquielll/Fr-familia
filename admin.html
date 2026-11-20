@@ -113,7 +113,7 @@ const PLANOS = [["consultoria","Consultoria Online"],["combo","Consultoria + Nut
 function drawLinks(){
   const base = location.origin + location.pathname.replace(/admin\.html$/,"");
   $("links").innerHTML = `<div class="ped"><b>Vitrine completa</b><div class="row" style="margin-top:6px"><input readonly value="${esc(base)}" style="flex:1;min-width:0"><button class="btn line" data-copy="${esc(base)}">Copiar</button></div></div>` +
-    PLANOS.map(([k,n])=>{ const u = base + "?plano=" + k; return `<div class="ped"><b>${n}</b><div class="row" style="margin-top:6px"><input readonly value="${esc(u)}" style="flex:1;min-width:0"><button class="btn line" data-copy="${esc(u)}">Copiar</button></div></div>`; }).join("");
+    PLANOS.map(([k,n])=>{ const u = base + k + "/"; return `<div class="ped"><b>${n}</b><div class="row" style="margin-top:6px"><input readonly value="${esc(u)}" style="flex:1;min-width:0"><button class="btn line" data-copy="${esc(u)}">Copiar</button></div></div>`; }).join("");
 }
 document.addEventListener("click", async e => {
   const b = e.target.closest("[data-copy]"); if(!b) return;
