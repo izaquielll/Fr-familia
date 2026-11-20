@@ -1,0 +1,27 @@
+{
+ "name": "Área do FR",
+ "short_name": "Área FR",
+ "start_url": "admin.html",
+ "scope": "./",
+ "display": "standalone",
+ "background_color": "#0f100d",
+ "theme_color": "#0f100d",
+ "icons": [
+  {
+   "src": "img/icone/fr-192.png",
+   "sizes": "192x192",
+   "type": "image/png"
+  },
+  {
+   "src": "img/icone/fr-512.png",
+   "sizes": "512x512",
+   "type": "image/png"
+  },
+  {
+   "src": "img/icone/fr-mask-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "maskable"
+  }
+ ]
+}

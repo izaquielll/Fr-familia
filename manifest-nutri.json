@@ -1,0 +1,27 @@
+{
+ "name": "Área da Nutri · Família FR",
+ "short_name": "Área Nutri",
+ "start_url": "nutri.html",
+ "scope": "./",
+ "display": "standalone",
+ "background_color": "#0f100d",
+ "theme_color": "#0f100d",
+ "icons": [
+  {
+   "src": "img/icone/nutri-192.png",
+   "sizes": "192x192",
+   "type": "image/png"
+  },
+  {
+   "src": "img/icone/nutri-512.png",
+   "sizes": "512x512",
+   "type": "image/png"
+  },
+  {
+   "src": "img/icone/nutri-mask-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "maskable"
+  }
+ ]
+}
