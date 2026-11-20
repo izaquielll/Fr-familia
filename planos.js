@@ -8,9 +8,8 @@ window.FRPlanos = (function(){
   const ativo = ate => ate && new Date() <= new Date(ate+"T23:59:59");
 
   function linkFor(base, slug, ref){
-    let u = STATIC.includes(slug) ? base + slug + "/" : base + "?plano=" + slug;
-    if(ref) u += (u.includes("?") ? "&" : "?") + "nutri=" + ref;
-    return u;
+    if(ref) return base + "n/" + ref + "/" + (slug ? "?plano=" + slug : "");
+    return STATIC.includes(slug) ? base + slug + "/" : base + "?plano=" + slug;
   }
 
   /* ---------- Links para enviar ---------- */
@@ -22,7 +21,7 @@ window.FRPlanos = (function(){
     const promo = ativo(C.promoAte);
     const combo = (C.consultoria||200) + (C.nutri||250);
     const lista = [];
-    lista.push({nome:"Vitrine completa", url: ref ? base + "?nutri=" + ref : base, txt:"Oi! 💪 Conheça os planos da Família FR: treino e nutrição do seu jeito. Escolha o seu aqui:"});
+    lista.push({nome:"Vitrine completa", url: ref ? linkFor(base, "", ref) : base, txt:"Oi! 💪 Conheça os planos da Família FR: treino e nutrição do seu jeito. Escolha o seu aqui:"});
     if(C.mostrarConsultoria !== false) lista.push({nome:"Consultoria Online", url: linkFor(base,"consultoria",ref),
       txt: promo ? `Oi! 💪 Chegou a ${C.promoNome||"promoção"} da Família FR: renovando agora, a consultoria sai por ${brl(C.consultoriaPromo)} o ciclo de 60 dias. Monte o seu plano aqui:` : `Oi! 💪 Consultoria online da Família FR por ${brl(C.consultoria||200)} o ciclo de 60 dias. Monte o seu plano aqui:`});
     if(C.mostrarCombo !== false) lista.push({nome:"Consultoria + Nutri", url: linkFor(base,"combo",ref),

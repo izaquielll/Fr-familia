@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Família FR</title>
+<script>
+// Link de nutri que ainda não ganhou página própria: leva para a vitrine com a indicação dela
+var m = location.pathname.match(/\/n\/([a-z0-9-]+)\/?/i);
+if (m) {
+  var base = location.pathname.slice(0, location.pathname.indexOf("/n/") + 1);
+  var p = new URLSearchParams(location.search); p.set("nutri", m[1].toLowerCase());
+  location.replace(base + "?" + p.toString());
+} else {
+  location.replace("/Fr-familia/");
+}
+</script>
+<style>body{background:#0f100d;color:#f3f4ef;font-family:system-ui,sans-serif;display:grid;place-items:center;height:100vh;margin:0}a{color:#d4ff3a}</style>
+</head><body><p>Abrindo… <a href="/Fr-familia/">ir para a vitrine</a></p></body></html>

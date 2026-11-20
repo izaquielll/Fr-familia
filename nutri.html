@@ -122,7 +122,7 @@ function drawLink(){
   drawExtras();
   if(!perfil){ $("box-link").classList.add("hidden"); return; }
   $("box-link").classList.remove("hidden");
-  const link = base + "?nutri=" + perfil.slug;
+  const link = base + "n/" + perfil.slug + "/";
   $("meu-link").textContent = link;
   const txt = {pendente:"Seu cadastro está em análise pela equipe FR. Assim que for aprovado, você aparece na vitrine e o seu link passa a funcionar.",
     aprovada:"Você já aparece na vitrine. Quem entrar pelo seu link chega com você escolhida como nutricionista.",
