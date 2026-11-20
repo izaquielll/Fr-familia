@@ -53,6 +53,9 @@
   .fr-bicho.pousa .corpo{animation:fr-amassa .22s ease-out}
   @keyframes fr-amassa{0%{transform:scale(1.15,.8)}100%{transform:scale(1,1)}}
   @keyframes fr-pula{from{transform:translateY(0)}to{transform:translateY(-4px)}}
+  .fr-bicho.fr-polvo .pe1{animation:fr-tent .22s ease-in-out infinite alternate;transform-origin:27px 31px}
+  .fr-bicho.fr-polvo .pe2{animation:fr-tent .22s ease-in-out infinite alternate-reverse;transform-origin:27px 31px}
+  @keyframes fr-tent{from{transform:skewX(-12deg) scaleY(.94)}to{transform:skewX(12deg) scaleY(1.04)}}
   @keyframes fr-perna{from{transform:rotate(-28deg)}to{transform:rotate(28deg)}}
   .fr-vitrine .fr-dvd{z-index:40;opacity:.55}.fr-vitrine .fr-bicho{z-index:40}
   .fr-sem-enfeite .fr-dvd,.fr-sem-enfeite .fr-bicho{display:none}
@@ -231,6 +234,22 @@
         <circle cx="29.5" cy="12" r="1.2" fill="#1d1712"/><circle cx="33" cy="12" r="1.2" fill="#1d1712"/>
         <path d="M29 15.5 q2.3 1.8 4.5 0" stroke="#1d1712" stroke-width="1.1" fill="none" stroke-linecap="round"/>
       </g>`},
+    polvo: {vel: 1.0, svg: `<g class="pe1"><path d="M27 31 Q18 36 12 46" stroke="#3fae9c" stroke-width="3.6" fill="none" stroke-linecap="round"/><circle cx="13.8" cy="44.4" r="1.5" fill="#2f6fd6"/><circle cx="12.0" cy="46.2" r="1.5" fill="#2f6fd6"/><path d="M27 31 Q25 41 24 50" stroke="#3fae9c" stroke-width="3.6" fill="none" stroke-linecap="round"/><circle cx="24.4" cy="48.4" r="1.5" fill="#2f6fd6"/><circle cx="24.0" cy="50.2" r="1.5" fill="#2f6fd6"/><path d="M27 31 Q33 40 36 49" stroke="#3fae9c" stroke-width="3.6" fill="none" stroke-linecap="round"/><circle cx="34.9" cy="47.4" r="1.5" fill="#2f6fd6"/><circle cx="36.0" cy="49.2" r="1.5" fill="#2f6fd6"/></g>
+      <g class="pe2"><path d="M27 31 Q21 40 18 49" stroke="#3fae9c" stroke-width="3.6" fill="none" stroke-linecap="round"/><circle cx="19.1" cy="47.4" r="1.5" fill="#2f6fd6"/><circle cx="18.0" cy="49.2" r="1.5" fill="#2f6fd6"/><path d="M27 31 Q29 41 30 50" stroke="#3fae9c" stroke-width="3.6" fill="none" stroke-linecap="round"/><circle cx="29.6" cy="48.4" r="1.5" fill="#2f6fd6"/><circle cx="30.0" cy="50.2" r="1.5" fill="#2f6fd6"/><path d="M27 31 Q37 36 42 46" stroke="#3fae9c" stroke-width="3.6" fill="none" stroke-linecap="round"/><circle cx="40.2" cy="44.4" r="1.5" fill="#2f6fd6"/><circle cx="42.0" cy="46.2" r="1.5" fill="#2f6fd6"/></g>
+      <g class="corpo">
+        <path d="M23 22 Q14 24 10 33" stroke="#3fae9c" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+        <circle cx="11.6" cy="30.2" r="1.5" fill="#2f6fd6"/><circle cx="10.2" cy="33" r="1.5" fill="#2f6fd6"/>
+        <path d="M31 22 Q39 25 42 35" stroke="#3fae9c" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+        <circle cx="40.8" cy="31.6" r="1.5" fill="#2f6fd6"/><circle cx="41.9" cy="34.4" r="1.5" fill="#2f6fd6"/>
+        <path d="M42.6 37.2 L48.6 21.5 L51 22.4 L45.2 38.2 Z" fill="#1a1a1a" stroke="#cfd3c8" stroke-width=".6"/><path d="M47.6 20.8 l4.4 1.6 l-.8 2.2 l-4.4 -1.6 z" fill="#1a1a1a" stroke="#cfd3c8" stroke-width=".6"/>
+        <circle cx="46.2" cy="33.6" r=".7" fill="#fff"/><circle cx="47.3" cy="30.6" r=".7" fill="#fff"/><circle cx="48.4" cy="27.6" r=".7" fill="#fff"/>
+        <ellipse cx="27" cy="28" rx="5" ry="5" fill="#3fae9c"/>
+        <rect x="22.5" y="19.5" width="9" height="10" rx="2.4" fill="#6b1e24"/>
+        <ellipse cx="27" cy="11.5" rx="8" ry="9" fill="#3fae9c"/>
+        <circle cx="18.7" cy="17.1" r="1.4" fill="#4aa3e8"/><circle cx="18.0" cy="8.5" r="1.4" fill="#4aa3e8"/><circle cx="22.2" cy="3.2" r="1.4" fill="#4aa3e8"/><circle cx="27.0" cy="1.8" r="1.4" fill="#4aa3e8"/><circle cx="31.8" cy="3.2" r="1.4" fill="#4aa3e8"/><circle cx="36.0" cy="8.5" r="1.4" fill="#4aa3e8"/><circle cx="35.3" cy="17.1" r="1.4" fill="#4aa3e8"/>
+        <circle cx="24.6" cy="10.5" r="1.4" fill="#111"/><circle cx="29.4" cy="10.5" r="1.4" fill="#111"/>
+        <path d="M24.8 14.6 l1.7 2.4 l3 -3" stroke="#111" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </g>`}, // desenhado pelo FR
   };
 
   // corrida: personagens surgem em lugares aleatórios da tela e correm até o outro lado,
@@ -262,7 +281,7 @@
         r = {eixo: "v", piso, dir: sobe ? -1 : 1, s: sobe ? H + 10 : -SZ - 10};
       }
       const el = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-      el.setAttribute("class", "fr-bicho vai"); el.setAttribute("viewBox", "0 0 54 54"); el.setAttribute("aria-hidden", "true");
+      el.setAttribute("class", "fr-bicho vai fr-" + nome); el.setAttribute("viewBox", "0 0 54 54"); el.setAttribute("aria-hidden", "true");
       el.innerHTML = c.svg; document.body.appendChild(el);
       el.addEventListener("animationend", e => { if(e.animationName === "fr-amassa") el.classList.remove("pousa"); });
       lista.push(Object.assign(r, {el, base, vel: base, a: 0, va: 0, noChao: true, giro: 0, gira: 0, caido: 0, prox: 1 + Math.random() * 2}));
