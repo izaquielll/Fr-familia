@@ -54,16 +54,9 @@
   @keyframes fr-amassa{0%{transform:scale(1.15,.8)}100%{transform:scale(1,1)}}
   @keyframes fr-pula{from{transform:translateY(0)}to{transform:translateY(-4px)}}
   @keyframes fr-perna{from{transform:rotate(-28deg)}to{transform:rotate(28deg)}}
-  .fr-obs{position:fixed;top:0;z-index:54;pointer-events:none;transform-origin:50% 100%;animation:fr-surge .35s cubic-bezier(.3,1.6,.5,1);transition:transform .45s ease-in,opacity .45s;filter:drop-shadow(0 3px 5px rgba(0,0,0,.35))}
-  .fr-obs svg{width:100%;height:100%;display:block}
-  .fr-obs.cai{transform:rotate(80deg) translateX(10px)}
-  .fr-obs.some{opacity:0;transform:scale(.4)}
-  .fr-obs.ban svg{animation:fr-bandeira .5s ease-in-out infinite alternate;transform-origin:10% 100%}
-  @keyframes fr-bandeira{from{transform:skewY(-4deg)}to{transform:skewY(4deg)}}
-  @keyframes fr-surge{from{transform:scale(0)}to{transform:scale(1)}}
-  .fr-vitrine .fr-dvd{z-index:40;opacity:.55}.fr-vitrine .fr-bicho{z-index:40}.fr-vitrine .fr-obs{z-index:39}
-  .fr-sem-enfeite .fr-dvd,.fr-sem-enfeite .fr-bicho,.fr-sem-enfeite .fr-obs{display:none}
-  @media (prefers-reduced-motion: reduce){.fr-dvd{display:none}.fr-bicho .corpo,.fr-bicho .pe1,.fr-bicho .pe2{animation:none}.fr-bicho,.fr-obs{display:none}}`;
+  .fr-vitrine .fr-dvd{z-index:40;opacity:.55}.fr-vitrine .fr-bicho{z-index:40}
+  .fr-sem-enfeite .fr-dvd,.fr-sem-enfeite .fr-bicho{display:none}
+  @media (prefers-reduced-motion: reduce){.fr-dvd{display:none}.fr-bicho .corpo,.fr-bicho .pe1,.fr-bicho .pe2{animation:none}.fr-bicho{display:none}}`;
 
   // desenhos que batem nas bordas, estilo logo do DVD (trocam a cada batida)
   const LEGUMES = [
@@ -155,8 +148,9 @@
   }
 
   // abacatinho correndo (personagem próprio da Família FR)
-  const BICHO = `<svg class="fr-bicho" viewBox="0 0 54 54" aria-hidden="true">
-    <g class="pe1"><path d="M22 40 l-2 9" stroke="#3d5a17" stroke-width="3" stroke-linecap="round"/><ellipse cx="19.5" cy="49.5" rx="3.2" ry="1.7" fill="#2f4511"/></g>
+  // corredores da Família FR (personagens próprios): cada um com pernas (pe1/pe2) e corpo
+  const CORREDORES = {
+    abacate: {vel: 1.0, svg: `<g class="pe1"><path d="M22 40 l-2 9" stroke="#3d5a17" stroke-width="3" stroke-linecap="round"/><ellipse cx="19.5" cy="49.5" rx="3.2" ry="1.7" fill="#2f4511"/></g>
     <g class="pe2"><path d="M32 40 l2 9" stroke="#3d5a17" stroke-width="3" stroke-linecap="round"/><ellipse cx="34.5" cy="49.5" rx="3.2" ry="1.7" fill="#2f4511"/></g>
     <g class="corpo">
       <path d="M27 4 C17 4 13 15 12 24 C10.5 35 17 43 27 43 C37 43 43.5 35 42 24 C41 15 37 4 27 4 Z" fill="#4f7a1f"/>
@@ -168,124 +162,146 @@
       <circle cx="20.5" cy="22" r="1.6" fill="#f29b9b" opacity=".7"/><circle cx="33.5" cy="22" r="1.6" fill="#f29b9b" opacity=".7"/>
       <path d="M13 27 q-5 -2 -7 -6" stroke="#3d5a17" stroke-width="2.6" fill="none" stroke-linecap="round"/>
       <path d="M41 27 q5 2 7 -2" stroke="#3d5a17" stroke-width="2.6" fill="none" stroke-linecap="round"/>
-    </g></svg>`;
-
-  // corrida de obstáculos do abacatinho: cones, barreira, caixa e anilha no chão, pula os bichinhos que passam
-  const OBS = {
-    cone: {w:28, h:32, alto:false, svg:`<svg viewBox="0 0 30 34"><path d="M15 2 L26 30 H4Z" fill="#ff7a2f"/><path d="M11 13h8l2 6H9z" fill="#fff"/><rect x="1" y="29" width="28" height="4.5" rx="1.5" fill="#c4521a"/></svg>`},
-    barreira: {w:40, h:40, alto:true, svg:`<svg viewBox="0 0 40 40"><rect x="5" y="10" width="3.2" height="29" rx="1" fill="#cfd3c8"/><rect x="31.8" y="10" width="3.2" height="29" rx="1" fill="#cfd3c8"/><rect x="1" y="36" width="11" height="3" rx="1" fill="#8b8f86"/><rect x="28" y="36" width="11" height="3" rx="1" fill="#8b8f86"/><rect x="1" y="7" width="38" height="8" rx="2" fill="#d4ff3a"/><path d="M9 7h6l-4 8H5zM23 7h6l-4 8h-6z" fill="#141a00" opacity=".55"/></svg>`},
-    caixa: {w:32, h:30, alto:false, svg:`<svg viewBox="0 0 32 30"><rect x="1" y="1" width="30" height="28" rx="2.5" fill="#a8743f"/><rect x="1" y="1" width="30" height="28" rx="2.5" fill="none" stroke="#7a4f24" stroke-width="2.5"/><path d="M3 3 L29 27 M29 3 L3 27" stroke="#7a4f24" stroke-width="2.5"/></svg>`},
-    anilha: {w:30, h:30, alto:false, svg:`<svg viewBox="0 0 30 30"><circle cx="15" cy="15" r="14" fill="#2b2e27"/><circle cx="15" cy="15" r="14" fill="none" stroke="#d4ff3a" stroke-width="2"/><circle cx="15" cy="15" r="8.5" fill="none" stroke="#4a4e44" stroke-width="2"/><circle cx="15" cy="15" r="3.2" fill="#8b8f86"/></svg>`},
+    </g>`},
+    pera: {vel: 1.0, svg: `<g class="pe1"><path d="M22 40 l-2 9" stroke="#6b6a1c" stroke-width="3" stroke-linecap="round"/><ellipse cx="19.5" cy="49.5" rx="3.2" ry="1.7" fill="#4d4c12"/></g>
+      <g class="pe2"><path d="M32 40 l2 9" stroke="#6b6a1c" stroke-width="3" stroke-linecap="round"/><ellipse cx="34.5" cy="49.5" rx="3.2" ry="1.7" fill="#4d4c12"/></g>
+      <g class="corpo">
+        <path d="M27 9 C22 9 21 15 21 18 C21 22 13 25 12.5 32 C12 39 18.5 43 27 43 C35.5 43 42 39 41.5 32 C41 25 33 22 33 18 C33 15 32 9 27 9 Z" fill="#c9d64a"/>
+        <path d="M34 26 C38 29 39 34 37 38" stroke="#e6ee8a" stroke-width="2.4" fill="none" stroke-linecap="round" opacity=".8"/>
+        <path d="M27 9 q0 -4 2 -6" stroke="#6b4a22" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M29 5 q6 -3 8 1 q-5 3 -8 -1 Z" fill="#5f9a2a"/>
+        <circle cx="23" cy="28" r="1.7" fill="#1d2410"/><circle cx="31" cy="28" r="1.7" fill="#1d2410"/>
+        <circle cx="23.5" cy="27.4" r=".55" fill="#fff"/><circle cx="31.5" cy="27.4" r=".55" fill="#fff"/>
+        <path d="M24.5 31.5 q2.5 2.2 5 0" stroke="#1d2410" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+        <circle cx="20" cy="31" r="1.6" fill="#f29b9b" opacity=".75"/><circle cx="34" cy="31" r="1.6" fill="#f29b9b" opacity=".75"/>
+        <path d="M13 31 q-5 -2 -7 -6" stroke="#6b6a1c" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+        <path d="M41 31 q5 2 7 -2" stroke="#6b6a1c" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+      </g>`},
+    maca: {vel: 1.05, svg: `<g class="pe1"><path d="M22 40 l-2 9" stroke="#6b1d1d" stroke-width="3" stroke-linecap="round"/><ellipse cx="19.5" cy="49.5" rx="3.2" ry="1.7" fill="#4a1212"/></g>
+      <g class="pe2"><path d="M32 40 l2 9" stroke="#6b1d1d" stroke-width="3" stroke-linecap="round"/><ellipse cx="34.5" cy="49.5" rx="3.2" ry="1.7" fill="#4a1212"/></g>
+      <g class="corpo">
+        <path d="M27 13 C22 9 12 10 11.5 22 C11 34 18 43 23 43 C25 43 26 42 27 42 C28 42 29 43 31 43 C36 43 43 34 42.5 22 C42 10 32 9 27 13 Z" fill="#e2393b"/>
+        <path d="M17 18 C15 21 15 25 16 28" stroke="#ff8a7a" stroke-width="2.6" fill="none" stroke-linecap="round" opacity=".8"/>
+        <path d="M27 13 q-1 -5 1 -8" stroke="#6b4a22" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M28.5 7 q7 -4 9 1 q-6 3 -9 -1 Z" fill="#5f9a2a"/>
+        <circle cx="23" cy="25" r="1.7" fill="#1d2410"/><circle cx="31" cy="25" r="1.7" fill="#1d2410"/>
+        <circle cx="23.5" cy="24.4" r=".55" fill="#fff"/><circle cx="31.5" cy="24.4" r=".55" fill="#fff"/>
+        <path d="M24.5 28.5 q2.5 2.2 5 0" stroke="#1d2410" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+        <circle cx="20" cy="28" r="1.6" fill="#f29b9b" opacity=".75"/><circle cx="34" cy="28" r="1.6" fill="#f29b9b" opacity=".75"/>
+        <path d="M13 29 q-5 -2 -7 -6" stroke="#8f2224" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+        <path d="M41 29 q5 2 7 -2" stroke="#8f2224" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+      </g>`},
+    melancia: {vel: 0.85, svg: `<g class="pe1"><path d="M22 40 l-2 9" stroke="#2f5d1b" stroke-width="3" stroke-linecap="round"/><ellipse cx="19.5" cy="49.5" rx="3.2" ry="1.7" fill="#1f3f11"/></g>
+      <g class="pe2"><path d="M32 40 l2 9" stroke="#2f5d1b" stroke-width="3" stroke-linecap="round"/><ellipse cx="34.5" cy="49.5" rx="3.2" ry="1.7" fill="#1f3f11"/></g>
+      <g class="corpo">
+        <path d="M6 15 L48 15 C48 33 38 42 27 42 C16 42 6 33 6 15 Z" fill="#2f7d32"/>
+        <path d="M9 15 L45 15 C45 30 37 38.5 27 38.5 C17 38.5 9 30 9 15 Z" fill="#c8f2a0"/>
+        <path d="M11 15 L43 15 C43 28 36 36 27 36 C18 36 11 28 11 15 Z" fill="#f2525a"/>
+        <ellipse cx="18" cy="27" rx="1" ry="1.6" fill="#2b1a10"/><ellipse cx="36" cy="27" rx="1" ry="1.6" fill="#2b1a10"/><ellipse cx="27" cy="32" rx="1" ry="1.6" fill="#2b1a10"/>
+        <circle cx="23" cy="20" r="1.7" fill="#1d2410"/><circle cx="31" cy="20" r="1.7" fill="#1d2410"/>
+        <circle cx="23.5" cy="19.4" r=".55" fill="#fff"/><circle cx="31.5" cy="19.4" r=".55" fill="#fff"/>
+        <path d="M24.5 23.5 q2.5 2.2 5 0" stroke="#1d2410" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+        <circle cx="20" cy="23" r="1.6" fill="#f29b9b" opacity=".75"/><circle cx="34" cy="23" r="1.6" fill="#f29b9b" opacity=".75"/>
+        <path d="M8 24 q-5 -2 -7 -6" stroke="#2f5d1b" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+        <path d="M46 24 q5 2 7 -2" stroke="#2f5d1b" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+      </g>`},
+    alface: {vel: 0.95, svg: `<g class="pe1"><path d="M22 40 l-2 9" stroke="#3d6b1a" stroke-width="3" stroke-linecap="round"/><ellipse cx="19.5" cy="49.5" rx="3.2" ry="1.7" fill="#2a4c10"/></g>
+      <g class="pe2"><path d="M32 40 l2 9" stroke="#3d6b1a" stroke-width="3" stroke-linecap="round"/><ellipse cx="34.5" cy="49.5" rx="3.2" ry="1.7" fill="#2a4c10"/></g>
+      <g class="corpo">
+        <path d="M27 5 C33 5 35 9 38 9 C43 9 45 14 44 18 C47 21 47 27 44 30 C45 35 42 40 37 41 C34 44 30 43 27 43 C24 43 20 44 17 41 C12 40 9 35 10 30 C7 27 7 21 10 18 C9 14 11 9 16 9 C19 9 21 5 27 5 Z" fill="#7cc443"/>
+        <path d="M27 10 C32 10 37 14 38 20 C40 27 37 36 27 37 C17 36 14 27 16 20 C17 14 22 10 27 10 Z" fill="#b6e27a"/>
+        <path d="M27 37 L27 14 M27 24 L20 18 M27 28 L34 21" stroke="#e8f7c9" stroke-width="1.3" fill="none" stroke-linecap="round" opacity=".9"/>
+        <circle cx="23" cy="24" r="1.7" fill="#1d2410"/><circle cx="31" cy="24" r="1.7" fill="#1d2410"/>
+        <circle cx="23.5" cy="23.4" r=".55" fill="#fff"/><circle cx="31.5" cy="23.4" r=".55" fill="#fff"/>
+        <path d="M24.5 27.5 q2.5 2.2 5 0" stroke="#1d2410" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+        <circle cx="20" cy="27" r="1.6" fill="#f29b9b" opacity=".75"/><circle cx="34" cy="27" r="1.6" fill="#f29b9b" opacity=".75"/>
+        <path d="M10 30 q-5 -2 -7 -6" stroke="#3d6b1a" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+        <path d="M44 30 q5 2 7 -2" stroke="#3d6b1a" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+      </g>`},
+    rapaz: {vel: 1.3, svg: `<g class="pe1"><path d="M23 38 l-3 11" stroke="#2a2e3a" stroke-width="3.6" stroke-linecap="round"/><ellipse cx="19.5" cy="49.8" rx="3.8" ry="1.8" fill="#f3f4ef"/></g>
+      <g class="pe2"><path d="M31 38 l3 11" stroke="#2a2e3a" stroke-width="3.6" stroke-linecap="round"/><ellipse cx="35" cy="49.8" rx="3.8" ry="1.8" fill="#f3f4ef"/></g>
+      <g class="corpo">
+        <path d="M21 31 h12 v8 h-12 z" fill="#2a2e3a"/>
+        <path d="M19 20 q8 -4 16 0 l0 12 h-16 z" fill="#d4ff3a"/>
+        <text x="27" y="29.5" text-anchor="middle" font-family="Poppins,Arial,sans-serif" font-weight="800" font-size="6.5" fill="#141a00">FR</text>
+        <path d="M19 22 q-6 4 -8 9" stroke="#8a5a3c" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <path d="M35 22 q6 -2 8 -8" stroke="#8a5a3c" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <circle cx="27" cy="12" r="7.5" fill="#a86e48"/>
+        <path d="M19.5 11 q1 -8 8 -8 q7 0 7.5 7 q-3 -3 -8 -3 q-4 0 -7.5 4 z" fill="#1d1712"/>
+        <circle cx="29.5" cy="12" r="1.2" fill="#1d1712"/><circle cx="33" cy="12" r="1.2" fill="#1d1712"/>
+        <path d="M29 15.5 q2.3 1.8 4.5 0" stroke="#1d1712" stroke-width="1.1" fill="none" stroke-linecap="round"/>
+      </g>`},
   };
-  const BANDEIRA = `<svg viewBox="0 0 30 46"><rect x="3" y="2" width="2.6" height="43" rx="1" fill="#cfd3c8"/><path d="M5.6 3h22v15h-22z" fill="#fff"/><path d="M5.6 3h5.5v5h-5.5zM16.6 3h5.5v5h-5.5zM11.1 8h5.5v5h-5.5zM22.1 8h5.5v5h-5.5zM5.6 13h5.5v5h-5.5zM16.6 13h5.5v5h-5.5z" fill="#141a00"/></svg>`;
 
+  // corrida: personagens surgem em alturas aleatórias da tela e correm até o outro lado
   function corrida(voando){
-    document.body.insertAdjacentHTML("beforeend", BICHO);
-    const bicho = document.querySelector(".fr-bicho"), SZ = 54, G = 1500;
-    let run = null, ant = null;
-    const poe = (tipo, x, piso, svg, w, h, cls) => {
-      const el = document.createElement("div"); el.className = "fr-obs" + (cls ? " " + cls : ""); el.setAttribute("aria-hidden", "true");
-      el.style.cssText = `left:${x - w / 2}px;top:${piso - h}px;width:${w}px;height:${h}px`; el.innerHTML = svg; document.body.appendChild(el);
-      return {tipo, x, w, h, el, passou: false};
-    };
-    // andares da pista: o chão e mais 2 ou 3 níveis pela tela, encostando no topo de botões e campos quando dá
-    function andares(){
-      const H = innerHeight, n = H > 620 ? 3 : 2, pisos = [H - 8];
-      const cands = [...document.querySelectorAll("button,input,a.btn,.card,.ped,h2,select")].map(el => el.getBoundingClientRect())
-        .filter(r => r.width > 90 && r.top > 70 && r.top < H - 90);
-      for(let i = 1; i <= n; i++){
-        const alvo = H - 8 - (H - 120) * i / n;
-        const perto = cands.filter(r => Math.abs(r.top - alvo) < 55).sort((a, b) => Math.abs(a.top - alvo) - Math.abs(b.top - alvo))[0];
-        pisos.push(Math.round(perto ? perto.top : alvo));
-      }
-      return pisos; // de baixo para cima
+    const SZ = 54, G = 1500, nomes = Object.keys(CORREDORES), lista = [];
+    let ant = null;
+    function alturas(){
+      const H = innerHeight, cands = [...document.querySelectorAll("button,input,a.btn,.card,.ped,h2,select,textarea")]
+        .map(el => el.getBoundingClientRect()).filter(r => r.width > 90 && r.top > 70 && r.top < H - 20).map(r => Math.round(r.top));
+      return cands;
     }
     function nova(){
-      if(run || !pref.enfeites || document.hidden) return;
-      const W = innerWidth, sobe = Math.random() < .6;
-      let pisos = andares(); if(!sobe) pisos = pisos.reverse();
-      const dir = Math.random() < .5 ? 1 : -1, base = 160 + Math.random() * 60, tipos = Object.keys(OBS), obs = [];
-      const porAndar = Math.max(1, Math.min(3, Math.floor(W / 180)));
-      pisos.forEach((piso, a) => {
-        const d = a % 2 ? -dir : dir;
-        for(let i = 0; i < porAndar; i++){
-          const t = tipos[Math.floor(Math.random() * tipos.length)], o = OBS[t];
-          let x = W * (0.24 + 0.52 * (i + 0.2 + Math.random() * 0.6) / porAndar); if(d < 0) x = W - x;
-          obs.push(Object.assign(poe(t, x, piso, o.svg, o.w, o.h), {andar: a}));
-        }
-      });
-      const ult = pisos.length - 1, dUlt = ult % 2 ? -dir : dir;
-      obs.push(Object.assign(poe("bandeira", dUlt > 0 ? W - 74 : 30, pisos[ult], BANDEIRA, 30, 46, "ban"), {andar: ult}));
-      run = {pisos, andar: 0, sobe, x: dir > 0 ? -SZ - 10 : W + 10, y: pisos[0] - SZ, vy: 0, dir, base, vel: base, obs,
-        noChao: true, giro: 0, gira: 0, caido: 0, modo: "corre", parede: 0};
-      bicho.classList.add("vai");
+      if(!pref.enfeites || document.hidden || lista.length >= 3) return;
+      const W = innerWidth, H = innerHeight, nome = nomes[Math.floor(Math.random() * nomes.length)], c = CORREDORES[nome];
+      const cands = alturas();
+      // às vezes em cima de um botão/campo, às vezes numa altura qualquer, às vezes no chão
+      const sorte = Math.random();
+      let piso = sorte < .5 && cands.length ? cands[Math.floor(Math.random() * cands.length)] : sorte < .8 ? 110 + Math.random() * (H - 130) : H - 8;
+      if(lista.some(o => Math.abs(o.piso - piso) < 50)) piso = Math.max(110, Math.min(H - 8, piso + (Math.random() < .5 ? -70 : 70)));
+      const dir = Math.random() < .5 ? 1 : -1, base = (140 + Math.random() * 60) * c.vel;
+      const el = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      el.setAttribute("class", "fr-bicho vai"); el.setAttribute("viewBox", "0 0 54 54"); el.setAttribute("aria-hidden", "true");
+      el.innerHTML = c.svg; document.body.appendChild(el);
+      el.addEventListener("animationend", e => { if(e.animationName === "fr-amassa") el.classList.remove("pousa"); });
+      lista.push({el, piso, x: dir > 0 ? -SZ - 10 : W + 10, y: piso - SZ, vy: 0, dir, base, vel: base, noChao: true, giro: 0, gira: 0, caido: 0, prox: 1 + Math.random() * 2});
     }
-    const pula = (forca, gira) => { if(!run || !run.noChao || run.modo !== "corre") return; run.vy = -forca; run.noChao = false; run.gira = gira || 0; bicho.classList.add("ar"); };
-    function fim(){
-      run.obs.forEach(o => { o.el.classList.add("some"); setTimeout(() => o.el.remove(), 500); });
-      run = null; bicho.classList.remove("vai", "ar", "caido");
-    }
+    const pula = (r, forca, gira) => { if(!r.noChao || r.caido > 0) return; r.vy = -forca; r.noChao = false; r.gira = gira || 0; r.el.classList.add("ar"); };
     function passo(t){
       const dt = ant == null ? 0 : Math.min(0.05, (t - ant) / 1000); ant = t;
-      if(run && !pref.enfeites) fim();
-      if(run){
-        const r = run, W = innerWidth, piso = () => r.pisos[r.andar] - SZ, cx = () => r.x + SZ / 2;
+      for(let i = lista.length - 1; i >= 0; i--){
+        const r = lista[i], W = innerWidth, cx = r.x + SZ / 2;
+        if(!pref.enfeites){ r.el.remove(); lista.splice(i, 1); continue; }
         r.vel = r.base + (r.vel - r.base) * Math.exp(-dt * 1.2);
-        let rot = 0;
-        if(r.modo === "escala"){ // subindo pela parede até o próximo andar
-          r.y -= r.vel * 0.85 * dt; rot = -90;
-          if(r.y <= piso()){ r.y = piso(); r.modo = "corre"; r.dir = -r.dir; bicho.classList.remove("ar"); pula(420, 0); }
-        } else if(r.caido > 0){ // tropeçou: rola no chão e levanta
+        if(r.caido > 0){ // tropeçou: rola e levanta
           r.caido -= dt; r.x += r.dir * r.base * 0.35 * dt; r.giro = Math.min(90, (0.9 - r.caido) * 400);
-          if(r.caido <= 0){ r.giro = 0; bicho.classList.remove("caido"); pula(380); }
+          if(r.caido <= 0){ r.giro = 0; r.el.classList.remove("caido"); pula(r, 380); }
         } else {
           r.x += r.dir * r.vel * dt;
-          r.obs.forEach(o => {
-            if(o.andar !== r.andar) return;
-            const d = (o.x - cx()) * r.dir;
-            if(!o.passou && r.noChao && d > 0 && d < 46 + o.w / 2 + r.vel * 0.06){
-              o.passou = true;
-              if(o.tipo === "bandeira") pula(560, 1);
-              else if(!OBS[o.tipo].alto && Math.random() < .12){ r.caido = 0.9; bicho.classList.add("caido"); setTimeout(() => o.el.classList.add("cai"), 120); }
-              else pula(OBS[o.tipo].alto ? 640 : 520, OBS[o.tipo].alto && Math.random() < .5 ? 1 : 0);
-            }
-          });
-          (voando || []).forEach(v => {
-            const d = (v.x + 26 - cx()) * r.dir;
-            if(r.noChao && d > 0 && d < 80 && Math.abs(v.y + 52 - r.pisos[r.andar]) < 40) pula(700, 1);
-          });
-          // chegou na parede: sobe para o andar de cima ou pula para o de baixo
-          const naParede = r.dir > 0 ? r.x >= W - SZ - 2 : r.x <= 2;
-          if(naParede && r.noChao && r.andar < r.pisos.length - 1){
-            r.x = r.dir > 0 ? W - SZ - 2 : 2; r.andar++;
-            if(r.sobe){ r.modo = "escala"; r.giro = 0; }
-            else { r.dir = -r.dir; r.noChao = false; r.vy = -380; r.gira = 1; bicho.classList.add("ar"); }
+          // de vez em quando: pulinho, mortal ou tropeço
+          r.prox -= dt;
+          if(r.prox <= 0 && r.noChao){
+            const s = Math.random();
+            if(s < .55) pula(r, 450); else if(s < .85) pula(r, 640, 1); else { r.caido = 0.9; r.el.classList.add("caido"); }
+            r.prox = 1.2 + Math.random() * 2.2;
           }
+          // pula os bichinhos voando e os outros corredores que vêm de frente
+          (voando || []).forEach(v => { const d = (v.x + 26 - cx) * r.dir; if(r.noChao && d > 0 && d < 80 && Math.abs(v.y + 52 - r.piso) < 40) pula(r, 700, 1); });
+          lista.forEach(o => { if(o === r || o.dir === r.dir) return; const d = (o.x - r.x) * r.dir;
+            if(r.noChao && d > 0 && d < 90 && Math.abs(o.piso - r.piso) < 30) pula(r, 620, Math.random() < .5 ? 1 : 0); });
         }
-        if(r.modo === "corre" && !r.noChao){
+        if(!r.noChao){
           r.vy += G * dt; r.y += r.vy * dt;
           if(r.gira) r.giro += 620 * dt;
-          if(r.vy > 0 && r.y >= piso()){ r.y = piso(); r.vy = 0; r.noChao = true; r.gira = 0; r.giro = 0;
-            bicho.classList.remove("ar", "pousa"); void bicho.offsetWidth; bicho.classList.add("pousa"); }
-        } else if(r.modo === "corre" && !r.caido) r.y = piso();
-        const ang = r.modo === "escala" ? rot : r.giro;
-        bicho.style.transform = `translate(${r.x}px,${r.y}px) scaleX(${r.dir}) rotate(${ang}deg)`;
-        if(r.x > W + SZ + 20 || r.x < -SZ - 30) fim();
+          if(r.vy > 0 && r.y >= r.piso - SZ){ r.y = r.piso - SZ; r.vy = 0; r.noChao = true; r.gira = 0; r.giro = 0;
+            r.el.classList.remove("ar", "pousa"); void r.el.getBoundingClientRect(); r.el.classList.add("pousa"); }
+        } else if(!r.caido) r.y = r.piso - SZ;
+        r.el.style.transform = `translate(${r.x}px,${r.y}px) scaleX(${r.dir}) rotate(${r.giro}deg)`;
+        if(r.x > W + SZ + 20 || r.x < -SZ - 30){ r.el.remove(); lista.splice(i, 1); }
       }
       requestAnimationFrame(passo);
     }
     requestAnimationFrame(passo);
-    bicho.addEventListener("animationend", e => { if(e.animationName === "fr-amassa") bicho.classList.remove("pousa"); });
-    // encostou (ou passou perto) do abacatinho: pulo alto com giro e dispara correndo
-    const assusta = (e, forte) => {
-      if(!run || run.caido > 0 || run.modo !== "corre") return;
-      const d = Math.hypot(e.clientX - (run.x + SZ / 2), e.clientY - (run.y + SZ / 2));
-      if(d < (forte ? 90 : 70)){ pula(forte ? 760 : 560, 1); run.vel = run.base * (forte ? 2 : 1.5); }
-    };
+    // encostou (ou passou perto): pulo alto com giro e dispara correndo
+    const assusta = (e, forte) => lista.forEach(r => {
+      if(r.caido > 0) return;
+      if(Math.hypot(e.clientX - (r.x + SZ / 2), e.clientY - (r.y + SZ / 2)) < (forte ? 90 : 70)){ pula(r, forte ? 760 : 560, 1); r.vel = r.base * (forte ? 2 : 1.5); }
+    });
     addEventListener("pointerdown", e => assusta(e, true), {passive: true});
     addEventListener("pointermove", e => assusta(e, false), {passive: true});
-    const agenda = () => setTimeout(() => { nova(); agenda(); }, 8000 + Math.random() * 10000);
-    setTimeout(nova, 1200 + Math.random() * 2500); agenda();
+    const agenda = () => setTimeout(() => { nova(); agenda(); }, 3500 + Math.random() * 5500);
+    setTimeout(nova, 1000 + Math.random() * 1500); agenda();
     return nova;
   }
 
