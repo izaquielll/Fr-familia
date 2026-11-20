@@ -3,7 +3,7 @@ Usa a arte original e repinta só o quadro: foto redonda, nome, "Nutricionista p
 import io
 import os
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 FONTES = os.path.join(AQUI, "fonts")
@@ -55,7 +55,7 @@ def _foto(img, foto):
     ImageDraw.Draw(m).ellipse((0, 0, d - 1, d - 1), fill=255)
     camada.paste(Image.new("RGBA", (d, d), LIME + (255,)), (0, 0), m)
     if foto is not None:
-        foto = foto.convert("RGB")
+        foto = ImageOps.exif_transpose(foto).convert("RGB")  # fotos de celular vêm com a rotação no EXIF
         w, h = foto.size
         lado = min(w, h)
         # recorte quadrado, puxando um pouco para cima (rosto)
