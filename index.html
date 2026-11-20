@@ -416,6 +416,7 @@ function abrirDoLink(){
       const ids = new Set(extra.map(e=>e.id));
       NUTRIS = [...NUTRIS.filter(n=>!ids.has(n.id)), ...extra];
       render(); refBanner();
+      if(S.id && !document.getElementById("ov").classList.contains("hidden")) drawSheet(); // janela já aberta: mostra as nutris novas
     }
   }catch(e){}
   try{
