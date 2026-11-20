@@ -369,6 +369,9 @@ function refBanner(){
   if(n && el && !el.dataset.ref){ el.dataset.ref = 1; el.insertAdjacentHTML("afterend", `<div class="promo-line">🥗 Você veio pela indicação da nutricionista <b>${esc(n.nome)}</b>. Ela já fica escolhida no seu plano.</div>`); }
 }
 render(); refBanner();
+const PLANO_LINKS = {consultoria:"consultoria", combo:"combo", nutri:"combo", convite:"convite", gluteo:"av-gluteo", abdomen:"av-abdomen", metabolica:"av-metabolica", hiit:"av-metabolica"};
+const PLANO = PLANO_LINKS[(new URLSearchParams(location.search).get("plano")||"").toLowerCase()];
+if(PLANO && (PLANO!=="convite" || ativo(C.conviteAte))) setTimeout(()=>open(PLANO), 300);
 (async () => {
   if(!sb) return;
   try{
