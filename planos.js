@@ -31,7 +31,7 @@ window.FRPlanos = (function(){
       let ns = [{slug:"fabiola", nome:"Fabíola Amorim"}];
       try{ const { data } = await sb.from("fr_nutris").select("slug,nome").eq("status","aprovada").order("created_at");
         (data||[]).forEach(n => { ns = ns.filter(x => x.slug !== n.slug); ns.push(n); }); }catch(e){}
-      ns.forEach(n => lista.push({nome:`Consultoria + Nutri · com ${n.nome}`, url: base + "combo/?com=" + encodeURIComponent(n.slug),
+      ns.forEach(n => lista.push({nome:`Consultoria + Nutri · com ${n.nome}`, url: base + "combo/" + encodeURIComponent(n.slug) + "/",
         txt: `Oi! 💪🥗 Treino + plano alimentar com a nutricionista ${n.nome}${promo ? `, de ${brl(combo)} por ${brl(C.comboPromo)}` : ` por ${brl(combo)}`}. Monte o seu plano aqui:`}));
     }
     if(C.mostrarConvite !== false && ativo(C.conviteAte)) lista.push({nome:"Convite de aluno (amigo)", url: linkFor(base,"convite",ref),
