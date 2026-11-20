@@ -8,7 +8,7 @@ window.FRPlanos = (function(){
   const ativo = ate => ate && new Date() <= new Date(ate+"T23:59:59");
 
   function linkFor(base, slug, ref){
-    if(ref) return base + "n/" + ref + "/" + (slug ? "?plano=" + slug : "");
+    if(ref) return base + "n/" + ref + "/" + (STATIC.includes(slug) ? slug + "/" : slug ? "?plano=" + slug : "");
     return STATIC.includes(slug) ? base + slug + "/" : base + "?plano=" + slug;
   }
 

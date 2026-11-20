@@ -121,3 +121,46 @@ for f in os.listdir("img/og"):
     if f.startswith("combo-") and f.endswith(".jpg") and f[6:-4] not in combos:
         os.remove(os.path.join("img/og", f))
 print("Combos:", sorted(combos))
+
+# ===== Link de cada plano enviado pela nutri: n/<slug>/<plano>/ com a arte do plano =====
+# (assim a prévia no WhatsApp sai igual à dos links do FR; no Consultoria + Nutri vai a arte com a foto dela)
+PLANOS = ["consultoria", "combo", "convite", "gluteo", "abdomen", "metabolica"]
+def og(pagina, campo):
+    m = re.search(rf'og:{campo}" content="([^"]*)"', pagina)
+    return m.group(1) if m else ""
+for n in nutris:
+    slug = n.get("slug") or ""
+    if slug not in validos:
+        continue
+    for plano in PLANOS:
+        if not os.path.exists(f"{plano}/index.html"):
+            continue
+        pg = open(f"{plano}/index.html", encoding="utf-8").read()
+        titulo, desc, img = og(pg, "title"), og(pg, "description"), og(pg, "image")
+        if plano == "combo" and slug in combos:
+            titulo = html.escape(f"Consultoria + Nutri com {combos[slug]['nome']} · Família FR")
+            desc = html.escape(desc_base.replace("nutricionista parceira", "a nutricionista " + combos[slug]["nome"]))
+            img = BASE + combos[slug]["img"]
+        destino = f"../../../?plano={plano}&nutri={slug}"
+        os.makedirs(f"{PASTA}/{slug}/{plano}", exist_ok=True)
+        with open(f"{PASTA}/{slug}/{plano}/index.html", "w", encoding="utf-8") as f:
+            f.write(f"""<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{titulo}</title>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Família FR">
+<meta property="og:title" content="{titulo}">
+<meta property="og:description" content="{desc}">
+<meta property="og:image" content="{img}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="{BASE}{PASTA}/{slug}/{plano}/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="description" content="{desc}">
+<script>var p=new URLSearchParams(location.search);p.set("plano","{plano}");p.set("nutri","{slug}");location.replace("../../../?"+p.toString());</script>
+<meta http-equiv="refresh" content="1; url={html.escape(destino)}">
+<style>body{{background:#0f100d;color:#f3f4ef;font-family:system-ui,sans-serif;display:grid;place-items:center;height:100vh;margin:0}}a{{color:#d4ff3a}}</style>
+</head><body><p>Abrindo o plano… <a href="{html.escape(destino)}">toque aqui se não abrir</a></p></body></html>
+""")
+print("Links por plano das nutris:", sorted(validos))
