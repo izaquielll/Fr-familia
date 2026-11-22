@@ -43,7 +43,7 @@ input:focus,textarea:focus{outline:none;border-color:var(--lime)}
 </style>
 </head>
 <body><div class="wrap">
-  <div class="top"><div class="logo"><i>FR</i>FAMÍLIA FR</div></div>
+  <div class="top"><div class="logo"><i>FR</i>FAMÍLIA FR</div><span style="flex:1"></span><a id="b-voltar" class="hidden" href="./" style="color:var(--tx);text-decoration:none;font-size:14px;font-weight:600;background:var(--s2);border:1px solid var(--line);border-radius:999px;padding:7px 14px 7px 11px">← Voltar aos planos</a></div>
   <div id="v-load" class="card mut">Carregando a sua anamnese…</div>
   <div id="v-erro" class="card hidden"></div>
 
@@ -80,6 +80,7 @@ const TOKEN = (new URLSearchParams(location.search).get("t")||"").toLowerCase().
 const KEY = "fr-anamnese-" + TOKEN;
 const W = (new URLSearchParams(location.search).get("w")||"").replace(/\D/g,"").slice(0,15); // veio da vitrine: ao terminar, abre o WhatsApp
 let P = null;
+if(W) document.getElementById("b-voltar").classList.remove("hidden");
 function linkZap(){
   const num = W || String(P.whatsapp||"").replace(/\D/g,""); if(!num) return null;
   const tel = num.startsWith("55") ? num : "55" + num;

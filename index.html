@@ -115,6 +115,8 @@ section{padding:56px 0 8px}
 .sheet .top{display:flex;align-items:flex-start;gap:10px;margin-bottom:6px}
 .sheet h3{font-size:24px;font-weight:800;flex:1}
 .x{background:var(--s2);border:0;width:36px;height:36px;border-radius:10px;font-size:18px}
+.voltar{display:inline-flex;align-items:center;gap:6px;background:var(--s2);border:1px solid var(--line);border-radius:999px;padding:8px 14px 8px 11px;font-size:14px;font-weight:600;color:var(--tx);margin-bottom:12px}
+.voltar:active{transform:scale(.97)}
 .fld{margin-top:16px}
 .fld > label,.fld > .lb{display:block;font-size:13px;font-weight:600;color:var(--mut);margin-bottom:6px}
 .opts{display:grid;gap:8px}
@@ -286,8 +288,15 @@ function open(id){
   // link do FR com nutri escolhida (?com=): o plano já abre com a nutri incluída
   if(COM && pre === COM && !REF){ if(id==="consultoria") S.comNutri = true; if(id.startsWith("pl-")) S.guia = true; }
   drawSheet(); document.getElementById("ov").classList.remove("hidden"); document.body.style.overflow="hidden";
+  document.getElementById("sheet").scrollTop = 0;
+  try{ if(!(history.state && history.state.frPlano)) history.pushState({frPlano:1}, ""); }catch(e){} // o "voltar" do celular fecha o plano
 }
-function close(){ document.getElementById("ov").classList.add("hidden"); document.body.style.overflow=""; }
+function close(doCelular){
+  const ov = document.getElementById("ov"); if(ov.classList.contains("hidden")) return;
+  ov.classList.add("hidden"); document.body.style.overflow="";
+  if(!doCelular){ try{ if(history.state && history.state.frPlano) history.back(); }catch(e){} }
+}
+window.addEventListener("popstate", () => close(true));
 
 function calc(){
   const promo = ativo(C.promoAte), combo = C.consultoria + C.nutri;
@@ -316,7 +325,7 @@ function drawSheet(){
   const acc = (isAv||S.id==="convite") ? "var(--or)" : "var(--lime)";
   const r = calc();
   const nutriOpts = NUTRIS.map(n=>`<label class="opt"><input type="radio" name="nutri" value="${n.id}" ${S.nutri===n.id?"checked":""}><span class="t"><b>${esc(n.nome)}</b><span>Nutricionista parceira</span></span></label>`).join("");
-  let h = `<div class="top"><h3>Monte o seu plano</h3><button class="x" data-close aria-label="Fechar">✕</button></div>`;
+  let h = `<button class="voltar" data-close type="button">← Voltar aos planos</button><div class="top"><h3>Monte o seu plano</h3><button class="x" data-close aria-label="Fechar">✕</button></div>`;
 
   if(S.id==="consultoria"||S.id==="combo"){
     h += perguntaCliente(promo);
