@@ -130,7 +130,7 @@ section{padding:56px 0 8px}
 .opt .t span{font-size:13px;color:var(--mut)}
 .opt .p{font-weight:700;white-space:nowrap}
 .opt:has(input:checked){border-color:var(--acc,var(--lime))}
-input[type=text],input[type=tel],input[type=date],input[type=number],select{width:100%;background:var(--s2);border:1.5px solid var(--line);border-radius:12px;padding:12px 14px}
+input[type=text],input[type=tel],input[type=email],input[type=date],input[type=number],select{width:100%;background:var(--s2);border:1.5px solid var(--line);border-radius:12px;padding:12px 14px}
 .sum{margin-top:18px;background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:14px}
 .sum .row{display:flex;justify-content:space-between;gap:10px;font-size:14px;margin:4px 0}
 .sum .tot{display:flex;justify-content:space-between;align-items:baseline;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
@@ -360,7 +360,9 @@ function drawSheet(){
     if(S.guia && !P.nutri_slug) h += `<div class="fld"><span class="lb">Nutricionista do guia</span><div class="opts">${nutriOpts}</div></div>`;
     if(perguntaAluno()) h += perguntaCliente(false);
   }
-  h += `<div class="fld"><label for="f-nome">Seu nome</label><input type="text" id="f-nome" autocomplete="name" value="${esc(S.nome||"")}"></div>
+  h += `<div class="fld"><label for="f-nome">Nome completo</label><input type="text" id="f-nome" autocomplete="name" value="${esc(S.nome||"")}"></div>
+    <div class="fld"><label for="f-nasc">Data de nascimento</label><input type="date" id="f-nasc" autocomplete="bday" min="1930-01-01" max="${new Date().toISOString().slice(0,10)}" value="${esc(S.nasc||"")}"></div>
+    <div class="fld"><label for="f-email">E-mail</label><input type="email" id="f-email" autocomplete="email" inputmode="email" placeholder="voce@email.com" value="${esc(S.email||"")}"><div class="note" style="margin-top:6px">Usamos para criar o seu acesso ao app de treino (MFIT).</div></div>
     <div class="fld"><label for="f-obj">Seu objetivo</label><select id="f-obj">${["","Emagrecimento","Hipertrofia","Definição","Condicionamento","Saúde e qualidade de vida"].map(o=>`<option ${S.obj===o?"selected":""} value="${o}">${o||"Escolha"}</option>`).join("")}</select></div>`;
 
   const nutriNome = NUTRIS.find(n=>n.id===S.nutri)?.nome || (plano(S.programa)||{}).nutri_nome;
@@ -404,7 +406,9 @@ function resumo(){
   m += `*Valor:* ${brl(r.v)} (${r.per})\n`;
   if(perguntaAluno() && S.aluno) m += `*Já sou cliente:* ${S.aluno==="sim"?(S.id.startsWith("pl-")?"Sim":"Sim, quero renovar"):"Não, sou cliente novo"}\n`;
   if(S.id==="convite") m += `*Indicado por:* ${S.indicado}\n`;
-  m += `*Nome:* ${S.nome}\n`;
+  m += `*Nome completo:* ${S.nome}\n`;
+  if(S.nasc) m += `*Nascimento:* ${S.nasc.split("-").reverse().join("/")}\n`;
+  if(S.email) m += `*E-mail:* ${S.email.trim()}\n`;
   if(S.obj) m += `*Objetivo:* ${S.obj}\n`;
   const nvl = isAv && (niveisDe(S.programa)||[]).find(x=>x.id===S.nivel);
   if(nvl) m += `*Nível:* ${nvl.nome}\n`;
@@ -430,7 +434,9 @@ document.addEventListener("click", e => {
   if(e.target.closest("[data-close]") || e.target.id==="ov"){ close(); return; }
   if(e.target.closest("[data-send]")){
     const err = document.getElementById("f-err");
-    if(!S.nome || !S.nome.trim()){ err.textContent="Coloque o seu nome."; return; }
+    if(!S.nome || S.nome.trim().split(/\s+/).length < 2){ err.textContent="Coloque o seu nome completo (nome e sobrenome)."; return; }
+    if(!S.nasc || !/^\d{4}-\d{2}-\d{2}$/.test(S.nasc) || S.nasc < "1930-01-01" || S.nasc > new Date().toISOString().slice(0,10)){ err.textContent="Coloque a sua data de nascimento."; return; }
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test((S.email||"").trim())){ err.textContent="Confira o seu e-mail."; return; }
     if(S.id==="convite" && !(S.indicado||"").trim()){ err.textContent="Diga quem te indicou."; return; }
     if(perguntaAluno() && !S.aluno){ err.textContent="Diga se você já é cliente."; return; }
     if(S.id.startsWith("pl-") && niveisDe(S.programa) && !S.nivel){ err.textContent="Escolha o seu nível."; return; }
@@ -463,10 +469,13 @@ document.addEventListener("change", e => {
   if(t.name==="guia") S.guia = t.value==="1";
   if(t.name==="nivel") S.nivel = t.value;
   if(t.id==="f-obj") S.obj=t.value;
+  if(t.id==="f-nasc") S.nasc=t.value;
   if(["aluno","comNutri","programa","guia","nutri"].includes(t.name)) drawSheet();
 });
 document.addEventListener("input", e => {
   if(e.target.id==="f-nome") S.nome=e.target.value;
+  if(e.target.id==="f-nasc") S.nasc=e.target.value;
+  if(e.target.id==="f-email") S.email=e.target.value;
   if(e.target.id==="f-ind") S.indicado=e.target.value;
 });
 document.addEventListener("keydown", e => { if(e.key==="Escape") close(); });
@@ -478,7 +487,7 @@ async function salvarPedido(){
   const r = calc(), isAv = S.id.startsWith("pl-");
   const showNutri = S.comNutri || S.id==="convite" || (isAv && (S.guia || !!(plano(S.programa)||{}).nutri_slug));
   try{ const { error } = await sb.from("fr_pedidos").insert({plano:r.nome + ((nv => nv ? " · " + nv.nome : "")(isAv && (niveisDe(S.programa)||[]).find(x=>x.id===S.nivel))), valor:r.v, nutri: showNutri ? (NUTRIS.find(n=>n.id===S.nutri)?.nome||null) : null, nutri_slug: showNutri ? S.nutri : null, ref_nutri: (REF && NUTRIS.some(n=>n.id===REF)) ? REF : null,
-    nome:(S.nome||"").trim().slice(0,120), objetivo:S.obj||null, aluno: S.aluno||null, indicado:(S.indicado||"").trim().slice(0,120)||null, resumo: resumo().slice(0,2000), token: S.token || null}); return !error; }catch(e){ return false; }
+    nome:(S.nome||"").trim().slice(0,120), email:(S.email||"").trim().toLowerCase().slice(0,200)||null, nascimento:S.nasc||null, objetivo:S.obj||null, aluno: S.aluno||null, indicado:(S.indicado||"").trim().slice(0,120)||null, resumo: resumo().slice(0,2000), token: S.token || null}); return !error; }catch(e){ return false; }
 }
 let REF = (new URLSearchParams(location.search).get("nutri")||"").toLowerCase().replace(/[^a-z0-9-]/g,"").slice(0,40) || null;
 // ?com=<nutri>: link enviado pelo FR que já abre com essa nutri escolhida (não conta como indicação dela)
