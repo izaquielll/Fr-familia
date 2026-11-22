@@ -38,7 +38,7 @@ nav{margin-left:auto;display:flex;gap:4px}
 nav a{color:var(--mut);text-decoration:none;font-size:14px;font-weight:600;padding:8px 10px;border-radius:8px}
 nav a:hover{color:var(--tx);background:var(--s2)}
 nav a.ig{display:inline-flex;align-items:center;gap:6px;color:var(--tx)}
-.ig-btn{display:inline-flex;align-items:center;gap:6px;margin-top:10px;font-size:13px;font-weight:700;color:var(--tx);text-decoration:none;padding:7px 12px;border-radius:10px;box-shadow:inset 0 0 0 1.5px var(--line)}
+.ig-btn{display:inline-flex;align-items:center;gap:6px;margin-top:8px;font-size:13px;font-weight:700;color:var(--tx);text-decoration:none;padding:7px 12px;border-radius:10px;box-shadow:inset 0 0 0 1.5px var(--line)}
 .ig-btn:hover{background:var(--s2)}
 @media(max-width:640px){nav a.hm{display:none}nav a.ig{font-size:13px;padding:8px 6px}nav:has(a.ig:not(.hidden)) a:not(.ig){display:none}}
 
@@ -283,8 +283,8 @@ function render(){
   const nf = sec("feminino","g-avulso"); document.getElementById("avulsos").classList.toggle("hidden", !nf);
   sec("programas","g-extras","extras"); sec("nutri","g-nplanos","nplanos");
   document.getElementById("g-nutris").innerHTML = NUTRIS.map(n => `<div class="nutri"><img src="${esc(n.foto)}" alt="${esc(n.nome)}">
-    <div class="info"><h3>${esc(n.nome)}</h3><div class="role">Nutricionista parceira</div><p class="mut" style="margin:8px 0 0;font-size:14px">${esc(n.bio)}</p>
-    <ul>${n.formacao.map(f=>`<li>${esc(f)}</li>`).join("")}</ul>${n.insta ? `<a class="ig-btn" href="${igUrl(n.insta)}" target="_blank" rel="noopener">${IG} @${esc(n.insta)}</a>` : ""}</div></div>`).join("") + `<a class="soon" href="nutri.html" style="display:block;text-decoration:none">É nutricionista? Seja parceira da Família FR →</a>`;
+    <div class="info"><h3>${esc(n.nome)}</h3><div class="role">Nutricionista parceira</div>${n.insta ? `<a class="ig-btn" href="${igUrl(n.insta)}" target="_blank" rel="noopener">${IG} @${esc(n.insta)}</a>` : ""}<p class="mut" style="margin:8px 0 0;font-size:14px">${esc(n.bio)}</p>
+    <ul>${n.formacao.map(f=>`<li>${esc(f)}</li>`).join("")}</ul></div></div>`).join("") + `<a class="soon" href="nutri.html" style="display:block;text-decoration:none">É nutricionista? Seja parceira da Família FR →</a>`;
 }
 
 /* ===== Montar o plano ===== */
