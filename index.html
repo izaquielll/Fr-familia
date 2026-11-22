@@ -214,7 +214,7 @@ footer{border-top:1px solid var(--line);margin-top:56px;padding:26px 0 40px;colo
 <script>
 /* ===== Valores padrão (usados quando o painel ainda não foi salvo ou não carrega) ===== */
 const DEFAULTS = {
-  consultoria: 200, consultoriaPromo: 150,
+  consultoria: 200, consultoriaPromo: 150, consultoriaNovo: 167, descRenovaCombo: 30,
   nutri: 250, comboPromo: 250,
   convite: 200, conviteAte: "2026-12-31",
   promoNome: "Black Friday", promoAte: "2026-12-31",
@@ -254,13 +254,13 @@ function render(){
   const cards = [
     C.mostrarConsultoria===false ? null : {id:"consultoria", cls:"lime", bg:"img/fr-frente.webp", tag: promo? C.promoNome : "Consultoria", nome:"Consultoria Online",
      itens:["Treino montado pra você no app MFIT","Avaliação online e anamnese completas","Suporte e correção no WhatsApp"],
-     de: promo? C.consultoria:null, v: promo? C.consultoriaPromo : C.consultoria, pre: promo?null:"A partir de", per: promo? `pagando até ${fmtD(C.promoAte)} · ciclo de 60 dias` : "por ciclo de 60 dias"},
+     de: promo? C.consultoria:null, v: promo? C.consultoriaPromo : C.consultoria, pre: promo?null:"A partir de", per: promo? `para quem já é aluno · ${brl(C.consultoriaNovo)} para quem está começando · ciclo de 60 dias` : "por ciclo de 60 dias"},
     C.mostrarCombo===false ? null : {id:"combo", cls:"lime", bg:"img/fr-barra.webp", tag: promo? C.promoNome : "Mais completo", nome:"Consultoria + Nutri",
-     itens:["Tudo da consultoria","Plano alimentar com a nutricionista que você escolher","2 atualizações do plano alimentar no ciclo"],
+     itens:["Tudo da consultoria","Avaliação presencial","Avaliação de treino (1 treino)","Plano alimentar com a nutricionista que você escolher","2 atualizações do plano alimentar no ciclo",`Após 60 dias: renove com ${C.descRenovaCombo}% off sobre ${brl(combo)}`],
      de: combo, v: promo? C.comboPromo : combo, per: promo? `pagando até ${fmtD(C.promoAte)} · ciclo de 60 dias` : `R$ ${C.consultoria} da consultoria + R$ ${C.nutri} da nutri`},
   ].filter(Boolean);
-  if(conv && C.mostrarConvite!==false) cards.push({id:"convite", cls:"or", bg:"img/fr-barra.webp", tag:"Convite de aluno", nome:"Consultoria + Nutri Online",
-     itens:["Para quem foi indicado por um aluno","Avaliação e anamnese completas, treino e plano alimentar","100% online, sem avaliação presencial"],
+  if(conv && C.mostrarConvite!==false) cards.push({id:"convite", cls:"or", bg:"img/fr-barra.webp", tag:"Convite de aluno · 100% online", nome:"Consultoria + Nutri Online",
+     itens:["<b>100% online: sem avaliação presencial</b>","Para quem foi indicado por um aluno","Avaliação online e anamnese completas","Treino no MFIT e plano alimentar com a nutri"],
      de: combo, v: C.convite, per:`1º ciclo de 60 dias · convite até ${fmtD(C.conviteAte)}`, cta:"Tenho um convite"});
   document.getElementById("g-consult").innerHTML = cards.map(card).join("");
 
@@ -294,7 +294,8 @@ function calc(){
   if(S.id==="consultoria"||S.id==="combo"){
     const renova = promo; // Black Friday vale para todos (novos e quem já é cliente)
     if(S.comNutri) return {nome:"Consultoria + Nutri"+(renova?` (${C.promoNome})`:""), v: renova? C.comboPromo : combo, de: combo, per:"por ciclo de 60 dias"};
-    return {nome:"Consultoria Online"+(renova?` (${C.promoNome})`:""), v: renova? C.consultoriaPromo : C.consultoria, de: renova? C.consultoria:null, per:"por ciclo de 60 dias"};
+    const vc = !renova ? C.consultoria : (S.aluno==="nao" ? C.consultoriaNovo : C.consultoriaPromo);
+    return {nome:"Consultoria Online"+(renova?` (${C.promoNome}${S.aluno==="nao"?", cliente novo":S.aluno==="sim"?", aluno":""})`:""), v: vc, de: renova? C.consultoria:null, per:"por ciclo de 60 dias"};
   }
   if(S.id==="convite") return {nome:"Consultoria + Nutri Online (convite de aluno)", v:C.convite, de:combo, per:"1º ciclo de 60 dias"};
   const a = plano(S.programa) || {nome:"Plano", preco:0, periodo:""};
@@ -321,8 +322,8 @@ function drawSheet(){
     h += perguntaCliente(promo);
     const renova = promo; // Black Friday vale para todos (novos e quem já é cliente)
     h += `<div class="fld"><span class="lb">Plano</span><div class="opts">
-      <label class="opt"><input type="radio" name="comNutri" value="0" ${!S.comNutri?"checked":""}><span class="t"><b>Só consultoria</b><span>Treino no MFIT + suporte</span></span><span class="p">${brl(renova?C.consultoriaPromo:C.consultoria)}</span></label>
-      <label class="opt"><input type="radio" name="comNutri" value="1" ${S.comNutri?"checked":""}><span class="t"><b>Consultoria + Nutri</b><span>Plano alimentar com 2 atualizações</span></span><span class="p">${brl(renova?C.comboPromo:combo)}</span></label></div></div>`;
+      <label class="opt"><input type="radio" name="comNutri" value="0" ${!S.comNutri?"checked":""}><span class="t"><b>Só consultoria</b><span>Treino no MFIT + suporte${renova?` · ${brl(C.consultoriaPromo)} aluno, ${brl(C.consultoriaNovo)} cliente novo`:""}</span></span><span class="p">${brl(!renova?C.consultoria:(S.aluno==="nao"?C.consultoriaNovo:C.consultoriaPromo))}</span></label>
+      <label class="opt"><input type="radio" name="comNutri" value="1" ${S.comNutri?"checked":""}><span class="t"><b>Consultoria + Nutri</b><span>Avaliação presencial + avaliação de treino + plano alimentar com 2 atualizações</span></span><span class="p">${brl(renova?C.comboPromo:combo)}</span></label></div></div>`;
     if(S.comNutri) h += `<div class="fld"><span class="lb">Nutricionista</span><div class="opts">${nutriOpts}</div></div>`;
   }
   if(S.id==="convite"){
@@ -348,6 +349,8 @@ function drawSheet(){
     ${showNutri?`<div class="row"><span class="mut">Nutricionista</span><span>${esc(nutriNome)}</span></div>`:""}
     ${treinador() && !isAv?`<div class="row"><span class="mut">Treinador</span><span>${esc(treinador().nome)}</span></div>`:""}
     <div class="tot"><span class="mut">${r.de&&r.de>r.v?`<s>${brl(r.de)}</s>`:""} ${r.per}</span><b>${brl(r.v)}</b></div>
+    ${(S.id==="consultoria"||S.id==="combo") && S.comNutri?`<div class="note">📍 Inclui avaliação presencial e avaliação de treino (1 treino).<br>🔁 Após 60 dias, renove com ${C.descRenovaCombo}% de desconto sobre ${brl(combo)} (fica ${brl(Math.round(combo*(100-C.descRenovaCombo))/100)}).</div>`:""}
+    ${S.id==="convite"?`<div class="note">💻 Plano 100% online: sem avaliação presencial.</div>`:""}
     ${isAv && (plano(S.programa)||{}).secao!=="nutri"?`<div class="note">🎁 Depois do programa: ${C.descConsult}% off na 1ª consultoria ou ${C.descCombo}% off na Consultoria + Nutri.</div>`:""}</div>
     <div id="f-err" class="err"></div>
     <button class="btn block ${isAv||S.id==="convite"?"or":""}" style="margin-top:14px" data-send>${precisaAnamnese() ? "Responder anamnese e enviar" : "Enviar resumo no WhatsApp"}</button>

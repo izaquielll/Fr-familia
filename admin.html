@@ -85,7 +85,8 @@ a.btn{text-decoration:none;display:inline-block}
 const sb = window.supabase.createClient(FR_CONFIG.url, FR_CONFIG.key);
 const FIELDS = [
   ["Consultoria",[["consultoria","Consultoria (valor normal)","number"],["nutri","Parte da nutri (valor normal)","number"]]],
-  ["Promoção para alunos",[["promoNome","Nome da promoção","text"],["promoAte","Vale até","date"],["consultoriaPromo","Consultoria na promoção","number"],["comboPromo","Consultoria + Nutri na promoção","number"]]],
+  ["Promoção para alunos",[["promoNome","Nome da promoção","text"],["promoAte","Vale até","date"],["consultoriaPromo","Consultoria na promoção (aluno)","number"],["comboPromo","Consultoria + Nutri na promoção","number"],["consultoriaNovo","Consultoria para cliente novo na promoção","number"]]],
+  ["Renovação após 60 dias",[["descRenovaCombo","Desconto na renovação da Consultoria + Nutri (%)","number"]]],
   ["Convite de aluno",[["convite","Valor do convite","number"],["conviteAte","Convite vale até","date"]]],
   ["Planos fixos na vitrine",[["mostrarConsultoria","Mostrar Consultoria Online","check"],["mostrarCombo","Mostrar Consultoria + Nutri","check"],["mostrarConvite","Mostrar Convite de aluno","check"]]],
   ["Desconto para quem faz um programa",[["descConsult","Na 1ª consultoria (%)","number"],["descCombo","Na 1ª Consultoria + Nutri (%)","number"]]],
