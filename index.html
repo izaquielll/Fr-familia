@@ -375,11 +375,19 @@ function drawSheet(){
   const sh = document.getElementById("sheet"); sh.style.setProperty("--acc",acc); sh.innerHTML = h;
 }
 
+/* Quem recebe o pedido e o Pix: o plano próprio da nutri, depois a nutri do link (se tiver WhatsApp), senão o FR */
+function destino(){
+  const PP = S.id && S.id.startsWith("pl-") ? plano(S.programa) : null;
+  if(PP && PP.nutri_zap) return {zap: PP.nutri_zap, nome: PP.nutri_nome};
+  const n = REF && NUTRIS.find(x => x.id === REF);
+  if(n && n.zap) return {zap: n.zap, nome: n.nome};
+  return {zap: C.whatsapp, nome: "FR"};
+}
 function resumo(){
   const r = calc(), isAv = S.id.startsWith("pl-");
   const nutriNome = NUTRIS.find(n=>n.id===S.nutri)?.nome || (plano(S.programa)||{}).nutri_nome;
   const showNutri = S.comNutri || S.id==="convite" || (isAv && (S.guia || !!(plano(S.programa)||{}).nutri_slug));
-  let m = `Olá, FR! Vim pela vitrine da Família FR 💪\n\n*Plano:* ${r.nome}\n`;
+  let m = `Olá, ${String(destino().nome||"FR").split(" ")[0]}! Vim pela vitrine da Família FR 💪\n\n*Plano:* ${r.nome}\n`;
   if(showNutri) m += `*Nutricionista:* ${nutriNome}\n`;
   if(treinador() && !isAv) m += `*Treinador:* ${treinador().nome}\n`;
   m += `*Valor:* ${brl(r.v)} (${r.per})\n`;
@@ -413,7 +421,7 @@ document.addEventListener("click", e => {
     if(S.id==="convite" && !(S.indicado||"").trim()){ err.textContent="Diga quem te indicou."; return; }
     if(perguntaAluno() && !S.aluno){ err.textContent="Diga se você já é cliente."; return; }
     const PP = S.id.startsWith("pl-") ? plano(S.programa) : null;
-    const num = String((PP && PP.nutri_zap) || C.whatsapp || "").replace(/\D/g,"");
+    const num = String(destino().zap || "").replace(/\D/g,"");
     if(!num){ err.textContent="O WhatsApp ainda não foi configurado."; return; }
     const tel = num.startsWith("55") ? num : "55"+num;
     S.token = precisaAnamnese() ? novoToken() : null;
@@ -480,9 +488,9 @@ function abrirDoLink(){
 (async () => {
   if(!sb) return;
   try{
-    const { data } = await sb.from("fr_nutris").select("slug,nome,foto_url,bio,especialidades,formacao,instagram").eq("status","aprovada").order("created_at");
+    const { data } = await sb.from("fr_nutris").select("slug,nome,foto_url,bio,especialidades,formacao,instagram,whatsapp").eq("status","aprovada").order("created_at");
     if(data && data.length){
-      const extra = data.map(d => ({id:d.slug, nome:d.nome, foto:d.foto_url || "img/fabiola.jpg", bio: [d.especialidades, d.bio].filter(Boolean).join(". "), formacao: (d.formacao||"").split("\n").map(s=>s.trim()).filter(Boolean), insta: d.instagram || ""}));
+      const extra = data.map(d => ({id:d.slug, nome:d.nome, foto:d.foto_url || "img/fabiola.jpg", bio: [d.especialidades, d.bio].filter(Boolean).join(". "), formacao: (d.formacao||"").split("\n").map(s=>s.trim()).filter(Boolean), insta: d.instagram || "", zap: (d.whatsapp||"").replace(/\D/g,"")}));
       const ids = new Set(extra.map(e=>e.id));
       // mesma nutri já fixa no site com outro link (ex.: "fabiola" e "fabiola-amorim"): fica só a do cadastro
       const nm = s => (s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();

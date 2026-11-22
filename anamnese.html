@@ -84,7 +84,7 @@ if(W) document.getElementById("b-voltar").classList.remove("hidden");
 function linkZap(){
   const num = W || String(P.whatsapp||"").replace(/\D/g,""); if(!num) return null;
   const tel = num.startsWith("55") ? num : "55" + num;
-  let m = P.resumo || `Olá, FR! Vim pela vitrine da Família FR 💪\n\n*Plano:* ${P.plano}\n*Nome:* ${P.nome}\n\nQuero fechar! Pode me mandar o Pix?`;
+  let m = P.resumo || `Olá! Vim pela vitrine da Família FR 💪\n\n*Plano:* ${P.plano}\n*Nome:* ${P.nome}\n\nQuero fechar! Pode me mandar o Pix?`;
   const fim = "\nQuero fechar! Pode me mandar o Pix?";
   m = m.includes(fim) ? m.replace(fim, "*Anamnese:* respondida ✅\n" + fim) : m + "\n*Anamnese:* respondida ✅";
   return `https://wa.me/${tel}?text=${encodeURIComponent(m)}`;
@@ -101,7 +101,7 @@ function abrirForm(R){
   $("sub").innerHTML = `${esc(P.nome)} · ${esc(P.plano)}`;
   $("aviso").innerHTML = P.pago
     ? `<div class="aviso ok">✅ Pix confirmado. Ao enviar, a sua anamnese vai direto para ${nutri}.</div>`
-    : `<div class="aviso lock">🔒 <b>Aguardando a confirmação do seu Pix.</b> Você já pode responder agora. A anamnese só chega para ${nutri} depois que o FR confirmar o pagamento, e até lá você pode alterar as respostas.</div>`;
+    : `<div class="aviso lock">🔒 <b>Aguardando a confirmação do seu Pix.</b> Você já pode responder agora. A anamnese só chega para ${nutri} depois que o pagamento for confirmado, e até lá você pode alterar as respostas.</div>`;
   $("b-enviar").textContent = rotulo();
   $("nota").textContent = P.pago ? "Depois de enviar, as respostas não podem mais ser alteradas." : "";
   FRAnamnese.form($("perguntas"), R || {});
@@ -119,7 +119,7 @@ function fim(R){
     $("b-editar").classList.remove("hidden");
   } else {
     $("fim-t").textContent = "Respostas salvas ✓";
-    $("fim-txt").innerHTML = `Assim que o FR confirmar o seu Pix, a sua anamnese segue sozinha para <b>${nutri}</b>. Você não precisa fazer mais nada. Se quiser mudar alguma resposta até lá, é só voltar por este mesmo link.`;
+    $("fim-txt").innerHTML = `Assim que o seu Pix for confirmado, a sua anamnese segue sozinha para <b>${nutri}</b>. Você não precisa fazer mais nada. Se quiser mudar alguma resposta até lá, é só voltar por este mesmo link.`;
     $("b-editar").classList.remove("hidden");
   }
   $("fim-resp").innerHTML = FRAnamnese.html(R); $("fim-resp").classList.toggle("hidden", !P.pago);

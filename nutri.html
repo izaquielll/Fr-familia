@@ -29,6 +29,8 @@ label{font-size:13px;color:var(--mut);display:block;margin:12px 0 4px}
 select{font:inherit}
 .hidden{display:none}
 a.btn{text-decoration:none;display:inline-block}.mini{padding:7px 12px;font-size:13px;border-radius:9px}
+.pix{display:inline-block;font-size:12px;font-weight:700;border-radius:999px;padding:2px 9px;margin-right:4px}
+.pix.no{background:rgba(255,122,47,.15);color:#ff7a2f}.pix.ok{background:rgba(212,255,58,.15);color:var(--lime)}
 .anbox{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:4px 12px 10px;margin-top:8px}
 .an-sec{font-size:13px;color:var(--lime);margin:14px 0 4px;text-transform:uppercase}.an-i{padding:6px 0;border-top:1px solid var(--line)}.an-l{font-size:12px;color:var(--mut)}.an-v{font-weight:600;font-size:14px}.an-vazio{color:var(--mut);font-weight:400}
 .novo{background:var(--lime);color:var(--ink);font-weight:700}
@@ -101,6 +103,7 @@ a.btn{text-decoration:none;display:inline-block}.mini{padding:7px 12px;font-size
     <div class="card" id="anams"><span class="mut">Salve o seu perfil para começar.</span></div>
 
     <h2>Pedidos com você</h2>
+    <p class="mut" style="margin:0">Quem entra pelo <b>seu link</b> manda o pedido no seu WhatsApp e faz o Pix para você. Quando o Pix cair, toque em <b>Confirmar Pix</b>: isso libera a anamnese e avisa a equipe FR. Depois repasse a parte do FR.</p>
     <div class="card" id="peds"><span class="mut">Salve o seu perfil para começar.</span></div>
   </div>
 </div>
@@ -180,13 +183,26 @@ function drawLink(){
 }
 async function loadPeds(){
   if(!perfil) return;
-  const { data, error } = await sb.from("fr_pedidos").select("created_at,plano,valor,nome,objetivo,ref_nutri,nutri_slug").order("created_at",{ascending:false}).limit(100);
+  const { data, error } = await sb.from("fr_pedidos").select("id,created_at,plano,valor,nome,objetivo,ref_nutri,nutri_slug,pago,pago_por").order("created_at",{ascending:false}).limit(100);
   if(error){ $("peds").innerHTML = `<span class="mut">Não deu para carregar os pedidos.</span>`; return; }
   if(!data.length){ $("peds").innerHTML = `<span class="mut">Nenhum pedido com você ainda.</span>`; return; }
-  $("peds").innerHTML = data.map(p=>`<div class="ped"><b>${esc(p.nome)} · ${brl(p.valor)}</b>
-    <span class="tag">${esc(p.plano)}</span>${p.ref_nutri===perfil.slug?`<span class="tag">Veio pelo seu link</span>`:""}${p.objetivo?`<span class="tag">${esc(p.objetivo)}</span>`:""}
-    <div class="mut" style="font-size:13px">${new Date(p.created_at).toLocaleString("pt-BR")}</div></div>`).join("");
+  $("peds").innerHTML = data.map(p=>{ const meu = p.ref_nutri===perfil.slug;
+    const pix = meu ? `<span class="pix ${p.pago?"ok":"no"}">${p.pago?"Pix confirmado":"Aguardando seu Pix"}</span>` : `<span class="pix ${p.pago?"ok":"no"}">${p.pago?"Pix confirmado pelo FR":"Pix com o FR"}</span>`;
+    const bt = !meu || perfil.status!=="aprovada" ? "" : !p.pago ? `<div class="row" style="margin-top:6px"><button class="btn mini" data-pix="1" data-id="${p.id}">Confirmar Pix</button></div>`
+      : p.pago_por===perfil.slug ? `<div class="row" style="margin-top:6px"><button class="btn line mini" data-pix="0" data-id="${p.id}">Desfazer Pix</button></div>` : "";
+    return `<div class="ped"><b>${esc(p.nome)} · ${brl(p.valor)}</b>
+    ${pix}<span class="tag">${esc(p.plano)}</span>${meu?`<span class="tag">Veio pelo seu link</span>`:""}${p.objetivo?`<span class="tag">${esc(p.objetivo)}</span>`:""}
+    <div class="mut" style="font-size:13px">${new Date(p.created_at).toLocaleString("pt-BR")}</div>${bt}</div>`; }).join("");
 }
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-pix]"); if(!b) return;
+  const pago = b.dataset.pix === "1";
+  if(!pago && !confirm("Desfazer a confirmação do Pix? A anamnese deste cliente volta a ficar bloqueada.")) return;
+  b.disabled = true; b.textContent = "Salvando…";
+  const { error } = await sb.rpc("fr_nutri_confirmar_pix", { p_id: Number(b.dataset.id), p_pago: pago });
+  if(error){ b.disabled = false; b.textContent = "Não deu certo. Tentar de novo"; return; }
+  loadPeds(); loadAnams();
+});
 
 $("foto").onchange = async () => {
   const f = $("foto").files[0]; if(!f || !user) return;
