@@ -64,33 +64,44 @@ input:focus,textarea:focus{outline:none;border-color:var(--lime)}
   <div id="v-fim" class="hidden">
     <h1 id="fim-t"></h1>
     <div class="card" id="fim-txt"></div>
+    <a class="btn hidden" id="b-zap" href="#">💬 Enviar meu resumo no WhatsApp</a>
     <button class="btn" id="b-editar" style="background:transparent;color:var(--tx);box-shadow:inset 0 0 0 1.5px var(--line)">Rever ou alterar minhas respostas</button>
     <div class="card hidden" id="fim-resp"></div>
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
-<script src="anamnese.js?v=20261122a"></script>
+<script src="anamnese.js?v=20261122b"></script>
 <script>
 const sb = window.supabase.createClient(FR_CONFIG.url, FR_CONFIG.key);
 const $ = id => document.getElementById(id);
 const esc = s => String(s??"").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const TOKEN = (new URLSearchParams(location.search).get("t")||"").toLowerCase().replace(/[^a-f0-9-]/g,"").slice(0,40);
 const KEY = "fr-anamnese-" + TOKEN;
+const W = (new URLSearchParams(location.search).get("w")||"").replace(/\D/g,"").slice(0,15); // veio da vitrine: ao terminar, abre o WhatsApp
 let P = null;
+function linkZap(){
+  const num = W || String(P.whatsapp||"").replace(/\D/g,""); if(!num) return null;
+  const tel = num.startsWith("55") ? num : "55" + num;
+  let m = P.resumo || `Olá, FR! Vim pela vitrine da Família FR 💪\n\n*Plano:* ${P.plano}\n*Nome:* ${P.nome}\n\nQuero fechar! Pode me mandar o Pix?`;
+  const fim = "\nQuero fechar! Pode me mandar o Pix?";
+  m = m.includes(fim) ? m.replace(fim, "*Anamnese:* respondida ✅\n" + fim) : m + "\n*Anamnese:* respondida ✅";
+  return `https://wa.me/${tel}?text=${encodeURIComponent(m)}`;
+}
 
 function mostra(id){ for(const v of ["v-load","v-erro","v-form","v-fim"]) $(v).classList.toggle("hidden", v!==id); window.scrollTo(0,0); }
 function erro(msg){ $("v-erro").innerHTML = msg; mostra("v-erro"); }
 const rascunho = () => { try{ return JSON.parse(localStorage.getItem(KEY)) || null; }catch(e){ return null; } };
 const guardar = () => { try{ localStorage.setItem(KEY, JSON.stringify(FRAnamnese.ler($("perguntas")))); }catch(e){} };
 
+const rotulo = () => W ? "Enviar e abrir o WhatsApp" : (P.pago ? "Enviar para a nutricionista" : "Salvar minhas respostas");
 function abrirForm(R){
   const nutri = P.nutri ? `a nutricionista <b>${esc(P.nutri)}</b>` : "a nutricionista";
   $("sub").innerHTML = `${esc(P.nome)} · ${esc(P.plano)}`;
   $("aviso").innerHTML = P.pago
     ? `<div class="aviso ok">✅ Pix confirmado. Ao enviar, a sua anamnese vai direto para ${nutri}.</div>`
     : `<div class="aviso lock">🔒 <b>Aguardando a confirmação do seu Pix.</b> Você já pode responder agora. A anamnese só chega para ${nutri} depois que o FR confirmar o pagamento, e até lá você pode alterar as respostas.</div>`;
-  $("b-enviar").textContent = P.pago ? "Enviar para a nutricionista" : "Salvar minhas respostas";
+  $("b-enviar").textContent = rotulo();
   $("nota").textContent = P.pago ? "Depois de enviar, as respostas não podem mais ser alteradas." : "";
   FRAnamnese.form($("perguntas"), R || {});
   mostra("v-form");
@@ -101,12 +112,17 @@ function fim(R){
     $("fim-t").textContent = "Anamnese enviada ✓";
     $("fim-txt").innerHTML = `Pronto, ${esc((P.nome||"").split(" ")[0])}! A sua anamnese já está com <b>${nutri}</b>. Se fez exames nos últimos 6 meses, mande os resultados para ela pelo WhatsApp.`;
     $("b-editar").classList.add("hidden");
+  } else if(W){
+    $("fim-t").textContent = "Anamnese respondida ✓";
+    $("fim-txt").innerHTML = `Agora é só mandar o seu resumo no WhatsApp. A gente confirma e te envia o Pix. Assim que o Pix for confirmado, a sua anamnese segue sozinha para <b>${nutri}</b>.`;
+    $("b-editar").classList.remove("hidden");
   } else {
     $("fim-t").textContent = "Respostas salvas ✓";
     $("fim-txt").innerHTML = `Assim que o FR confirmar o seu Pix, a sua anamnese segue sozinha para <b>${nutri}</b>. Você não precisa fazer mais nada. Se quiser mudar alguma resposta até lá, é só voltar por este mesmo link.`;
     $("b-editar").classList.remove("hidden");
   }
   $("fim-resp").innerHTML = FRAnamnese.html(R); $("fim-resp").classList.toggle("hidden", !P.pago);
+  const z = W && linkZap(); $("b-zap").classList.toggle("hidden", !z); if(z) $("b-zap").href = z;
   mostra("v-fim");
 }
 
@@ -139,11 +155,12 @@ $("b-enviar").onclick = async () => {
   if(error){
     if(/ja_enviada/.test(error.message)){ const r = await sb.rpc("fr_anamnese_ver", { p_token: TOKEN }); P = r.data || P; fim(P.respostas); return; }
     $("f-err").textContent = "Não deu para enviar. Confira a internet e toque de novo. Suas respostas continuam guardadas aqui.";
-    $("b-enviar").textContent = P.pago ? "Enviar para a nutricionista" : "Salvar minhas respostas"; return;
+    $("b-enviar").textContent = rotulo(); return;
   }
   P.pago = !!(data && data.pago); P.respondida = true; P.respostas = R;
   if(P.pago){ try{ localStorage.removeItem(KEY); }catch(e){} }
   fim(R);
+  const z = W && linkZap(); if(z) location.href = z;
 };
 iniciar();
 </script>
