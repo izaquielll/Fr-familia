@@ -52,29 +52,33 @@
   @keyframes fxFumaca{0%{transform:scale(.4);opacity:.9}100%{transform:scale(5);opacity:0}}
   @keyframes fxTexto{0%{opacity:0;transform:scale(.9)}25%{opacity:1;transform:none}75%{opacity:1}100%{opacity:0;transform:scale(1.15)}}
   @keyframes fxFlash{0%{opacity:0}30%{opacity:.35}100%{opacity:0}}
+  .fx-splash{justify-content:center;cursor:default}
+  .fx-splash .tx{top:7vh}
+  .fx-splash .cont{position:absolute;left:0;right:0;top:44%;text-align:center;font:800 clamp(90px,28vw,160px)/1 Poppins,system-ui,sans-serif;color:#d4ff3a;text-shadow:0 0 40px rgba(212,255,58,.6);pointer-events:none}
+  .fx-splash .cont.bate{animation:fxConta .8s ease-out forwards}
+  .fx-splash .base{position:absolute;left:50%;bottom:150px;width:120px;margin-left:-60px}
+  .fx-splash .fog-s{width:84px;margin:0 auto;position:relative;z-index:2;animation:fxPreparo .12s ease-in-out infinite alternate}
+  .fx-splash .fog-s svg{display:block;width:100%;filter:drop-shadow(0 0 16px rgba(212,255,58,.45))}
+  .fx-splash .fog-s .chama{transform-box:fill-box;transform-origin:50% 0;transform:scaleY(.35);transition:transform .4s}
+  .fx-splash .pad{height:10px;margin:-54px auto 0;width:150px;margin-left:-15px;border-radius:6px;background:linear-gradient(#3a3f31,#20231c);box-shadow:0 0 30px rgba(212,255,58,.25)}
+  .fx-splash .vap{position:absolute;bottom:-4px;left:50%;width:60px;height:60px;margin-left:-30px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.22),transparent 70%);animation:fxVapor 2s ease-out infinite}
+  .fx-splash .vap.v2{animation-delay:.7s;margin-left:-60px}.fx-splash .vap.v3{animation-delay:1.3s;margin-left:0}
+  .fx-splash .lancar{position:absolute;left:50%;bottom:34px;transform:translateX(-50%) scale(.6);opacity:0;pointer-events:none;border:0;border-radius:999px;padding:16px 38px;
+    background:#d4ff3a;color:#141a00;font:800 20px Poppins,system-ui,sans-serif;letter-spacing:.08em;white-space:nowrap;cursor:pointer;transition:transform .35s cubic-bezier(.3,1.6,.5,1),opacity .25s}
+  .fx-splash .lancar.ok{opacity:1;pointer-events:auto;transform:translateX(-50%);animation:fxBotao 1.3s .4s ease-out infinite}
+  .fx-splash.decola .lancar{opacity:0;pointer-events:none;animation:none}
+  .fx-splash.decola .fog-s{animation:fxSubida 1.3s cubic-bezier(.55,0,.75,.2) forwards}
+  .fx-splash.decola .fog-s .chama{transform:scaleY(1.3);animation:fxChama .07s ease-in-out infinite alternate}
+  .fx-splash.decola .vap{animation:fxFumaca 1.2s ease-out forwards}
+  .fx-splash.decola .tx{transition:opacity .6s .4s, transform .9s .3s;opacity:0;transform:translateY(-40px)}
+  .fx-splash.decola::after{content:"";position:absolute;inset:0;background:#d4ff3a;opacity:0;animation:fxFlash .6s 1s ease-out forwards}
+  @keyframes fxConta{0%{transform:scale(1.9);opacity:0}25%{opacity:1}100%{transform:scale(.7);opacity:0}}
+  @keyframes fxPreparo{from{transform:translateX(-.6px)}to{transform:translateX(.6px)}}
+  @keyframes fxVapor{0%{transform:scale(.5);opacity:0}30%{opacity:.8}100%{transform:scale(2.2) translateY(-10px);opacity:0}}
+  @keyframes fxBotao{0%{box-shadow:0 0 0 0 rgba(212,255,58,.6)}100%{box-shadow:0 0 0 22px rgba(212,255,58,0)}}
+  @keyframes fxSubida{0%{transform:translateY(4px)}100%{transform:translateY(-130vh) scale(1.2)}}
   `;
   const st = document.createElement("style"); st.textContent = css; document.head.appendChild(st);
-
-  /* ===== Abertura ===== */
-  let liberar; const pronto = new Promise(r => liberar = r);
-  window.FRDepoisDaAbertura = fn => pronto.then(fn);
-  let viu = false; try{ viu = sessionStorage.getItem("fr-abertura") === "1"; sessionStorage.setItem("fr-abertura","1"); }catch(e){}
-  if(viu || calmo || !document.body){ liberar(); }
-  else {
-    const s = document.createElement("div"); s.className = "fx-splash"; s.setAttribute("role","dialog"); s.setAttribute("aria-label","Família FR");
-    let pts = ""; for(let i=0;i<22;i++) pts += `<i class="pt" style="left:${Math.random()*100}%;animation-duration:${2.2+Math.random()*2.5}s;animation-delay:${Math.random()*2}s;transform:scale(${.5+Math.random()})"></i>`;
-    s.innerHTML = `<div class="glow"></div><div class="aneis"><i></i><i></i><i></i></div>${pts}
-      <img class="ft" src="img/fr-frente.webp" alt="">
-      <div class="tx"><div class="badge">FR</div><div class="nome">FAMÍLIA FR</div>
-        <div class="l1">Você está entrando na</div><div class="l2"><em>melhor consultoria</em><br>do Brasil</div></div>
-      <div class="barra"><b></b></div>`;
-    document.body.appendChild(s); document.documentElement.style.overflow = "hidden";
-    let fechou = false;
-    const fecha = () => { if(fechou) return; fechou = true; s.classList.add("sai"); document.documentElement.style.overflow = "";
-      setTimeout(() => { s.remove(); liberar(); }, 650); };
-    s.addEventListener("click", fecha);
-    setTimeout(fecha, 2900);
-  }
 
   /* ===== Foguete ao escolher um plano ===== */
   const foguete = `<svg viewBox="0 0 64 150" aria-hidden="true">
@@ -85,6 +89,34 @@
     <path d="M16 70 L2 96 L2 106 L16 96 Z" fill="#d4ff3a"/><path d="M48 70 L62 96 L62 106 L48 96 Z" fill="#d4ff3a"/>
     <rect x="18" y="96" width="28" height="9" rx="2" fill="#a4a99c"/>
     <text x="32" y="83" text-anchor="middle" font-family="Poppins,system-ui,sans-serif" font-weight="800" font-size="13" fill="#0f100d">FR</text></svg>`;
+  /* ===== Abertura: preparação, 3-2-1 e LANÇAR ===== */
+  let liberar; const pronto = new Promise(r => liberar = r);
+  window.FRDepoisDaAbertura = fn => pronto.then(fn);
+  let viu = false; try{ viu = sessionStorage.getItem("fr-abertura") === "1"; }catch(e){}
+  if(viu || calmo || !document.body){ liberar(); }
+  else {
+    const s = document.createElement("div"); s.className = "fx-splash"; s.setAttribute("role","dialog"); s.setAttribute("aria-label","Família FR");
+    let pts = ""; for(let i=0;i<22;i++) pts += `<i class="pt" style="left:${Math.random()*100}%;animation-duration:${2.2+Math.random()*2.5}s;animation-delay:${Math.random()*2}s;transform:scale(${.5+Math.random()})"></i>`;
+    s.innerHTML = `<div class="glow"></div><div class="aneis"><i></i><i></i><i></i></div>${pts}
+      <div class="tx"><div class="badge">FR</div><div class="nome">FAMÍLIA FR</div>
+        <div class="l1">Preparando o lançamento da</div><div class="l2"><em>melhor consultoria</em><br>do Brasil</div></div>
+      <div class="cont" aria-live="polite"></div>
+      <div class="base"><div class="fog-s">${foguete}</div><div class="pad"></div><i class="vap"></i><i class="vap v2"></i><i class="vap v3"></i></div>
+      <button class="lancar" type="button">🚀 LANÇAR</button>`;
+    document.body.appendChild(s); document.documentElement.style.overflow = "hidden";
+    const cont = s.querySelector(".cont"), btn = s.querySelector(".lancar");
+    [["3",900],["2",1700],["1",2500]].forEach(([n,t]) => setTimeout(() => { cont.textContent = n; cont.classList.remove("bate"); void cont.offsetWidth; cont.classList.add("bate"); }, t));
+    setTimeout(() => { cont.textContent = ""; btn.classList.add("ok"); }, 3300);
+    btn.addEventListener("click", () => {
+      if(s.classList.contains("decola")) return;
+      try{ sessionStorage.setItem("fr-abertura","1"); }catch(e){}
+      try{ navigator.vibrate && navigator.vibrate([30,30,60]); }catch(e){}
+      s.classList.add("decola");
+      setTimeout(() => { s.classList.add("sai"); document.documentElement.style.overflow = ""; }, 1250);
+      setTimeout(() => { s.remove(); liberar(); }, 1850);
+    });
+  }
+
   let voando = false;
   window.FRFoguete = function(depois){
     if(calmo || voando){ depois && depois(); return; }
