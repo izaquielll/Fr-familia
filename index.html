@@ -236,7 +236,8 @@ const ITENS_PROG = "30 dias de treino no app MFIT\nOpcional: guia alimentar da n
 let EXTRA = [
   {slug:"gluteo", nome:"Base de Glúteo", descricao:"Glúteos e posteriores, com progressão de carga em 4 semanas.", itens:ITENS_PROG, preco:67, periodo:"programa de 30 dias", tem_guia:true, preco_guia:80, secao:"feminino"},
   {slug:"abdomen", nome:"Base de Abdômen", descricao:"Core e abdômen: estabilidade, força e definição.", itens:ITENS_PROG, preco:67, periodo:"programa de 30 dias", tem_guia:true, preco_guia:80, secao:"feminino"},
-  {slug:"metabolica", nome:"Base Metabólica + HIIT", descricao:"Corpo inteiro com HIIT para gastar mais e ganhar fôlego.", itens:ITENS_PROG, preco:67, periodo:"programa de 30 dias", tem_guia:true, preco_guia:80, secao:"feminino"}];
+  {slug:"metabolica", nome:"Base Metabólica + HIIT", descricao:"Corpo inteiro com HIIT para gastar mais e ganhar fôlego.", itens:ITENS_PROG, preco:67, periodo:"programa de 30 dias", tem_guia:true, preco_guia:80, secao:"feminino"},
+  {slug:"hyrox", nome:"HYROX Fit 30 dias", descricao:"Corrida, força e as 8 estações do HYROX dentro da academia. Você escolhe o nível: iniciante, intermediário ou avançado.", itens:"30 dias de treino no app MFIT\n3 níveis: iniciante, intermediário e avançado\nVariação de cada estação para a sua academia\nTeste no início e no fim para ver a evolução", preco:67, periodo:"programa de 30 dias", tem_guia:true, preco_guia:80, secao:"programas"}];
 const plano = slug => EXTRA.find(x=>x.slug===slug);
 let C = {...DEFAULTS};
 let db = null, cfgVersion = null;
@@ -351,6 +352,8 @@ function drawSheet(){
     const P = plano(S.programa) || {}; const irmaos = EXTRA.filter(x=>x.secao===P.secao && !x.nutri_slug && !P.nutri_slug);
     if(irmaos.length > 1) h += `<div class="fld"><span class="lb">Programa</span><div class="opts">${irmaos.map(a=>`<label class="opt"><input type="radio" name="programa" value="${esc(a.slug)}" ${S.programa===a.slug?"checked":""}><span class="t"><b>${esc(a.nome)}</b><span>${esc(a.descricao||"")}</span></span></label>`).join("")}</div></div>`;
     else h += `<div class="fld"><span class="lb">Plano</span><div class="opts"><div class="opt"><span class="t"><b>${esc(P.nome||"")}</b><span>${esc(P.descricao||"")}</span></span><span class="p">${brl(P.preco||0)}</span></div></div></div>`;
+    const nvs = niveisDe(S.programa);
+    if(nvs) h += `<div class="fld"><span class="lb">Seu nível</span><div class="opts">${nvs.map(n=>`<label class="opt"><input type="radio" name="nivel" value="${n.id}" ${S.nivel===n.id?"checked":""}><span class="t"><b>${n.nome}</b><span>${esc(n.desc)}<br>${esc(n.dose)}</span></span></label>`).join("")}</div><div class="note">Na dúvida, escolha o nível de baixo. A carga é sua: você anota no app e vai subindo. Cada estação tem variação para quem não tem o aparelho.</div></div>`;
     if(P.tem_guia && P.preco_guia) h += `<div class="fld"><span class="lb">Guia alimentar</span><div class="opts">
       <label class="opt"><input type="radio" name="guia" value="0" ${!S.guia?"checked":""}><span class="t"><b>Só o ${P.secao==="nutri"?"plano":"treino"}</b></span><span class="p">${brl(P.preco)}</span></label>
       <label class="opt"><input type="radio" name="guia" value="1" ${S.guia?"checked":""}><span class="t"><b>Com guia alimentar</b><span>Guia da nutricionista parceira</span></span><span class="p">${brl(P.preco_guia)}</span></label></div></div>`;
@@ -383,6 +386,14 @@ function destino(){
   if(n && n.zap) return {zap: n.zap, nome: n.nome};
   return {zap: C.whatsapp, nome: "FR"};
 }
+/* Programas com nível: o cliente escolhe antes de pedir; o treino de cada nível fica no MFIT */
+const NIVEIS_PROG = {
+  hyrox: [
+    {id:"iniciante", nome:"Iniciante", desc:"Treina há menos de 6 meses ou ainda não corre 5 km sem parar.", dose:"3 treinos/semana · circuito com 2 voltas · corrida de 400 m (pode alternar com caminhada)"},
+    {id:"intermediario", nome:"Intermediário", desc:"Treina com regularidade e já corre 5 km.", dose:"3 treinos/semana · 3 voltas · corrida de 600 m · mais repetições"},
+    {id:"avancado", nome:"Avançado", desc:"Já treina pesado e quer a série mais puxada.", dose:"3 treinos/semana · 4 voltas · corrida de 800 m · menos descanso"}]
+};
+const niveisDe = slug => NIVEIS_PROG[slug] || null;
 function resumo(){
   const r = calc(), isAv = S.id.startsWith("pl-");
   const nutriNome = NUTRIS.find(n=>n.id===S.nutri)?.nome || (plano(S.programa)||{}).nutri_nome;
@@ -395,6 +406,8 @@ function resumo(){
   if(S.id==="convite") m += `*Indicado por:* ${S.indicado}\n`;
   m += `*Nome:* ${S.nome}\n`;
   if(S.obj) m += `*Objetivo:* ${S.obj}\n`;
+  const nvl = isAv && (niveisDe(S.programa)||[]).find(x=>x.id===S.nivel);
+  if(nvl) m += `*Nível:* ${nvl.nome}\n`;
   const refN = REF && NUTRIS.find(n=>n.id===REF);
   if(refN) m += `*Indicação da nutri:* ${refN.nome}\n`;
   m += `\nQuero fechar! Pode me mandar o Pix?`;
@@ -420,6 +433,7 @@ document.addEventListener("click", e => {
     if(!S.nome || !S.nome.trim()){ err.textContent="Coloque o seu nome."; return; }
     if(S.id==="convite" && !(S.indicado||"").trim()){ err.textContent="Diga quem te indicou."; return; }
     if(perguntaAluno() && !S.aluno){ err.textContent="Diga se você já é cliente."; return; }
+    if(S.id.startsWith("pl-") && niveisDe(S.programa) && !S.nivel){ err.textContent="Escolha o seu nível."; return; }
     const PP = S.id.startsWith("pl-") ? plano(S.programa) : null;
     const num = String(destino().zap || "").replace(/\D/g,"");
     if(!num){ err.textContent="O WhatsApp ainda não foi configurado."; return; }
@@ -447,6 +461,7 @@ document.addEventListener("change", e => {
   if(t.name==="nutri") S.nutri=t.value;
   if(t.name==="programa") S.programa=t.value;
   if(t.name==="guia") S.guia = t.value==="1";
+  if(t.name==="nivel") S.nivel = t.value;
   if(t.id==="f-obj") S.obj=t.value;
   if(["aluno","comNutri","programa","guia","nutri"].includes(t.name)) drawSheet();
 });
@@ -462,7 +477,7 @@ async function salvarPedido(){
   if(!sb) return false;
   const r = calc(), isAv = S.id.startsWith("pl-");
   const showNutri = S.comNutri || S.id==="convite" || (isAv && (S.guia || !!(plano(S.programa)||{}).nutri_slug));
-  try{ const { error } = await sb.from("fr_pedidos").insert({plano:r.nome, valor:r.v, nutri: showNutri ? (NUTRIS.find(n=>n.id===S.nutri)?.nome||null) : null, nutri_slug: showNutri ? S.nutri : null, ref_nutri: (REF && NUTRIS.some(n=>n.id===REF)) ? REF : null,
+  try{ const { error } = await sb.from("fr_pedidos").insert({plano:r.nome + ((nv => nv ? " · " + nv.nome : "")(isAv && (niveisDe(S.programa)||[]).find(x=>x.id===S.nivel))), valor:r.v, nutri: showNutri ? (NUTRIS.find(n=>n.id===S.nutri)?.nome||null) : null, nutri_slug: showNutri ? S.nutri : null, ref_nutri: (REF && NUTRIS.some(n=>n.id===REF)) ? REF : null,
     nome:(S.nome||"").trim().slice(0,120), objetivo:S.obj||null, aluno: S.aluno||null, indicado:(S.indicado||"").trim().slice(0,120)||null, resumo: resumo().slice(0,2000), token: S.token || null}); return !error; }catch(e){ return false; }
 }
 let REF = (new URLSearchParams(location.search).get("nutri")||"").toLowerCase().replace(/[^a-z0-9-]/g,"").slice(0,40) || null;
