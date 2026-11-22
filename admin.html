@@ -26,6 +26,7 @@ label{font-size:13px;color:var(--mut);display:block;margin:10px 0 4px}
 .pix.no{background:rgba(255,122,47,.15);color:#ff7a2f}.pix.ok{background:rgba(212,255,58,.15);color:var(--lime)}
 a.btn{text-decoration:none;display:inline-block}
 .mini{padding:7px 12px;font-size:13px;border-radius:9px}
+.mini.del{color:#ff7a2f;margin-left:auto}
 .anbox{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:4px 12px 10px;margin-top:8px}
 .an-sec{font-size:13px;color:var(--lime);margin:14px 0 4px;text-transform:uppercase}.an-i{padding:6px 0;border-top:1px solid var(--line)}.an-l{font-size:12px;color:var(--mut)}.an-v{font-weight:600;font-size:14px}.an-vazio{color:var(--mut);font-weight:400}
 </style>
@@ -128,10 +129,20 @@ function drawPeds(){
       ${p.pago?`<button class="btn line mini" data-pago="0" data-id="${p.id}">Desfazer Pix</button>`:`<button class="btn mini" data-pago="1" data-id="${p.id}">Confirmar Pix</button>`}
       ${p.token?`<a class="btn line mini" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(`Oi, ${String(p.nome||"").split(" ")[0]}! Aqui está a sua anamnese da Família FR 📝 Leva uns 15 minutos: ${linkAn(p)}`)}">Enviar link da anamnese</a>`:""}
       ${an?`<button class="btn line mini" data-ver="${p.id}">Ver anamnese</button>`:""}
+      <button class="btn line mini del" data-del="${p.id}">Excluir</button>
     </div><div id="an-${p.id}" class="anbox hidden"></div></div>`;
   }).join("");
 }
 document.addEventListener("click", async e => {
+  const d = e.target.closest("[data-del]");
+  if(d){
+    const p = PEDIDOS_FR.find(x=>String(x.id)===d.dataset.del); if(!p) return;
+    if(!confirm(`Excluir o pedido de ${p.nome} (${brl(p.valor)})?${ANAMN_FR[p.id] ? " A anamnese dele também será apagada." : ""} Não dá para desfazer.`)) return;
+    d.disabled = true; d.textContent = "Excluindo…";
+    const { error, count } = await sb.from("fr_pedidos").delete({ count: "exact" }).eq("id", p.id);
+    if(error || !count){ d.disabled = false; d.textContent = "Excluir"; alert("Não deu para excluir. Confira a internet."); return; }
+    PEDIDOS_FR = PEDIDOS_FR.filter(x => x.id !== p.id); delete ANAMN_FR[p.id]; drawPeds(); return;
+  }
   const b = e.target.closest("[data-pago]");
   if(b){
     const pago = b.dataset.pago === "1";
