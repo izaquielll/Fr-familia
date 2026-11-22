@@ -151,6 +151,7 @@ footer{border-top:1px solid var(--line);margin-top:56px;padding:26px 0 40px;colo
 <meta name="theme-color" content="#0f100d">
 </head>
 <body>
+<script src="efeitos.js?v=20261122a"></script>
 <header><div class="wrap">
   <a class="logo" href="#"><i>FR</i>FAMÍLIA FR</a>
   <nav><a href="#planos">Planos</a><a class="hm" href="#nutris">Nutris</a><a class="hm" href="#como">Como funciona</a></nav>
@@ -384,7 +385,7 @@ function novoToken(){
 }
 
 document.addEventListener("click", e => {
-  const o = e.target.closest("[data-open]"); if(o){ open(o.dataset.open); return; }
+  const o = e.target.closest("[data-open]"); if(o){ const id = o.dataset.open; (window.FRFoguete || (f=>f()))(() => open(id)); return; }
   if(e.target.closest("[data-close]") || e.target.id==="ov"){ close(); return; }
   if(e.target.closest("[data-send]")){
     const err = document.getElementById("f-err");
@@ -454,7 +455,7 @@ function abrirDoLink(){
   const core = {consultoria:"consultoria", combo:"combo", nutri:"combo", convite:"convite"}[PLANO_Q];
   const id = core || (plano(PLANO_Q) ? "pl-"+PLANO_Q : (PLANO_Q==="hiit" && plano("metabolica") ? "pl-metabolica" : null));
   if(!id || (id==="convite" && !ativo(C.conviteAte))) return;
-  planoAberto = true; setTimeout(()=>open(id), 200);
+  planoAberto = true; (window.FRDepoisDaAbertura || (f=>f()))(() => setTimeout(()=>open(id), 200));
 }
 (async () => {
   if(!sb) return;
