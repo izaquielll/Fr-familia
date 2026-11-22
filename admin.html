@@ -22,6 +22,12 @@ label{font-size:13px;color:var(--mut);display:block;margin:10px 0 4px}
 .ped{border-top:1px solid var(--line);padding:10px 0}.ped:first-child{border-top:0}
 .ped b{display:block}.tag{display:inline-block;font-size:12px;background:var(--s2);border-radius:999px;padding:2px 8px;margin-right:4px}
 .hidden{display:none}
+.pix{display:inline-block;font-size:12px;font-weight:700;border-radius:999px;padding:2px 9px;margin-right:4px}
+.pix.no{background:rgba(255,122,47,.15);color:#ff7a2f}.pix.ok{background:rgba(212,255,58,.15);color:var(--lime)}
+a.btn{text-decoration:none;display:inline-block}
+.mini{padding:7px 12px;font-size:13px;border-radius:9px}
+.anbox{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:4px 12px 10px;margin-top:8px}
+.an-sec{font-size:13px;color:var(--lime);margin:14px 0 4px;text-transform:uppercase}.an-i{padding:6px 0;border-top:1px solid var(--line)}.an-l{font-size:12px;color:var(--mut)}.an-v{font-weight:600;font-size:14px}.an-vazio{color:var(--mut);font-weight:400}
 </style>
 <script src="tema.js?v=20261120i"></script>
 <link rel="manifest" href="manifest-admin.json">
@@ -67,12 +73,14 @@ label{font-size:13px;color:var(--mut);display:block;margin:10px 0 4px}
     <p class="mut" style="margin:0">Elas se cadastram em <b>nutri.html</b>. Só aparecem na vitrine depois que você aprovar.</p>
     <div class="card" id="nutris"><span class="mut">Carregando…</span></div>
     <h2>Pedidos recebidos</h2>
+    <p class="mut" style="margin:0">Quando o Pix cair, toque em <b>Confirmar Pix</b>. Nos planos com nutri, isso libera a anamnese do cliente para a nutricionista.</p>
     <div class="card" id="peds"><span class="mut">Carregando…</span></div>
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
 <script src="planos.js?v=20261120c"></script>
+<script src="anamnese.js?v=20261122a"></script>
 <script>
 const sb = window.supabase.createClient(FR_CONFIG.url, FR_CONFIG.key);
 const FIELDS = [
@@ -97,14 +105,51 @@ async function show(session){
   loadPeds(); loadNutris(); drawLinks();
   if(!planosUI) planosUI = FRPlanos.mountPlanos($("planos"), { sb, admin: true, onChange: drawLinks }); else planosUI.reload();
 }
+let PEDIDOS_FR = [], ANAMN_FR = {};
 async function loadPeds(){
   const { data, error } = await sb.from("fr_pedidos").select("*").order("created_at",{ascending:false}).limit(100);
   if(error){ $("peds").innerHTML = `<span class="mut">Sem permissão para ver os pedidos. Confira se este e-mail é de administrador.</span>`; return; }
   if(!data.length){ $("peds").innerHTML = `<span class="mut">Nenhum pedido ainda.</span>`; return; }
-  $("peds").innerHTML = data.map(p=>`<div class="ped"><b>${esc(p.nome)} · ${brl(p.valor)}</b>
-    <span class="tag">${esc(p.plano)}</span>${p.nutri?`<span class="tag">${esc(p.nutri)}</span>`:""}${p.objetivo?`<span class="tag">${esc(p.objetivo)}</span>`:""}${p.indicado?`<span class="tag">Indicado por ${esc(p.indicado)}</span>`:""}${p.ref_nutri?`<span class="tag">Link da nutri: ${esc(p.ref_nutri)}</span>`:""}
-    <div class="mut" style="font-size:13px">${new Date(p.created_at).toLocaleString("pt-BR")}</div></div>`).join("");
+  PEDIDOS_FR = data; ANAMN_FR = {};
+  const ids = data.filter(p=>p.token).map(p=>p.id);
+  if(ids.length){ const r = await sb.from("fr_anamneses").select("pedido_id,respostas,atualizada_em").in("pedido_id", ids); (r.data||[]).forEach(a => ANAMN_FR[a.pedido_id] = a); }
+  drawPeds();
 }
+const linkAn = p => location.origin + location.pathname.replace(/admin\.html$/,"") + "anamnese.html?t=" + p.token;
+function drawPeds(){
+  $("peds").innerHTML = PEDIDOS_FR.map(p=>{
+    const an = ANAMN_FR[p.id];
+    const st = !p.token ? "" : an ? (p.pago ? `<span class="tag">📝 Anamnese com a nutri</span>` : `<span class="tag">📝 Anamnese respondida · aguarda o Pix</span>`) : `<span class="tag">📝 Anamnese ainda não respondida</span>`;
+    return `<div class="ped"><b>${esc(p.nome)} · ${brl(p.valor)}</b>
+    <span class="pix ${p.pago?"ok":"no"}">${p.pago?"Pix confirmado":"Aguardando Pix"}</span><span class="tag">${esc(p.plano)}</span>${p.nutri?`<span class="tag">${esc(p.nutri)}</span>`:""}${p.objetivo?`<span class="tag">${esc(p.objetivo)}</span>`:""}${p.indicado?`<span class="tag">Indicado por ${esc(p.indicado)}</span>`:""}${p.ref_nutri?`<span class="tag">Link da nutri: ${esc(p.ref_nutri)}</span>`:""}${st}
+    <div class="mut" style="font-size:13px">${new Date(p.created_at).toLocaleString("pt-BR")}${p.pago_em?` · Pix confirmado em ${new Date(p.pago_em).toLocaleDateString("pt-BR")}`:""}</div>
+    <div class="row" style="margin-top:8px">
+      ${p.pago?`<button class="btn line mini" data-pago="0" data-id="${p.id}">Desfazer Pix</button>`:`<button class="btn mini" data-pago="1" data-id="${p.id}">Confirmar Pix</button>`}
+      ${p.token?`<a class="btn line mini" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(`Oi, ${String(p.nome||"").split(" ")[0]}! Aqui está a sua anamnese da Família FR 📝 Leva uns 15 minutos: ${linkAn(p)}`)}">Enviar link da anamnese</a>`:""}
+      ${an?`<button class="btn line mini" data-ver="${p.id}">Ver anamnese</button>`:""}
+    </div><div id="an-${p.id}" class="anbox hidden"></div></div>`;
+  }).join("");
+}
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-pago]");
+  if(b){
+    const pago = b.dataset.pago === "1";
+    if(!pago && !confirm("Desfazer a confirmação do Pix? A nutri deixa de ver a anamnese deste cliente.")) return;
+    b.disabled = true;
+    const { data, error } = await sb.from("fr_pedidos").update({ pago }).eq("id", b.dataset.id).select().single();
+    if(error){ b.disabled = false; alert("Não deu para salvar. Confira a internet."); return; }
+    PEDIDOS_FR = PEDIDOS_FR.map(p => p.id === data.id ? data : p); drawPeds(); return;
+  }
+  const v = e.target.closest("[data-ver]");
+  if(v){
+    const box = $("an-"+v.dataset.ver), p = PEDIDOS_FR.find(x=>String(x.id)===v.dataset.ver);
+    if(box.classList.toggle("hidden")) return;
+    box.innerHTML = `<div class="row" style="margin-top:10px"><button class="btn line mini" data-print="${p.id}">Imprimir / PDF</button></div>` + FRAnamnese.html(ANAMN_FR[p.id].respostas);
+    return;
+  }
+  const pr = e.target.closest("[data-print]");
+  if(pr){ const p = PEDIDOS_FR.find(x=>String(x.id)===pr.dataset.print); FRAnamnese.imprimir(ANAMN_FR[p.id].respostas, "Anamnese · " + p.nome, `${p.plano}${p.nutri?" · "+p.nutri:""} · ${new Date(ANAMN_FR[p.id].atualizada_em).toLocaleDateString("pt-BR")}`); }
+});
 async function loadNutris(){
   const { data, error } = await sb.from("fr_nutris").select("id,slug,nome,whatsapp,especialidades,foto_url,status,created_at").order("created_at",{ascending:false});
   if(error){ $("nutris").innerHTML = `<span class="mut">Não deu para carregar.</span>`; return; }

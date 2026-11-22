@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Anamnese · Família FR</title>
+<link rel="icon" type="image/png" href="img/icone/fr-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+<meta name="theme-color" content="#0f100d">
+<style>
+:root{--bg:#0f100d;--s1:#171914;--s2:#20231c;--line:#2c3026;--tx:#f3f4ef;--mut:#a4a99c;--lime:#d4ff3a;--ink:#141a00;--or:#ff7a2f}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 Poppins,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:680px;margin:0 auto;padding:18px 16px 80px}
+.top{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.08em;font-size:14px}
+.logo i{font-style:normal;width:32px;height:32px;border-radius:9px;background:var(--lime);color:var(--ink);display:grid;place-items:center;letter-spacing:0}
+h1{font-size:28px;line-height:1.1;margin:18px 0 6px}
+.mut{color:var(--mut)}
+.card{background:var(--s1);border:1px solid var(--line);border-radius:16px;padding:16px;margin-top:14px}
+.aviso{border-radius:14px;padding:12px 14px;margin-top:14px;font-size:14px}
+.aviso.lock{background:rgba(255,122,47,.12);border:1px solid rgba(255,122,47,.4)}
+.aviso.ok{background:rgba(212,255,58,.1);border:1px solid rgba(212,255,58,.35)}
+.sec{background:var(--s1);border:1px solid var(--line);border-radius:18px;padding:16px;margin-top:16px}
+.sec h2{font-size:17px;margin:0 0 4px;color:var(--lime)}
+.q{margin-top:16px}.q[hidden]{display:none}
+.ql{font-weight:600;font-size:15px}.ql i{color:var(--or);font-style:normal}
+.qd{font-size:13px;color:var(--mut);margin-top:2px}
+input[type=text],textarea{width:100%;margin-top:8px;background:var(--s2);border:1.5px solid var(--line);border-radius:12px;padding:12px 13px;color:var(--tx);font:inherit}
+textarea{resize:vertical}
+input:focus,textarea:focus{outline:none;border-color:var(--lime)}
+.opts{display:grid;gap:7px;margin-top:8px}
+.opt{display:flex;align-items:flex-start;gap:11px;background:var(--s2);border:1.5px solid var(--line);border-radius:12px;padding:11px 13px;cursor:pointer;font-size:14.5px}
+.opt input{accent-color:var(--lime);width:18px;height:18px;flex:none;margin-top:2px}
+.opt:has(input:checked){border-color:var(--lime)}
+.q.falta .ql{color:#ff8a80}
+.btn{display:inline-flex;justify-content:center;align-items:center;gap:8px;border:0;border-radius:12px;padding:15px 20px;font:inherit;font-weight:700;background:var(--lime);color:var(--ink);cursor:pointer;width:100%;margin-top:18px;text-decoration:none}
+.btn:disabled{opacity:.5}
+.err{color:#ff8a80;font-size:14px;margin-top:10px}
+.an-sec{font-size:14px;color:var(--lime);margin:18px 0 6px;text-transform:uppercase;letter-spacing:.04em}
+.an-i{padding:8px 0;border-top:1px solid var(--line)}.an-l{font-size:13px;color:var(--mut)}.an-v{font-weight:600}.an-vazio{color:var(--mut);font-weight:400}
+.hidden{display:none!important}
+</style>
+</head>
+<body><div class="wrap">
+  <div class="top"><div class="logo"><i>FR</i>FAMÍLIA FR</div></div>
+  <div id="v-load" class="card mut">Carregando a sua anamnese…</div>
+  <div id="v-erro" class="card hidden"></div>
+
+  <div id="v-form" class="hidden">
+    <h1>Anamnese</h1>
+    <p class="mut" style="margin:0" id="sub"></p>
+    <div class="card" style="font-size:14px">
+      Este formulário é a base do nosso trabalho: quanto melhor e mais detalhado você preencher, mais preciso e personalizado ficará o seu plano alimentar.<br>
+      <b>Tempo estimado: cerca de 15 minutos.</b> Reserve esse tempinho num momento tranquilo para responder sem pressa. O que você escrever fica guardado neste aparelho enquanto responde.
+    </div>
+    <div id="aviso"></div>
+    <div id="perguntas"></div>
+    <div id="f-err" class="err"></div>
+    <button class="btn" id="b-enviar">Enviar anamnese</button>
+    <p class="mut" style="font-size:13px;text-align:center;margin-top:10px" id="nota"></p>
+  </div>
+
+  <div id="v-fim" class="hidden">
+    <h1 id="fim-t"></h1>
+    <div class="card" id="fim-txt"></div>
+    <button class="btn" id="b-editar" style="background:transparent;color:var(--tx);box-shadow:inset 0 0 0 1.5px var(--line)">Rever ou alterar minhas respostas</button>
+    <div class="card hidden" id="fim-resp"></div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="anamnese.js?v=20261122a"></script>
+<script>
+const sb = window.supabase.createClient(FR_CONFIG.url, FR_CONFIG.key);
+const $ = id => document.getElementById(id);
+const esc = s => String(s??"").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const TOKEN = (new URLSearchParams(location.search).get("t")||"").toLowerCase().replace(/[^a-f0-9-]/g,"").slice(0,40);
+const KEY = "fr-anamnese-" + TOKEN;
+let P = null;
+
+function mostra(id){ for(const v of ["v-load","v-erro","v-form","v-fim"]) $(v).classList.toggle("hidden", v!==id); window.scrollTo(0,0); }
+function erro(msg){ $("v-erro").innerHTML = msg; mostra("v-erro"); }
+const rascunho = () => { try{ return JSON.parse(localStorage.getItem(KEY)) || null; }catch(e){ return null; } };
+const guardar = () => { try{ localStorage.setItem(KEY, JSON.stringify(FRAnamnese.ler($("perguntas")))); }catch(e){} };
+
+function abrirForm(R){
+  const nutri = P.nutri ? `a nutricionista <b>${esc(P.nutri)}</b>` : "a nutricionista";
+  $("sub").innerHTML = `${esc(P.nome)} · ${esc(P.plano)}`;
+  $("aviso").innerHTML = P.pago
+    ? `<div class="aviso ok">✅ Pix confirmado. Ao enviar, a sua anamnese vai direto para ${nutri}.</div>`
+    : `<div class="aviso lock">🔒 <b>Aguardando a confirmação do seu Pix.</b> Você já pode responder agora. A anamnese só chega para ${nutri} depois que o FR confirmar o pagamento, e até lá você pode alterar as respostas.</div>`;
+  $("b-enviar").textContent = P.pago ? "Enviar para a nutricionista" : "Salvar minhas respostas";
+  $("nota").textContent = P.pago ? "Depois de enviar, as respostas não podem mais ser alteradas." : "";
+  FRAnamnese.form($("perguntas"), R || {});
+  mostra("v-form");
+}
+function fim(R){
+  const nutri = P.nutri ? esc(P.nutri) : "a nutricionista";
+  if(P.pago){
+    $("fim-t").textContent = "Anamnese enviada ✓";
+    $("fim-txt").innerHTML = `Pronto, ${esc((P.nome||"").split(" ")[0])}! A sua anamnese já está com <b>${nutri}</b>. Se fez exames nos últimos 6 meses, mande os resultados para ela pelo WhatsApp.`;
+    $("b-editar").classList.add("hidden");
+  } else {
+    $("fim-t").textContent = "Respostas salvas ✓";
+    $("fim-txt").innerHTML = `Assim que o FR confirmar o seu Pix, a sua anamnese segue sozinha para <b>${nutri}</b>. Você não precisa fazer mais nada. Se quiser mudar alguma resposta até lá, é só voltar por este mesmo link.`;
+    $("b-editar").classList.remove("hidden");
+  }
+  $("fim-resp").innerHTML = FRAnamnese.html(R); $("fim-resp").classList.toggle("hidden", !P.pago);
+  mostra("v-fim");
+}
+
+async function iniciar(){
+  if(TOKEN.length < 32){ erro(`Este link de anamnese não está completo. Peça o link de novo para o FR no WhatsApp.`); return; }
+  const { data, error } = await sb.rpc("fr_anamnese_ver", { p_token: TOKEN });
+  if(error){ erro(`Não deu para abrir agora. Confira a internet e <a href="" style="color:var(--lime)">tente de novo</a>.`); return; }
+  if(!data){ erro(`Não encontramos esta anamnese. Peça o link de novo para o FR no WhatsApp.`); return; }
+  P = data;
+  if(P.respondida){ fim(P.respostas); return; }
+  abrirForm(rascunho() || P.respostas || {});
+}
+
+$("perguntas").addEventListener("change", () => { FRAnamnese.atualizar($("perguntas")); guardar(); });
+$("perguntas").addEventListener("input", () => guardar());
+$("b-editar").onclick = () => abrirForm(rascunho() || P.respostas || {});
+$("b-enviar").onclick = async () => {
+  const R = FRAnamnese.ler($("perguntas"));
+  document.querySelectorAll(".q.falta").forEach(e => e.classList.remove("falta"));
+  const f = FRAnamnese.faltando(R);
+  if(f.length){
+    f.forEach(q => document.querySelector(`[data-q="${q.id}"]`)?.classList.add("falta"));
+    $("f-err").textContent = f.length === 1 ? "Faltou responder 1 pergunta obrigatória (marcada em vermelho)." : `Faltou responder ${f.length} perguntas obrigatórias (marcadas em vermelho).`;
+    document.querySelector(".q.falta")?.scrollIntoView({behavior:"smooth", block:"center"});
+    return;
+  }
+  $("f-err").textContent = ""; $("b-enviar").disabled = true; $("b-enviar").textContent = "Enviando…";
+  const { data, error } = await sb.rpc("fr_anamnese_salvar", { p_token: TOKEN, p_respostas: R });
+  $("b-enviar").disabled = false;
+  if(error){
+    if(/ja_enviada/.test(error.message)){ const r = await sb.rpc("fr_anamnese_ver", { p_token: TOKEN }); P = r.data || P; fim(P.respostas); return; }
+    $("f-err").textContent = "Não deu para enviar. Confira a internet e toque de novo. Suas respostas continuam guardadas aqui.";
+    $("b-enviar").textContent = P.pago ? "Enviar para a nutricionista" : "Salvar minhas respostas"; return;
+  }
+  P.pago = !!(data && data.pago); P.respondida = true; P.respostas = R;
+  if(P.pago){ try{ localStorage.removeItem(KEY); }catch(e){} }
+  fim(R);
+};
+iniciar();
+</script>
+</body>
+</html>

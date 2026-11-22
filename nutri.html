@@ -28,6 +28,10 @@ label{font-size:13px;color:var(--mut);display:block;margin:12px 0 4px}
 .g{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}@media(max-width:560px){.g{grid-template-columns:1fr}}
 select{font:inherit}
 .hidden{display:none}
+a.btn{text-decoration:none;display:inline-block}.mini{padding:7px 12px;font-size:13px;border-radius:9px}
+.anbox{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:4px 12px 10px;margin-top:8px}
+.an-sec{font-size:13px;color:var(--lime);margin:14px 0 4px;text-transform:uppercase}.an-i{padding:6px 0;border-top:1px solid var(--line)}.an-l{font-size:12px;color:var(--mut)}.an-v{font-weight:600;font-size:14px}.an-vazio{color:var(--mut);font-weight:400}
+.novo{background:var(--lime);color:var(--ink);font-weight:700}
 </style>
 <script src="tema.js?v=20261120i"></script>
 <link rel="manifest" href="manifest-nutri.json">
@@ -90,6 +94,10 @@ select{font:inherit}
       <div class="card" id="planos"></div>
     </div>
 
+    <h2>Anamneses dos seus clientes</h2>
+    <p class="mut" style="margin:0">Chegam aqui assim que o cliente responde e o FR confirma o Pix.</p>
+    <div class="card" id="anams"><span class="mut">Salve o seu perfil para começar.</span></div>
+
     <h2>Pedidos com você</h2>
     <div class="card" id="peds"><span class="mut">Salve o seu perfil para começar.</span></div>
   </div>
@@ -97,6 +105,7 @@ select{font:inherit}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
 <script src="planos.js?v=20261120c"></script>
+<script src="anamnese.js?v=20261122a"></script>
 <script>
 const sb = window.supabase.createClient(FR_CONFIG.url, FR_CONFIG.key);
 const $ = id => document.getElementById(id);
@@ -116,8 +125,35 @@ async function show(session){
   $("f-nome").value = data?.nome || ""; $("f-zap").value = data?.whatsapp || "";
   $("f-esp").value = data?.especialidades || ""; $("f-form").value = data?.formacao || ""; $("f-bio").value = data?.bio || "";
   $("foto-prev").src = fotoUrl || "";
-  drawLink(); loadPeds();
+  drawLink(); loadPeds(); loadAnams();
 }
+let ANAMS = [];
+const vistoKey = () => "fr-anamneses-vistas-" + (user?.id || "");
+const vistas = () => { try{ return JSON.parse(localStorage.getItem(vistoKey())) || []; }catch(e){ return []; } };
+async function loadAnams(){
+  if(!perfil) return;
+  const { data, error } = await sb.from("fr_anamneses").select("pedido_id,respostas,atualizada_em,fr_pedidos(nome,plano,pago_em,created_at)").order("atualizada_em",{ascending:false}).limit(200);
+  if(error){ $("anams").innerHTML = `<span class="mut">Não deu para carregar as anamneses.</span>`; return; }
+  ANAMS = data || [];
+  if(!ANAMS.length){ $("anams").innerHTML = `<span class="mut">Nenhuma anamnese ainda.</span>`; return; }
+  const vs = vistas();
+  $("anams").innerHTML = ANAMS.map(a => { const p = a.fr_pedidos || {}; return `<div class="ped"><b>${esc(p.nome||"Cliente")}</b>
+    ${vs.includes(a.pedido_id)?"":`<span class="tag novo">Nova</span>`}<span class="tag">${esc(p.plano||"")}</span>
+    <div class="mut" style="font-size:13px">Respondida em ${new Date(a.atualizada_em).toLocaleDateString("pt-BR")}${p.pago_em?` · Pix confirmado em ${new Date(p.pago_em).toLocaleDateString("pt-BR")}`:""}</div>
+    <div class="row" style="margin-top:8px"><button class="btn mini" data-ver="${a.pedido_id}">Ver anamnese</button><button class="btn line mini" data-print="${a.pedido_id}">Imprimir / PDF</button><button class="btn line mini" data-copiar="${a.pedido_id}">Copiar texto</button></div>
+    <div id="an-${a.pedido_id}" class="anbox hidden"></div></div>`; }).join("");
+}
+document.addEventListener("click", async e => {
+  const t = e.target.closest("[data-ver],[data-print],[data-copiar]"); if(!t) return;
+  const id = Number(t.dataset.ver || t.dataset.print || t.dataset.copiar), a = ANAMS.find(x=>x.pedido_id===id); if(!a) return;
+  const p = a.fr_pedidos || {}, sub = `${p.plano||""} · respondida em ${new Date(a.atualizada_em).toLocaleDateString("pt-BR")}`;
+  const vs = vistas(); if(!vs.includes(id)){ vs.push(id); try{ localStorage.setItem(vistoKey(), JSON.stringify(vs)); }catch(err){} t.closest(".ped").querySelector(".novo")?.remove(); }
+  if(t.dataset.ver){ const box = $("an-"+id); if(!box.classList.toggle("hidden")) box.innerHTML = FRAnamnese.html(a.respostas); return; }
+  if(t.dataset.print){ FRAnamnese.imprimir(a.respostas, "Anamnese · " + (p.nome||""), sub); return; }
+  const txt = FRAnamnese.texto(a.respostas, `ANAMNESE · ${p.nome||""}\n${sub}`);
+  try{ await navigator.clipboard.writeText(txt); t.textContent = "Copiado ✓"; }catch(err){ t.textContent = "Não deu para copiar"; }
+  setTimeout(()=>t.textContent="Copiar texto",1800);
+});
 let planosUI = null;
 function drawExtras(){
   const ok = perfil && perfil.status === "aprovada";

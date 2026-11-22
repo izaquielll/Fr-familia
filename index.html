@@ -361,8 +361,30 @@ function resumo(){
   if(S.obj) m += `*Objetivo:* ${S.obj}\n`;
   const refN = REF && NUTRIS.find(n=>n.id===REF);
   if(refN) m += `*Indicação da nutri:* ${refN.nome}\n`;
+  if(S.token) m += `*Minha anamnese:* ${linkAnamnese()}\n`;
   m += `\nQuero fechar! Pode me mandar o Pix?`;
   return m;
+}
+/* Anamnese da nutri: o link nasce com o pedido e só chega para a nutri depois que o FR confirma o Pix */
+const linkAnamnese = () => new URL("anamnese.html?t=" + S.token, location.href).href;
+function precisaAnamnese(){
+  const isAv = S.id.startsWith("pl-"), PP = isAv ? plano(S.programa) : null;
+  const showNutri = S.comNutri || S.id==="convite" || (isAv && (S.guia || !!(PP||{}).nutri_slug));
+  return showNutri && !(PP && PP.nutri_zap) && !!sb;
+}
+function novoToken(){
+  try{ if(crypto.randomUUID) return crypto.randomUUID().replace(/-/g,""); }catch(e){}
+  const b = new Uint8Array(16); crypto.getRandomValues(b); return [...b].map(x=>x.toString(16).padStart(2,"0")).join("");
+}
+function telaAnamnese(){
+  const nutriNome = NUTRIS.find(n=>n.id===S.nutri)?.nome || "a nutricionista";
+  const sh = document.getElementById("sheet");
+  sh.innerHTML = `<div class="top"><h3>Resumo enviado ✓</h3><button class="x" data-close aria-label="Fechar">✕</button></div>
+    <p class="mut" style="margin:4px 0 0">Agora é só mandar a mensagem no WhatsApp. A gente confirma e te envia o Pix.</p>
+    <div class="sum" style="--acc:var(--lime)"><b style="font-size:18px">Próximo passo: sua anamnese 📝</b>
+      <p class="mut" style="margin:6px 0 0;font-size:14px">Responda já as perguntas para ${esc(nutriNome)} montar o seu plano alimentar (cerca de 15 minutos). Ela recebe as respostas assim que o seu Pix for confirmado.</p>
+      <a class="btn block" style="margin-top:14px" href="${esc(linkAnamnese())}">Responder minha anamnese</a></div>
+    <div class="note">O link da anamnese também vai na sua mensagem do WhatsApp, para você abrir depois se preferir.</div>`;
 }
 
 document.addEventListener("click", e => {
@@ -376,9 +398,11 @@ document.addEventListener("click", e => {
     const num = String((PP && PP.nutri_zap) || C.whatsapp || "").replace(/\D/g,"");
     if(!num){ err.textContent="O WhatsApp ainda não foi configurado."; return; }
     const tel = num.startsWith("55") ? num : "55"+num;
+    S.token = precisaAnamnese() ? novoToken() : null;
     salvarPedido();
     const a = document.createElement("a"); a.href = `https://wa.me/${tel}?text=${encodeURIComponent(resumo())}`; a.target="_blank"; a.rel="noopener";
     document.body.appendChild(a); a.click(); a.remove();
+    if(S.token) telaAnamnese();
   }
 });
 document.addEventListener("change", e => {
@@ -404,7 +428,7 @@ async function salvarPedido(){
   const r = calc(), isAv = S.id.startsWith("pl-");
   const showNutri = S.comNutri || S.id==="convite" || (isAv && (S.guia || !!(plano(S.programa)||{}).nutri_slug));
   try{ await sb.from("fr_pedidos").insert({plano:r.nome, valor:r.v, nutri: showNutri ? (NUTRIS.find(n=>n.id===S.nutri)?.nome||null) : null, nutri_slug: showNutri ? S.nutri : null, ref_nutri: (REF && NUTRIS.some(n=>n.id===REF)) ? REF : null,
-    nome:(S.nome||"").trim().slice(0,120), objetivo:S.obj||null, aluno: S.aluno||null, indicado:(S.indicado||"").trim().slice(0,120)||null, resumo: resumo().slice(0,2000)}); }catch(e){}
+    nome:(S.nome||"").trim().slice(0,120), objetivo:S.obj||null, aluno: S.aluno||null, indicado:(S.indicado||"").trim().slice(0,120)||null, resumo: resumo().slice(0,2000), token: S.token || null}); }catch(e){}
 }
 let REF = (new URLSearchParams(location.search).get("nutri")||"").toLowerCase().replace(/[^a-z0-9-]/g,"").slice(0,40) || null;
 // ?com=<nutri>: link enviado pelo FR que já abre com essa nutri escolhida (não conta como indicação dela)
