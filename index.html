@@ -269,7 +269,7 @@ function render(){
   const cards = [
     C.mostrarConsultoria===false ? null : {id:"consultoria", cls:"lime", arte:"consultoria", bg:"img/fr-frente.webp", tag: promo? C.promoNome : "Consultoria", nome:"Consultoria Online",
      itens:["Treino montado pra você no app MFIT","Avaliação online e anamnese completas","Suporte e correção no WhatsApp"],
-     de: promo? C.consultoria:null, v: promo? C.consultoriaPromo : C.consultoria, pre: promo?null:"A partir de", per: promo? `para quem já é aluno · ${brl(C.consultoriaNovo)} para quem está começando · ciclo de 60 dias` : "por ciclo de 60 dias"},
+     de: promo? C.consultoria:null, v: promo? C.consultoriaPromo : C.consultoria, pre: promo?null:"A partir de", per: promo? `para alunos que renovarem até ${fmtD(C.promoAte)} · ${brl(C.consultoriaNovo)} para quem está começando · ciclo de 60 dias` : "por ciclo de 60 dias"},
     C.mostrarCombo===false ? null : {id:"combo", cls:"lime", arte:"combo", bg:"img/fr-barra.webp", tag: promo? C.promoNome : "Mais completo", nome:"Consultoria + Nutri",
      itens:["Tudo da consultoria","Avaliação presencial","Avaliação de treino (1 treino)","Plano alimentar com a nutricionista que você escolher","2 atualizações do plano alimentar no ciclo",`Após 60 dias: renove com ${C.descRenovaCombo}% off sobre ${brl(combo)}`],
      de: combo, v: promo? C.comboPromo : combo, per: promo? `pagando até ${fmtD(C.promoAte)} · ciclo de 60 dias` : `R$ ${C.consultoria} da consultoria + R$ ${C.nutri} da nutri`},
@@ -330,7 +330,7 @@ const perguntaAluno = () => { const isAv = S.id.startsWith("pl-"), PP = isAv ? p
   return S.id==="consultoria" || S.id==="combo" || (isAv && (S.guia || !!(PP||{}).nutri_slug) && !(PP && PP.nutri_zap)); };
 function perguntaCliente(promo){
   return `<div class="fld"><span class="lb">Você já é cliente?</span><div class="opts">
-      <label class="opt"><input type="radio" name="aluno" value="sim" ${S.aluno==="sim"?"checked":""}><span class="t"><b>Sim, já sou cliente</b><span>Vai direto para o WhatsApp</span></span></label>
+      <label class="opt"><input type="radio" name="aluno" value="sim" ${S.aluno==="sim"?"checked":""}><span class="t"><b>Sim, já sou cliente</b><span>${promo && !S.id.startsWith("pl-") ? `Renovação com o valor de ${C.promoNome} até ${fmtD(C.promoAte)} · ` : ""}vai direto para o WhatsApp</span></span></label>
       <label class="opt"><input type="radio" name="aluno" value="nao" ${S.aluno==="nao"?"checked":""}><span class="t"><b>Não, sou cliente novo</b><span>Começa pela anamnese</span></span></label></div></div>`;
 }
 function drawSheet(){
@@ -344,7 +344,7 @@ function drawSheet(){
     h += perguntaCliente(promo);
     const renova = promo; // Black Friday vale para todos (novos e quem já é cliente)
     h += `<div class="fld"><span class="lb">Plano</span><div class="opts">
-      <label class="opt"><input type="radio" name="comNutri" value="0" ${!S.comNutri?"checked":""}><span class="t"><b>Só consultoria</b><span>Treino no MFIT + suporte${renova?` · ${brl(C.consultoriaPromo)} aluno, ${brl(C.consultoriaNovo)} cliente novo`:""}</span></span><span class="p">${brl(!renova?C.consultoria:(S.aluno==="nao"?C.consultoriaNovo:C.consultoriaPromo))}</span></label>
+      <label class="opt"><input type="radio" name="comNutri" value="0" ${!S.comNutri?"checked":""}><span class="t"><b>Só consultoria</b><span>Treino no MFIT + suporte${renova?` · ${brl(C.consultoriaPromo)} renovando, ${brl(C.consultoriaNovo)} cliente novo`:""}</span></span><span class="p">${brl(!renova?C.consultoria:(S.aluno==="nao"?C.consultoriaNovo:C.consultoriaPromo))}</span></label>
       <label class="opt"><input type="radio" name="comNutri" value="1" ${S.comNutri?"checked":""}><span class="t"><b>Consultoria + Nutri</b><span>Avaliação presencial + avaliação de treino + plano alimentar com 2 atualizações</span></span><span class="p">${brl(renova?C.comboPromo:combo)}</span></label></div></div>`;
     if(S.comNutri) h += `<div class="fld"><span class="lb">Nutricionista</span><div class="opts">${nutriOpts}</div></div>`;
   }
