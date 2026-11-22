@@ -37,7 +37,10 @@ header .wrap{display:flex;align-items:center;gap:14px;height:62px}
 nav{margin-left:auto;display:flex;gap:4px}
 nav a{color:var(--mut);text-decoration:none;font-size:14px;font-weight:600;padding:8px 10px;border-radius:8px}
 nav a:hover{color:var(--tx);background:var(--s2)}
-@media(max-width:640px){nav a.hm{display:none}}
+nav a.ig{display:inline-flex;align-items:center;gap:6px;color:var(--tx)}
+.ig-btn{display:inline-flex;align-items:center;gap:6px;margin-top:10px;font-size:13px;font-weight:700;color:var(--tx);text-decoration:none;padding:7px 12px;border-radius:10px;box-shadow:inset 0 0 0 1.5px var(--line)}
+.ig-btn:hover{background:var(--s2)}
+@media(max-width:640px){nav a.hm{display:none}nav a.ig span{display:none}}
 
 /* buttons */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:12px;padding:14px 20px;font-weight:700;font-size:15px;background:var(--lime);color:var(--lime-ink);text-decoration:none}
@@ -156,7 +159,7 @@ footer{border-top:1px solid var(--line);margin-top:56px;padding:26px 0 40px;colo
 <script src="efeitos.js?v=20261122b"></script>
 <header><div class="wrap">
   <a class="logo" href="#"><i>FR</i>FAMÍLIA FR</a>
-  <nav><a href="#planos">Planos</a><a class="hm" href="#nutris">Nutris</a><a class="hm" href="#como">Como funciona</a></nav>
+  <nav><a href="#planos">Planos</a><a class="hm" href="#nutris">Nutris</a><a class="hm" href="#como">Como funciona</a><a class="ig hidden" id="nav-ig" target="_blank" rel="noopener" aria-label="Instagram"></a></nav>
 </div></header>
 
 <div class="hero"><div class="glow"></div><div class="wrap">
@@ -207,7 +210,7 @@ footer{border-top:1px solid var(--line);margin-top:56px;padding:26px 0 40px;colo
 
 
 <footer><div class="wrap">Família FR · Consultoria online de treino e nutrição. Valores sujeitos a confirmação no WhatsApp.
-  <span style="float:right"><a href="nutri.html" style="color:var(--mut)">Sou nutricionista</a> · <a href="admin.html" style="color:var(--mut)">Área do FR</a></span></div></footer>
+  <span style="float:right"><a id="ft-ig" class="hidden" target="_blank" rel="noopener" style="color:var(--mut)"></a><a href="nutri.html" style="color:var(--mut)">Sou nutricionista</a> · <a href="admin.html" style="color:var(--mut)">Área do FR</a></span></div></footer>
 
 <div class="ov hidden" id="ov"><div class="sheet" id="sheet"></div></div>
 
@@ -222,8 +225,10 @@ const DEFAULTS = {
   promoNome: "Black Friday", promoAte: "2026-12-31",
   avulso: 67, avulsoGuia: 80,
   descConsult: 20, descCombo: 30,
-  whatsapp: ""
+  whatsapp: "", instagram: ""
 };
+const IG = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>';
+const igUrl = u => "https://instagram.com/" + encodeURIComponent(u);
 let NUTRIS = [{id:"fabiola", nome:"Fabíola Amorim", foto:"img/fabiola.jpg",
   bio:"Atuação em emagrecimento, hipertrofia, nutrição clínica e esportiva, com estratégias individualizadas e baseadas em evidências científicas. Foco em resultados, composição corporal, desempenho físico e saúde.",
   formacao:["Graduada em Nutrição","Pós-graduada em Nutrição Clínica em Patologias","Mestranda em Saúde Coletiva pela UFJF"]}];
@@ -244,6 +249,9 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":
 function render(){
   const promo = ativo(C.promoAte), conv = ativo(C.conviteAte);
   const combo = C.consultoria + C.nutri;
+  [["nav-ig", u => IG + `<span class="hm">@${esc(u)}</span>`], ["ft-ig", u => `Instagram @${esc(u)} · `]].forEach(([id, f]) => {
+    const el = document.getElementById(id); el.classList.toggle("hidden", !C.instagram);
+    if(C.instagram){ el.href = igUrl(C.instagram); el.innerHTML = f(C.instagram); } });
   document.getElementById("hero-tag").textContent = promo ? `${C.promoNome} · até ${fmtD(C.promoAte)}` : "Consultoria online";
   document.getElementById("promo-line").innerHTML = promo ? `${C.promoNome} até ${fmtD(C.promoAte)}: consultoria por <b>${brl(C.consultoriaPromo)}</b> e com nutri por <b>${brl(C.comboPromo)}</b>.` : "";
 
@@ -276,7 +284,7 @@ function render(){
   sec("programas","g-extras","extras"); sec("nutri","g-nplanos","nplanos");
   document.getElementById("g-nutris").innerHTML = NUTRIS.map(n => `<div class="nutri"><img src="${esc(n.foto)}" alt="${esc(n.nome)}">
     <div class="info"><h3>${esc(n.nome)}</h3><div class="role">Nutricionista parceira</div><p class="mut" style="margin:8px 0 0;font-size:14px">${esc(n.bio)}</p>
-    <ul>${n.formacao.map(f=>`<li>${esc(f)}</li>`).join("")}</ul></div></div>`).join("") + `<a class="soon" href="nutri.html" style="display:block;text-decoration:none">É nutricionista? Seja parceira da Família FR →</a>`;
+    <ul>${n.formacao.map(f=>`<li>${esc(f)}</li>`).join("")}</ul>${n.insta ? `<a class="ig-btn" href="${igUrl(n.insta)}" target="_blank" rel="noopener">${IG} @${esc(n.insta)}</a>` : ""}</div></div>`).join("") + `<a class="soon" href="nutri.html" style="display:block;text-decoration:none">É nutricionista? Seja parceira da Família FR →</a>`;
 }
 
 /* ===== Montar o plano ===== */
@@ -472,9 +480,9 @@ function abrirDoLink(){
 (async () => {
   if(!sb) return;
   try{
-    const { data } = await sb.from("fr_nutris").select("slug,nome,foto_url,bio,especialidades,formacao").eq("status","aprovada").order("created_at");
+    const { data } = await sb.from("fr_nutris").select("slug,nome,foto_url,bio,especialidades,formacao,instagram").eq("status","aprovada").order("created_at");
     if(data && data.length){
-      const extra = data.map(d => ({id:d.slug, nome:d.nome, foto:d.foto_url || "img/fabiola.jpg", bio: [d.especialidades, d.bio].filter(Boolean).join(". "), formacao: (d.formacao||"").split("\n").map(s=>s.trim()).filter(Boolean)}));
+      const extra = data.map(d => ({id:d.slug, nome:d.nome, foto:d.foto_url || "img/fabiola.jpg", bio: [d.especialidades, d.bio].filter(Boolean).join(". "), formacao: (d.formacao||"").split("\n").map(s=>s.trim()).filter(Boolean), insta: d.instagram || ""}));
       const ids = new Set(extra.map(e=>e.id));
       // mesma nutri já fixa no site com outro link (ex.: "fabiola" e "fabiola-amorim"): fica só a do cadastro
       const nm = s => (s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();

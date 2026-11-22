@@ -69,6 +69,7 @@ a.btn{text-decoration:none;display:inline-block}.mini{padding:7px 12px;font-size
       <p class="mut" id="st-txt" style="margin:6px 0 10px"></p>
       <div class="link" id="meu-link"></div>
       <div class="row"><button class="btn" id="b-copy">Copiar link</button><a class="btn line" id="b-share" target="_blank" rel="noopener">Enviar no WhatsApp</a></div>
+      <p class="mut" style="margin:12px 0 0;font-size:13px">📲 <b>Instagram:</b> cole esse link na sua bio (Editar perfil → Links → Adicionar link externo). Quem tocar cai na vitrine com você já escolhida.</p>
     </div>
 
     <h2>Seu perfil</h2>
@@ -79,6 +80,7 @@ a.btn{text-decoration:none;display:inline-block}.mini{padding:7px 12px;font-size
       </div>
       <label for="f-nome">Nome como vai aparecer</label><input id="f-nome" maxlength="80" placeholder="Ex.: Fabíola Amorim">
       <label for="f-zap">Seu WhatsApp (com DDD)</label><input id="f-zap" type="tel" maxlength="20">
+      <label for="f-insta">Seu Instagram (opcional)</label><input id="f-insta" maxlength="80" placeholder="@seuperfil" autocapitalize="off" autocomplete="off">
       <label for="f-esp">Especialidades</label><input id="f-esp" maxlength="200" placeholder="Ex.: Emagrecimento · Hipertrofia · Nutrição esportiva">
       <label for="f-form">Formação (uma por linha)</label><textarea id="f-form" maxlength="600" placeholder="Graduada em Nutrição&#10;Pós-graduada em ..."></textarea>
       <label for="f-bio">Apresentação</label><textarea id="f-bio" maxlength="600"></textarea>
@@ -123,7 +125,7 @@ async function show(session){
   const { data } = await sb.from("fr_nutris").select("*").eq("user_id", user.id).maybeSingle();
   perfil = data; fotoUrl = data?.foto_url || null;
   $("f-nome").value = data?.nome || ""; $("f-zap").value = data?.whatsapp || "";
-  $("f-esp").value = data?.especialidades || ""; $("f-form").value = data?.formacao || ""; $("f-bio").value = data?.bio || "";
+  $("f-esp").value = data?.especialidades || ""; $("f-form").value = data?.formacao || ""; $("f-bio").value = data?.bio || ""; $("f-insta").value = data?.instagram ? "@" + data.instagram : "";
   $("foto-prev").src = fotoUrl || "";
   drawLink(); loadPeds(); loadAnams();
 }
@@ -198,11 +200,14 @@ $("foto").onchange = async () => {
   $("foto-prev").src = fotoUrl; $("st-save").textContent = "Foto pronta. Toque em Salvar perfil.";
 };
 
+const normInsta = s => { s = String(s||"").trim().replace(/^https?:\/\/(www\.)?instagram\.com\//i,"").replace(/^@+/,"").replace(/[/?#].*$/,""); return /^[A-Za-z0-9._]{1,30}$/.test(s) ? s : ""; };
 $("b-save").onclick = async () => {
   const nome = $("f-nome").value.trim();
   if(nome.length < 2){ $("st-save").textContent = "Coloque o seu nome."; return; }
+  const insta = normInsta($("f-insta").value);
+  if($("f-insta").value.trim() && !insta){ $("st-save").textContent = "Confira o Instagram: use só o @, por exemplo @seuperfil."; return; }
   const dados = { nome, whatsapp: $("f-zap").value.replace(/\D/g,"").slice(0,20) || null, especialidades: $("f-esp").value.trim() || null,
-    formacao: $("f-form").value.trim() || null, bio: $("f-bio").value.trim() || null, foto_url: fotoUrl };
+    formacao: $("f-form").value.trim() || null, bio: $("f-bio").value.trim() || null, foto_url: fotoUrl, instagram: insta || null };
   $("st-save").textContent = "Salvando…"; $("b-save").disabled = true;
   const lento = setTimeout(() => { $("st-save").textContent = "Está demorando… confira a internet e toque em Salvar perfil de novo."; $("b-save").disabled = false; }, 15000);
   let res;
