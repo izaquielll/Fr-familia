@@ -305,7 +305,7 @@ function calc(){
 const perguntaAluno = () => { const isAv = S.id.startsWith("pl-"), PP = isAv ? plano(S.programa) : null;
   return S.id==="consultoria" || S.id==="combo" || (isAv && (S.guia || !!(PP||{}).nutri_slug) && !(PP && PP.nutri_zap)); };
 function perguntaCliente(promo){
-  return `<div class="fld"><span class="lb">Você já é cliente da Família FR?</span><div class="opts">
+  return `<div class="fld"><span class="lb">Você já é cliente?</span><div class="opts">
       <label class="opt"><input type="radio" name="aluno" value="sim" ${S.aluno==="sim"?"checked":""}><span class="t"><b>Sim, já sou cliente</b><span>${promo && !S.id.startsWith("pl-") ? `Renovando: ${C.promoNome} para pagamentos até ${fmtD(C.promoAte)}` : "Vai direto para o WhatsApp"}</span></span></label>
       <label class="opt"><input type="radio" name="aluno" value="nao" ${S.aluno==="nao"?"checked":""}><span class="t"><b>Não, sou cliente novo</b><span>${promo && !S.id.startsWith("pl-") ? "Valor normal do plano" : "Começa pela anamnese"}</span></span></label></div></div>`;
 }
@@ -390,7 +390,7 @@ document.addEventListener("click", e => {
     const err = document.getElementById("f-err");
     if(!S.nome || !S.nome.trim()){ err.textContent="Coloque o seu nome."; return; }
     if(S.id==="convite" && !(S.indicado||"").trim()){ err.textContent="Diga quem te indicou."; return; }
-    if(perguntaAluno() && !S.aluno){ err.textContent="Diga se você já é cliente da Família FR."; return; }
+    if(perguntaAluno() && !S.aluno){ err.textContent="Diga se você já é cliente."; return; }
     const PP = S.id.startsWith("pl-") ? plano(S.programa) : null;
     const num = String((PP && PP.nutri_zap) || C.whatsapp || "").replace(/\D/g,"");
     if(!num){ err.textContent="O WhatsApp ainda não foi configurado."; return; }
