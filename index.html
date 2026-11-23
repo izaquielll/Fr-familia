@@ -223,7 +223,7 @@ footer{border-top:1px solid var(--line);margin-top:56px;padding:26px 0 40px;colo
 /* ===== Valores padrão (usados quando o painel ainda não foi salvo ou não carrega) ===== */
 const DEFAULTS = {
   consultoria: 200, consultoriaPromo: 150, consultoriaNovo: 167, descRenovaCombo: 30,
-  nutri: 250, comboPromo: 250,
+  nutri: 250, comboPromo: 250, trimestralPromo: 240,
   convite: 200, conviteAte: "2026-12-31",
   promoNome: "Black Friday", promoAte: "2026-12-31",
   avulso: 67, avulsoGuia: 80,
@@ -273,6 +273,9 @@ function render(){
     C.mostrarCombo===false ? null : {id:"combo", cls:"lime", arte:"combo", bg:"img/fr-barra.webp", tag: promo? C.promoNome : "Mais completo", nome:"Consultoria + Nutri",
      itens:["Tudo da consultoria","Avaliação presencial","Avaliação de treino (1 treino)","Plano alimentar com a nutricionista que você escolher","2 atualizações do plano alimentar no ciclo",`Após 60 dias: renove com ${C.descRenovaCombo}% off sobre ${brl(combo)}`],
      de: combo, v: promo? C.comboPromo : combo, per: promo? `pagando até ${fmtD(C.promoAte)} · ciclo de 60 dias` : `R$ ${C.consultoria} da consultoria + R$ ${C.nutri} da nutri`},
+    (promo && C.trimestralPromo>0 && C.mostrarConsultoria!==false) ? {id:"trimestral", cls:"lime", bg:"img/fr-frente.webp", tag: C.promoNome+" · Trimestral", nome:"Consultoria Trimestral",
+     itens:["90 dias de acompanhamento","Treino montado pra você no app MFIT","Avaliação online e anamnese completas","Suporte e correção no WhatsApp"],
+     de: null, pre:"Só na "+C.promoNome, v: Math.round(C.trimestralPromo/3), per:`por mês · ${brl(C.trimestralPromo)} pelos 90 dias · até ${fmtD(C.promoAte)}`} : null,
   ].filter(Boolean);
   if(conv && C.mostrarConvite!==false) cards.push({id:"convite", cls:"or", arte:"convite", bg:"img/fr-barra.webp", tag:"Convite de aluno · 100% online", nome:"Consultoria + Nutri Online",
      itens:["<b>100% online: sem avaliação presencial</b>","Para quem foi indicado por um aluno","Avaliação online e anamnese completas","Treino no MFIT e plano alimentar com a nutri"],
@@ -296,7 +299,7 @@ function render(){
 let S = {};
 function open(id){
   const pre = [REF, COM].find(x => x && NUTRIS.some(n=>n.id===x));
-  S = {id, aluno: "", nutri: pre || NUTRIS[0].id, guia: false, comNutri: id==="combo"||id==="convite"};
+  S = {id: id==="trimestral" ? "consultoria" : id, tri: id==="trimestral", aluno: "", nutri: pre || NUTRIS[0].id, guia: false, comNutri: id==="combo"||id==="convite"};
   if(id.startsWith("pl-")){ S.programa = id.slice(3); const p = plano(S.programa); if(p && p.nutri_slug) S.nutri = p.nutri_slug; }
   // link do FR com nutri escolhida (?com=): o plano já abre com a nutri incluída
   if(COM && pre === COM && !REF){ if(id==="consultoria") S.comNutri = true; if(id.startsWith("pl-")) S.guia = true; }
@@ -315,6 +318,7 @@ function calc(){
   const promo = ativo(C.promoAte), combo = C.consultoria + C.nutri;
   if(S.id==="consultoria"||S.id==="combo"){
     const renova = promo; // Black Friday vale para todos (novos e quem já é cliente)
+    if(S.tri && triOk()) return {nome:`Consultoria Trimestral (${C.promoNome})`, v: C.trimestralPromo, de: null, per:`90 dias · ${brl(Math.round(C.trimestralPromo/3))}/mês`};
     if(S.comNutri) return {nome:"Consultoria + Nutri"+(renova?` (${C.promoNome})`:""), v: renova? C.comboPromo : combo, de: combo, per:"por ciclo de 60 dias"};
     const vc = !renova ? C.consultoria : (S.aluno==="nao" ? C.consultoriaNovo : C.consultoriaPromo);
     return {nome:"Consultoria Online"+(renova?` (${C.promoNome}${S.aluno==="nao"?", cliente novo":S.aluno==="sim"?", aluno":""})`:""), v: vc, de: renova? C.consultoria:null, per:"por ciclo de 60 dias"};
@@ -325,6 +329,7 @@ function calc(){
   return {nome:a.nome+(g?" + guia alimentar":""), v: g? a.preco_guia : a.preco, de: !g && a.preco_de ? a.preco_de : null, per:a.periodo||""};
 }
 
+const triOk = () => ativo(C.promoAte) && C.trimestralPromo > 0;
 /* Cliente novo responde a anamnese antes do WhatsApp; quem já é cliente vai direto */
 const perguntaAluno = () => { const isAv = S.id.startsWith("pl-"), PP = isAv ? plano(S.programa) : null;
   return S.id==="consultoria" || S.id==="combo" || (isAv && (S.guia || !!(PP||{}).nutri_slug) && !(PP && PP.nutri_zap)); };
@@ -344,7 +349,8 @@ function drawSheet(){
     h += perguntaCliente(promo);
     const renova = promo; // Black Friday vale para todos (novos e quem já é cliente)
     h += `<div class="fld"><span class="lb">Plano</span><div class="opts">
-      <label class="opt"><input type="radio" name="comNutri" value="0" ${!S.comNutri?"checked":""}><span class="t"><b>Só consultoria</b><span>Treino no MFIT + suporte${renova?` · ${brl(C.consultoriaPromo)} renovando, ${brl(C.consultoriaNovo)} cliente novo`:""}</span></span><span class="p">${brl(!renova?C.consultoria:(S.aluno==="nao"?C.consultoriaNovo:C.consultoriaPromo))}</span></label>
+      <label class="opt"><input type="radio" name="comNutri" value="0" ${!S.comNutri&&!S.tri?"checked":""}><span class="t"><b>Só consultoria · 60 dias</b><span>Treino no MFIT + suporte${renova?` · ${brl(C.consultoriaPromo)} renovando, ${brl(C.consultoriaNovo)} cliente novo`:""}</span></span><span class="p">${brl(!renova?C.consultoria:(S.aluno==="nao"?C.consultoriaNovo:C.consultoriaPromo))}</span></label>
+      ${triOk()?`<label class="opt"><input type="radio" name="comNutri" value="t" ${S.tri?"checked":""}><span class="t"><b>Só consultoria · trimestral (90 dias)</b><span>${C.promoNome}: ${brl(Math.round(C.trimestralPromo/3))}/mês, pagamento único</span></span><span class="p">${brl(C.trimestralPromo)}</span></label>`:""}
       <label class="opt"><input type="radio" name="comNutri" value="1" ${S.comNutri?"checked":""}><span class="t"><b>Consultoria + Nutri</b><span>Avaliação presencial + avaliação de treino + plano alimentar com 2 atualizações</span></span><span class="p">${brl(renova?C.comboPromo:combo)}</span></label></div></div>`;
     if(S.comNutri) h += `<div class="fld"><span class="lb">Nutricionista</span><div class="opts">${nutriOpts}</div></div>`;
   }
@@ -467,7 +473,7 @@ document.addEventListener("click", e => {
 document.addEventListener("change", e => {
   const t = e.target; if(!t.closest("#sheet")) return;
   if(t.name==="aluno") S.aluno=t.value;
-  if(t.name==="comNutri") S.comNutri = t.value==="1";
+  if(t.name==="comNutri"){ S.comNutri = t.value==="1"; S.tri = t.value==="t"; }
   if(t.name==="nutri") S.nutri=t.value;
   if(t.name==="programa") S.programa=t.value;
   if(t.name==="guia") S.guia = t.value==="1";
@@ -508,7 +514,7 @@ const PLANO_Q = (new URLSearchParams(location.search).get("plano")||"").toLowerC
 let planoAberto = false;
 function abrirDoLink(){
   if(planoAberto || !PLANO_Q) return;
-  const core = {consultoria:"consultoria", combo:"combo", nutri:"combo", convite:"convite"}[PLANO_Q];
+  const core = {consultoria:"consultoria", combo:"combo", nutri:"combo", convite:"convite", trimestral:"trimestral"}[PLANO_Q];
   const id = core || (plano(PLANO_Q) ? "pl-"+PLANO_Q : (PLANO_Q==="hiit" && plano("metabolica") ? "pl-metabolica" : null));
   if(!id || (id==="convite" && !ativo(C.conviteAte))) return;
   planoAberto = true; (window.FRDepoisDaAbertura || (f=>f()))(() => setTimeout(()=>open(id), 200));
