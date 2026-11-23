@@ -222,7 +222,7 @@ footer{border-top:1px solid var(--line);margin-top:56px;padding:26px 0 40px;colo
 <script>
 /* ===== Valores padrão (usados quando o painel ainda não foi salvo ou não carrega) ===== */
 const DEFAULTS = {
-  consultoria: 200, consultoriaPromo: 150, consultoriaNovo: 167, descRenovaCombo: 30,
+  consultoria: 200, consultoriaNovoNormal: 250, consultoriaPromo: 150, consultoriaNovo: 167, descRenovaCombo: 30,
   nutri: 250, comboPromo: 250, trimestralPromo: 240,
   convite: 200, conviteAte: "2026-12-31",
   promoNome: "Black Friday", promoAte: "2026-12-31",
@@ -317,7 +317,7 @@ function calc(){
     const renova = promo; // Black Friday vale para todos (novos e quem já é cliente)
     if(S.tri && S.privado && triOk()) return {nome:`Consultoria Trimestral (${C.promoNome})`, v: C.trimestralPromo, de: null, per:`90 dias · ${brl(Math.round(C.trimestralPromo/3))}/mês`};
     if(S.comNutri) return {nome:"Consultoria + Nutri"+(renova?` (${C.promoNome})`:""), v: renova? C.comboPromo : combo, de: combo, per:"por ciclo de 60 dias"};
-    const vc = !renova ? C.consultoria : (S.aluno==="nao" ? C.consultoriaNovo : C.consultoriaPromo);
+    const vc = !renova ? (S.aluno==="nao" ? (C.consultoriaNovoNormal||C.consultoria) : C.consultoria) : (S.aluno==="nao" ? C.consultoriaNovo : C.consultoriaPromo);
     return {nome:"Consultoria Online"+(renova?` (${C.promoNome}${S.aluno==="nao"?", cliente novo":S.aluno==="sim"?", aluno":""})`:""), v: vc, de: renova? C.consultoria:null, per:"por ciclo de 60 dias"};
   }
   if(S.id==="convite") return {nome:"Consultoria + Nutri Online (convite de aluno)", v:C.convite, de:combo, per:"1º ciclo de 60 dias"};
@@ -346,7 +346,7 @@ function drawSheet(){
     h += perguntaCliente(promo);
     const renova = promo; // Black Friday vale para todos (novos e quem já é cliente)
     h += `<div class="fld"><span class="lb">Plano</span><div class="opts">
-      <label class="opt"><input type="radio" name="comNutri" value="0" ${!S.comNutri&&!S.tri?"checked":""}><span class="t"><b>Só consultoria · 60 dias</b><span>Treino no MFIT + suporte${renova?` · ${brl(C.consultoriaPromo)} renovando, ${brl(C.consultoriaNovo)} cliente novo`:""}</span></span><span class="p">${brl(!renova?C.consultoria:(S.aluno==="nao"?C.consultoriaNovo:C.consultoriaPromo))}</span></label>
+      <label class="opt"><input type="radio" name="comNutri" value="0" ${!S.comNutri&&!S.tri?"checked":""}><span class="t"><b>Só consultoria · 60 dias</b><span>Treino no MFIT + suporte${renova?` · ${brl(C.consultoriaPromo)} renovando, ${brl(C.consultoriaNovo)} cliente novo`:(C.consultoriaNovoNormal>C.consultoria?` · ${brl(C.consultoria)} aluno, ${brl(C.consultoriaNovoNormal)} cliente novo`:"")}</span></span><span class="p">${brl(!renova?(S.aluno==="nao"?(C.consultoriaNovoNormal||C.consultoria):C.consultoria):(S.aluno==="nao"?C.consultoriaNovo:C.consultoriaPromo))}</span></label>
       ${triOk()&&S.privado?`<label class="opt"><input type="radio" name="comNutri" value="t" ${S.tri?"checked":""}><span class="t"><b>Só consultoria · trimestral (90 dias)</b><span>${C.promoNome}: ${brl(Math.round(C.trimestralPromo/3))}/mês, pagamento único</span></span><span class="p">${brl(C.trimestralPromo)}</span></label>`:""}
       <label class="opt"><input type="radio" name="comNutri" value="1" ${S.comNutri?"checked":""}><span class="t"><b>Consultoria + Nutri</b><span>Avaliação presencial + avaliação de treino + plano alimentar com 2 atualizações</span></span><span class="p">${brl(renova?C.comboPromo:combo)}</span></label></div></div>`;
     if(S.comNutri) h += `<div class="fld"><span class="lb">Nutricionista</span><div class="opts">${nutriOpts}</div></div>`;
