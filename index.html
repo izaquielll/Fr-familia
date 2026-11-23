@@ -95,6 +95,15 @@ section{padding:56px 0 8px}
 .price .v{font-size:44px;font-weight:800;line-height:1;color:var(--acc)}
 .price .v small{font-size:18px;color:var(--tx);margin-right:4px}
 .price .per{font-size:13px;color:var(--mut);margin-top:4px}
+/* Black Friday: fila de espera com preços escondidos até a abertura */
+.price .v.lk{font-size:30px;color:var(--tx)}
+.bf{margin-top:22px;background:var(--s1);border:1px solid var(--line);border-radius:18px;padding:16px;display:grid;gap:12px;max-width:520px}
+.bf .t{font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--lime)}
+.bf .cd{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.bf .cd div{background:var(--s2);border-radius:12px;padding:10px 4px;text-align:center}
+.bf .cd b{display:block;font-size:30px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.bf .cd span{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em}
+.bf p{margin:0;font-size:14px;color:var(--mut)}
 .plan .btn{background:var(--acc);color:var(--ink)}
 
 /* nutris */
@@ -228,7 +237,8 @@ const DEFAULTS = {
   promoNome: "Black Friday", promoAte: "2026-12-31",
   avulso: 67, avulsoGuia: 80,
   descConsult: 20, descCombo: 30,
-  whatsapp: "", instagram: ""
+  whatsapp: "", instagram: "",
+  precosOcultos: true, bfAbre: "2026-11-24T12:00"
 };
 const IG = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>';
 const igUrl = u => "https://instagram.com/" + encodeURIComponent(u);
@@ -248,6 +258,23 @@ const brl = n => "R$ " + Number(n).toLocaleString("pt-BR",{minimumFractionDigits
 const fmtD = s => s ? s.split("-").reverse().slice(0,2).join("/") : "";
 const ativo = ate => { if(!ate) return false; const e = new Date(ate+"T23:59:59"); return new Date() <= e; };
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+/* ===== Black Friday: até abrir, a vitrine não mostra preços e o botão leva para a fila de espera ===== */
+const abreEm = () => { const v = String(C.bfAbre||DEFAULTS.bfAbre); const d = new Date(/[zZ]|[+-]\d\d:\d\d$/.test(v) ? v : v + (v.length===16?":00":"") + "-03:00"); return isNaN(d) ? 0 : d.getTime(); };
+const travado = () => C.precosOcultos !== false && Date.now() < abreEm();
+const abreTxt = () => { const d = new Date(abreEm() - 3*3600e3); return `${String(d.getUTCDate()).padStart(2,"0")}/${String(d.getUTCMonth()+1).padStart(2,"0")} às ${d.getUTCHours()}h${d.getUTCMinutes()?String(d.getUTCMinutes()).padStart(2,"0"):""}`; };
+const zapFR = () => { const n = String(C.whatsapp || "22997322604").replace(/\D/g,""); return n.startsWith("55") ? n : "55"+n; };
+function entrarNaFila(nomePlano){
+  const m = `Oi! EU QUERO entrar na fila de espera da Black Friday da Família FR${nomePlano?` (${nomePlano})`:""}.`;
+  const a = document.createElement("a"); a.href = `https://wa.me/${zapFR()}?text=${encodeURIComponent(m)}`; a.target="_blank"; a.rel="noopener";
+  document.body.appendChild(a); a.click(); a.remove();
+}
+function contagem(){
+  const el = document.getElementById("bf-cd"); if(!el) return;
+  const t = Math.max(0, Math.floor((abreEm() - Date.now())/1000)), p = n => String(n).padStart(2,"0");
+  el.innerHTML = [[Math.floor(t/86400),"dias"],[Math.floor(t%86400/3600),"horas"],[Math.floor(t%3600/60),"min"],[t%60,"seg"]].map(([n,l])=>`<div><b>${p(n)}</b><span>${l}</span></div>`).join("");
+}
+let eraTravado = null;
+setInterval(() => { const tv = travado(); if(eraTravado !== null && tv !== eraTravado) render(); else contagem(); }, 1000);
 
 /* ===== Vitrine ===== */
 function render(){
@@ -258,13 +285,23 @@ function render(){
     if(C.instagram){ el.href = igUrl(C.instagram); el.innerHTML = f(C.instagram); } });
   document.getElementById("hero-tag").textContent = promo ? `${C.promoNome} · até ${fmtD(C.promoAte)}` : "Consultoria online";
   document.getElementById("promo-line").innerHTML = promo ? `${C.promoNome} até ${fmtD(C.promoAte)}: consultoria por <b>${brl(C.consultoriaPromo)}</b> e com nutri por <b>${brl(C.comboPromo)}</b>.` : "";
+  const tv = travado(); eraTravado = tv;
+  if(tv){
+    document.getElementById("hero-tag").textContent = `Black Friday · abre ${abreTxt()}`;
+    document.getElementById("promo-line").innerHTML = `<div class="bf"><div class="t">Pela primeira vez: Black Friday da Família FR</div>
+      <div class="cd" id="bf-cd" aria-label="Contagem regressiva"></div>
+      <p>Treino individualizado + plano com nutricionista, avaliação e suporte no WhatsApp. Os preços aparecem aqui em <b>${abreTxt()}</b>. Entre na fila e receba primeiro.</p>
+      <button class="btn block" data-fila="">Entrar na fila de espera</button></div>`;
+    contagem();
+  }
 
   const ARTE = k => (window.FR_ARTES && window.FR_ARTES[k]) ? `<div class="arte">${window.FR_ARTES[k]}</div>` : "";
   const card = (o) => `<div class="plan ${o.cls}">${ARTE(o.arte)}${o.bg?`<img class="bg" src="${o.bg}" alt="">`:""}
-    <span class="tg">${o.tag}</span><h3>${o.nome}</h3><ul>${o.itens.map(i=>`<li>${i}</li>`).join("")}</ul>
-    <div class="price">${o.de?`<div class="de">De <s>${brl(o.de)}</s> por</div>`:`<div class="de">${o.pre||"&nbsp;"}</div>`}
+    <span class="tg">${o.tag}</span><h3>${o.nome}</h3><ul>${o.itens.filter(i=>!(travado() && /R\$|\d+% off/.test(i))).map(i=>`<li>${i}</li>`).join("")}</ul>
+    ${travado() ? `<div class="price"><div class="de">Black Friday</div><div class="v lk">🔒 ${abreTxt()}</div><div class="per">Preço liberado na abertura. Entre na fila para receber primeiro.</div></div>
+    <button class="btn block" data-fila="${esc(String(o.nome).replace(/<[^>]*>/g,""))}">Entrar na fila de espera</button></div>` : `<div class="price">${o.de?`<div class="de">De <s>${brl(o.de)}</s> por</div>`:`<div class="de">${o.pre||"&nbsp;"}</div>`}
     <div class="v"><small>R$</small>${Number(o.v).toLocaleString("pt-BR")}</div><div class="per">${o.per}</div></div>
-    <button class="btn block" data-open="${o.id}">${o.cta||"Montar meu plano"}</button></div>`;
+    <button class="btn block" data-open="${o.id}">${o.cta||"Montar meu plano"}</button></div>`}`;
 
   const cards = [
     C.mostrarConsultoria===false ? null : {id:"consultoria", cls:"lime", arte:"consultoria", bg:"img/fr-frente.webp", tag: promo? C.promoNome : "Consultoria", nome:"Consultoria Online",
@@ -295,6 +332,7 @@ function render(){
 /* ===== Montar o plano ===== */
 let S = {};
 function open(id){
+  if(travado()){ entrarNaFila(); return; } // preços ainda escondidos: vai para a fila
   const pre = [REF, COM].find(x => x && NUTRIS.some(n=>n.id===x));
   S = {id: id==="trimestral" ? "consultoria" : id, tri: id==="trimestral", privado: id==="trimestral", aluno: "", nutri: pre || NUTRIS[0].id, guia: false, comNutri: id==="combo"||id==="convite"};
   if(id.startsWith("pl-")){ S.programa = id.slice(3); const p = plano(S.programa); if(p && p.nutri_slug) S.nutri = p.nutri_slug; }
@@ -437,6 +475,7 @@ function novoToken(){
 }
 
 document.addEventListener("click", e => {
+  const fl = e.target.closest("[data-fila]"); if(fl){ entrarNaFila(fl.dataset.fila); return; }
   const o = e.target.closest("[data-open]"); if(o){ const id = o.dataset.open; (window.FRFoguete || (f=>f()))(() => open(id)); return; }
   if(e.target.closest("[data-close]") || e.target.id==="ov"){ close(); return; }
   if(e.target.closest("[data-send]")){
