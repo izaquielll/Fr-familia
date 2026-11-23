@@ -24,6 +24,8 @@ window.FRPlanos = (function(){
     lista.push({nome:"Vitrine completa", url: ref ? linkFor(base, "", ref) : base, txt:"Oi! 💪 Conheça os planos da Família FR: treino e nutrição do seu jeito. Escolha o seu aqui:"});
     if(C.mostrarConsultoria !== false) lista.push({nome:"Consultoria Online", url: linkFor(base,"consultoria",ref),
       txt: promo ? `Oi! 💪 Chegou a ${C.promoNome||"promoção"} da Família FR: renovando agora, a consultoria sai por ${brl(C.consultoriaPromo)} o ciclo de 60 dias. Monte o seu plano aqui:` : `Oi! 💪 Consultoria online da Família FR por ${brl(C.consultoria||200)} o ciclo de 60 dias. Monte o seu plano aqui:`});
+    if(promo && C.mostrarConsultoria !== false && (C.trimestralPromo ?? 240) > 0) lista.push({nome:"Consultoria Trimestral", url: linkFor(base,"trimestral",ref),
+      txt: `Oi! 💪 Só na ${C.promoNome||"promoção"}: consultoria TRIMESTRAL da Família FR por ${brl(Math.round((C.trimestralPromo ?? 240)/3))}/mês (${brl(C.trimestralPromo ?? 240)} pelos 90 dias). Monte o seu plano aqui:`});
     if(C.mostrarCombo !== false) lista.push({nome:"Consultoria + Nutri", url: linkFor(base,"combo",ref),
       txt: `Oi! 💪🥗 Treino + plano alimentar com nutricionista parceira${promo ? `, de ${brl(combo)} por ${brl(C.comboPromo)}` : ` por ${brl(combo)}`}. Monte o seu plano aqui:`});
     // Na Área do FR: todos os planos ganham a escolha da nutricionista (nenhuma vem marcada)
