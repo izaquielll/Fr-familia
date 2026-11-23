@@ -263,10 +263,49 @@ const abreEm = () => { const v = String(C.bfAbre||DEFAULTS.bfAbre); const d = ne
 const travado = () => C.precosOcultos !== false && Date.now() < abreEm();
 const abreTxt = () => { const d = new Date(abreEm() - 3*3600e3); return `${String(d.getUTCDate()).padStart(2,"0")}/${String(d.getUTCMonth()+1).padStart(2,"0")} às ${d.getUTCHours()}h${d.getUTCMinutes()?String(d.getUTCMinutes()).padStart(2,"0"):""}`; };
 const zapFR = () => { const n = String(C.whatsapp || "22997322604").replace(/\D/g,""); return n.startsWith("55") ? n : "55"+n; };
-function entrarNaFila(nomePlano){
+/* Fila de espera: pré-cadastro (nome, nascimento, sexo, e-mail e celular) salvo na tabela fr_fila */
+let FILA = null;
+function zapFila(nomePlano){
   const m = `Oi! EU QUERO entrar na fila de espera da Black Friday da Família FR${nomePlano?` (${nomePlano})`:""}.`;
   const a = document.createElement("a"); a.href = `https://wa.me/${zapFR()}?text=${encodeURIComponent(m)}`; a.target="_blank"; a.rel="noopener";
   document.body.appendChild(a); a.click(); a.remove();
+}
+function entrarNaFila(nomePlano){
+  S = {}; FILA = { plano: nomePlano || "" };
+  const hoje = new Date().toISOString().slice(0,10);
+  document.getElementById("sheet").innerHTML = `<button class="voltar" data-close type="button">← Voltar aos planos</button><div class="top"><h3>Fila de espera</h3><button class="x" data-close aria-label="Fechar">✕</button></div>
+    <p class="mut" style="margin:0">Faça o seu pré-cadastro e receba primeiro quando os preços da Black Friday abrirem${nomePlano?` (<b>${esc(nomePlano)}</b>)`:""}.</p>
+    <div class="fld"><label for="q-nome">Nome completo</label><input type="text" id="q-nome" autocomplete="name" maxlength="120"></div>
+    <div class="fld"><label for="q-nasc">Data de nascimento</label><input type="date" id="q-nasc" autocomplete="bday" min="1930-01-01" max="${hoje}"></div>
+    <div class="fld"><span class="lb">Sexo</span><div class="opts" style="grid-template-columns:1fr 1fr">
+      <label class="opt"><input type="radio" name="q-sexo" value="feminino"><span class="t"><b>Feminino</b></span></label>
+      <label class="opt"><input type="radio" name="q-sexo" value="masculino"><span class="t"><b>Masculino</b></span></label></div></div>
+    <div class="fld"><label for="q-email">E-mail</label><input type="email" id="q-email" autocomplete="email" inputmode="email" placeholder="voce@email.com" maxlength="200"></div>
+    <div class="fld"><label for="q-cel">Celular (WhatsApp com DDD)</label><input type="tel" id="q-cel" autocomplete="tel" inputmode="tel" placeholder="(22) 99999-9999" maxlength="20"></div>
+    <div id="q-err" class="err"></div>
+    <button class="btn block" style="margin-top:14px" data-fila-send>Entrar na fila</button>`;
+  document.getElementById("ov").classList.remove("hidden"); document.body.style.overflow="hidden";
+  document.getElementById("sheet").scrollTop = 0;
+  try{ if(!(history.state && history.state.frPlano)) history.pushState({frPlano:1}, ""); }catch(e){}
+}
+async function enviarFila(b){
+  const v = id => (document.getElementById(id)?.value || "").trim(), err = document.getElementById("q-err");
+  const nome = v("q-nome").replace(/\s+/g," "), nasc = v("q-nasc"), email = v("q-email").toLowerCase();
+  const sexo = document.querySelector('input[name="q-sexo"]:checked')?.value || "";
+  let cel = v("q-cel").replace(/\D/g,""); if(cel.length >= 12 && cel.startsWith("55")) cel = cel.slice(2);
+  if(nome.split(" ").length < 2){ err.textContent = "Coloque o seu nome completo (nome e sobrenome)."; return; }
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(nasc) || nasc < "1930-01-01" || nasc > new Date().toISOString().slice(0,10)){ err.textContent = "Coloque a sua data de nascimento."; return; }
+  if(!sexo){ err.textContent = "Escolha masculino ou feminino."; return; }
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)){ err.textContent = "Confira o seu e-mail."; return; }
+  if(cel.length < 10 || cel.length > 11){ err.textContent = "Coloque o celular com DDD."; return; }
+  err.textContent = ""; b.disabled = true; b.textContent = "Salvando…";
+  let ok = false;
+  try{ if(sb){ const { error } = await sb.from("fr_fila").insert({ nome: nome.slice(0,120), nascimento: nasc, sexo, email: email.slice(0,200), celular: cel,
+    plano: (FILA && FILA.plano) ? FILA.plano.slice(0,120) : null, ref_nutri: (REF && NUTRIS.some(n=>n.id===REF)) ? REF : null }); ok = !error; } }catch(e){}
+  if(!ok){ b.disabled = false; b.textContent = "Entrar na fila"; err.innerHTML = `Não deu para salvar agora. Confira a internet e tente de novo, ou <a href="#" data-fila-zap style="color:var(--lime)">avise pelo WhatsApp</a>.`; return; }
+  document.getElementById("sheet").innerHTML = `<div class="top"><h3>Você está na fila! 🎉</h3><button class="x" data-close aria-label="Fechar">✕</button></div>
+    <p class="mut">Pronto, ${esc(nome.split(" ")[0])}. Quando os preços da Black Friday abrirem em <b>${abreTxt()}</b>, você recebe primeiro.</p>
+    <button class="btn block" style="margin-top:14px" data-close>Voltar aos planos</button>`;
 }
 function contagem(){
   const el = document.getElementById("bf-cd"); if(!el) return;
@@ -476,6 +515,8 @@ function novoToken(){
 
 document.addEventListener("click", e => {
   const fl = e.target.closest("[data-fila]"); if(fl){ entrarNaFila(fl.dataset.fila); return; }
+  const fs = e.target.closest("[data-fila-send]"); if(fs){ enviarFila(fs); return; }
+  if(e.target.closest("[data-fila-zap]")){ e.preventDefault(); zapFila(FILA && FILA.plano); return; }
   const o = e.target.closest("[data-open]"); if(o){ const id = o.dataset.open; (window.FRFoguete || (f=>f()))(() => open(id)); return; }
   if(e.target.closest("[data-close]") || e.target.id==="ov"){ close(); return; }
   if(e.target.closest("[data-send]")){

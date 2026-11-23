@@ -73,6 +73,9 @@ a.btn{text-decoration:none;display:inline-block}
     <h2>Nutricionistas parceiras</h2>
     <p class="mut" style="margin:0">Elas se cadastram em <b>nutri.html</b>. Só aparecem na vitrine depois que você aprovar.</p>
     <div class="card" id="nutris"><span class="mut">Carregando…</span></div>
+    <h2>Fila de espera</h2>
+    <p class="mut" style="margin:0">Pré-cadastros feitos na vitrine pelo botão <b>Entrar na fila de espera</b>. As nutris aprovadas também veem esta lista.</p>
+    <div class="card" id="fila"><span class="mut">Carregando…</span></div>
     <h2>Pedidos recebidos</h2>
     <p class="mut" style="margin:0">Quando o Pix cair, toque em <b>Confirmar Pix</b>. Nos planos com nutri, isso libera a anamnese do cliente para a nutricionista.</p>
     <div class="card" id="peds"><span class="mut">Carregando…</span></div>
@@ -82,6 +85,7 @@ a.btn{text-decoration:none;display:inline-block}
 <script src="config.js"></script>
 <script src="planos.js?v=20261120c"></script>
 <script src="anamnese.js?v=20261122b"></script>
+<script src="fila.js?v=20261123a"></script>
 <script>
 const sb = window.supabase.createClient(FR_CONFIG.url, FR_CONFIG.key);
 const FIELDS = [
@@ -105,7 +109,7 @@ async function show(session){
   const { data } = await sb.from("fr_config").select("dados").eq("id",1).maybeSingle();
   C = data?.dados || {};
   $("form").innerHTML = FIELDS.map(([t,fs])=>`<h3 style="font-size:15px;margin:14px 0 0">${t}</h3><div class="g">${fs.map(([k,l,ty])=>`${ty==="check" ? `<label style="display:flex;gap:8px;align-items:center;margin-top:14px"><input id="a-${k}" type="checkbox" style="width:auto" ${C[k]!==false?"checked":""}> ${l}</label>` : `<div><label for="a-${k}">${l}</label><input id="a-${k}" type="${ty}" ${ty==="number"?'step="0.01" min="0"':""} value="${esc(C[k])}"></div>`}`).join("")}</div>`).join("");
-  loadPeds(); loadNutris(); drawLinks();
+  loadPeds(); loadNutris(); drawLinks(); FRFila.mount($("fila"), { sb, admin: true });
   if(!planosUI) planosUI = FRPlanos.mountPlanos($("planos"), { sb, admin: true, onChange: drawLinks }); else planosUI.reload();
 }
 let PEDIDOS_FR = [], ANAMN_FR = {};

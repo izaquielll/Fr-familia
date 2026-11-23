@@ -98,6 +98,10 @@ a.btn{text-decoration:none;display:inline-block}.mini{padding:7px 12px;font-size
       <div class="card" id="planos"></div>
     </div>
 
+    <h2>Fila de espera</h2>
+    <p class="mut" style="margin:0">Quem fez o pré-cadastro na vitrine para a Black Friday. Toque em <b>WhatsApp</b> para falar com a pessoa.</p>
+    <div class="card" id="fila"><span class="mut">Salve o seu perfil para começar.</span></div>
+
     <h2>Anamneses dos seus clientes</h2>
     <p class="mut" style="margin:0">Chegam aqui assim que o cliente responde e o FR confirma o Pix.</p>
     <div class="card" id="anams"><span class="mut">Salve o seu perfil para começar.</span></div>
@@ -111,6 +115,7 @@ a.btn{text-decoration:none;display:inline-block}.mini{padding:7px 12px;font-size
 <script src="config.js"></script>
 <script src="planos.js?v=20261120c"></script>
 <script src="anamnese.js?v=20261122b"></script>
+<script src="fila.js?v=20261123a"></script>
 <script>
 const sb = window.supabase.createClient(FR_CONFIG.url, FR_CONFIG.key);
 const $ = id => document.getElementById(id);
@@ -130,7 +135,12 @@ async function show(session){
   $("f-nome").value = data?.nome || ""; $("f-zap").value = data?.whatsapp || "";
   $("f-esp").value = data?.especialidades || ""; $("f-form").value = data?.formacao || ""; $("f-bio").value = data?.bio || ""; $("f-insta").value = data?.instagram ? "@" + data.instagram : "";
   $("foto-prev").src = fotoUrl || "";
-  drawLink(); loadPeds(); loadAnams();
+  drawLink(); loadPeds(); loadAnams(); loadFila();
+}
+function loadFila(){
+  if(!perfil) return;
+  if(perfil.status !== "aprovada"){ $("fila").innerHTML = `<span class="mut">A fila aparece aqui assim que a equipe FR aprovar o seu cadastro.</span>`; return; }
+  FRFila.mount($("fila"), { sb, admin: false });
 }
 let ANAMS = [];
 const vistoKey = () => "fr-anamneses-vistas-" + (user?.id || "");
