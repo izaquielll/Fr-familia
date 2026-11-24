@@ -11,6 +11,9 @@ window.FRFila = (() => {
     const blob = new Blob(["﻿" + linhas.map(l => l.map(q).join(";")).join("\r\n")], {type:"text/csv;charset=utf-8"});
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "fila-de-espera-familia-fr.csv"; document.body.appendChild(a); a.click(); a.remove();
   }
+  // Mensagem do botão WhatsApp: avisa que os planos abriram e manda o link da vitrine (com a marca da nutri, se veio pelo link dela)
+  const vitrine = p => new URL("./", location.href).href + (p.ref_nutri ? "?nutri=" + encodeURIComponent(p.ref_nutri) : "");
+  const msg = p => `Oi, ${String(p.nome).trim().split(/\s+/)[0]}! Aqui é da Família FR 💪 Você entrou na nossa fila de espera e os planos da Black Friday já estão disponíveis 🖤🔥${p.plano ? ` Você marcou interesse em: ${p.plano}.` : ""} Escolha o seu aqui: ${vitrine(p)}`;
   async function mount(el, { sb, admin }){
     el.innerHTML = `<span class="mut">Carregando…</span>`;
     const { data, error } = await sb.from("fr_fila").select("*").order("created_at",{ascending:false}).limit(1000);
@@ -22,7 +25,7 @@ window.FRFila = (() => {
       el.innerHTML = `<div class="row" style="margin-top:0"><b>${L.length} ${L.length===1?"pessoa":"pessoas"} na fila</b><span class="mut" style="font-size:13px">${f} feminino · ${L.length-f} masculino</span><button class="btn line mini" data-fila-csv style="margin-left:auto">Baixar planilha</button></div>` +
         L.map(p => `<div class="ped"><b>${esc(p.nome)}</b><span class="tag">${p.sexo==="feminino"?"Feminino":"Masculino"}</span><span class="tag">Nasc. ${dataBR(p.nascimento)} · ${idade(p.nascimento)} anos</span>${p.plano?`<span class="tag">${esc(p.plano)}</span>`:""}${p.ref_nutri?`<span class="tag">Link da nutri: ${esc(p.ref_nutri)}</span>`:""}
           <div class="mut" style="font-size:13px">${esc(p.email)} · ${celBR(p.celular)} · entrou em ${new Date(p.created_at).toLocaleString("pt-BR")}</div>
-          <div class="row" style="margin-top:8px"><a class="btn line mini" target="_blank" rel="noopener" href="https://wa.me/${zap(p.celular)}?text=${encodeURIComponent(`Oi, ${String(p.nome).split(" ")[0]}! Aqui é da Família FR 💪`)}">WhatsApp</a>${admin?`<button class="btn line mini del" data-fila-del="${p.id}">Excluir</button>`:""}</div></div>`).join("");
+          <div class="row" style="margin-top:8px"><a class="btn line mini" target="_blank" rel="noopener" href="https://wa.me/${zap(p.celular)}?text=${encodeURIComponent(msg(p))}">WhatsApp</a>${admin?`<button class="btn line mini del" data-fila-del="${p.id}">Excluir</button>`:""}</div></div>`).join("");
     };
     draw();
     el.onclick = async e => {
