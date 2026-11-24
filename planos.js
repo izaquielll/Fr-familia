@@ -22,6 +22,17 @@ window.FRPlanos = (function(){
     const combo = (C.consultoria||200) + (C.nutri||250), combo_v = combo;
     const lista = [];
     lista.push({nome:"Vitrine completa", url: ref ? linkFor(base, "", ref) : base, txt:"Oi! 💪 Conheça os planos da Família FR: treino e nutrição do seu jeito. Escolha o seu aqui:"});
+    // Aviso da Black Friday (FR e nutris): capa da vitrine; pelo link da nutri, a fila e os pedidos ficam marcados com ela
+    if(promo){
+      const abre = (v => { v = String(v||""); const d = new Date(/[zZ]|[+-]\d\d:\d\d$/.test(v) ? v : v + (v.length===16?":00":"") + "-03:00"); return isNaN(d) ? null : d; })(C.bfAbre || "2026-11-24T12:00");
+      const antes = abre && Date.now() < abre.getTime() && C.precosOcultos !== false;
+      const quando = !abre ? "" : (b => { const dia = `${String(b.getUTCDate()).padStart(2,"0")}/${String(b.getUTCMonth()+1).padStart(2,"0")}`, h = `${b.getUTCHours()}h${b.getUTCMinutes()?String(b.getUTCMinutes()).padStart(2,"0"):""}`;
+        const hoje = new Date(Date.now() - 3*3600e3), am = new Date(hoje.getTime() + 864e5); const mesmo = x => x.getUTCDate()===b.getUTCDate() && x.getUTCMonth()===b.getUTCMonth();
+        return (mesmo(hoje) ? `hoje (${dia})` : mesmo(am) ? `amanhã (${dia})` : `dia ${dia}`) + ` às ${h}`; })(new Date(abre.getTime() - 3*3600e3));
+      lista.push({nome:"📣 Aviso da Black Friday", url: base + "bf/" + (ref ? "?nutri=" + encodeURIComponent(ref) : ""),
+        txt: antes ? `🖤🔥 Vem aí a primeira Black Friday da Família FR! Os preços abrem ${quando}. Treino e nutrição do seu jeito, com a equipe FR. Entre na fila de espera e receba primeiro:`
+                   : `🖤🔥 Começou a Black Friday da Família FR! Treino e nutrição do seu jeito, com a equipe FR${C.promoAte ? `, com preços especiais até ${String(C.promoAte).split("-").reverse().slice(0,2).join("/")}` : ""}. Escolha o seu plano aqui:`});
+    }
     // Só na Área do FR: página onde os alunos geram o cupom (capa: img/og/cupom.jpg)
     if(!ref && C.cupomAtivo !== false) lista.push({nome:"🎟️ Cupom de aluno (o aluno gera o dele)", url: base + "cupom.html",
       txt: "Oi! 💚 Obrigado pelo companheirismo de sempre! Gere aqui o seu cupom de aluno da Família FR, use no seu plano e passe para os amigos:"});
