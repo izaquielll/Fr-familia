@@ -153,26 +153,16 @@ def gerar():
             foto = Image.open(os.path.join(RAIZ, "img/fabiola.jpg"))
         fotos.append((n.get("nome") or "", foto))
     if fotos:
-        D, passo = 104, 92
-        total = D + passo * (len(fotos) - 1)
-        x0 = 1170 - total
-        yb = 430
-        # faixa escura para os nomes ficarem legíveis sobre a foto
-        faixa = Image.new("RGBA", img.size, (0, 0, 0, 0))
-        ImageDraw.Draw(faixa).rounded_rectangle(((x0 - 18) * S, (yb - 14) * S, 1188 * S, 612 * S), radius=22 * S, fill=FUNDO + (215,), outline=LIME + (120,), width=S)
-        img.paste(faixa, (0, 0), faixa)
-        d = ImageDraw.Draw(img)
+        # embaixo dos planos, no lado esquerdo (a foto do FR fica sozinha à direita)
+        D, passo = 66, 54
         for i, (nome, foto) in enumerate(fotos):
-            c = foto_redonda(foto, D, anel=4)
-            img.paste(c, ((x0 + i * passo) * S, yb * S), c)
-        primeiros = [n.split(" ")[0] + (" " + n.split(" ")[-1] if len(n.split(" ")) > 1 else "") for n, _ in fotos]
-        nomes = " e ".join([", ".join(primeiros[:-1]), primeiros[-1]]) if len(primeiros) > 1 else primeiros[0]
-        cx = (x0 - 18 + 1188) / 2
-        fn = f("Poppins-Bold.ttf", 17)
-        while d.textlength(nomes, font=fn) > (1188 - x0 - 10) * S and fn.size > 22:
-            fn = ImageFont.truetype(os.path.join(FONTES, "Poppins-Bold.ttf"), fn.size - 2)
-        d.text((cx * S, (yb + D + 30) * S), nomes, font=fn, fill=BRANCO, anchor="ms")
-        d.text((cx * S, (yb + D + 52) * S), "Nutricionistas parceiras" if len(fotos) > 1 else "Nutricionista parceira", font=f("Poppins-Bold.ttf", 13), fill=LIME, anchor="ms")
+            c = foto_redonda(foto, D, anel=3)
+            img.paste(c, ((X + i * passo) * S, (y + 4) * S), c)
+        d = ImageDraw.Draw(img)
+        nomes = " e ".join([", ".join(n for n, _ in fotos[:-1]), fotos[-1][0]]) if len(fotos) > 1 else fotos[0][0]
+        tx = X + passo * (len(fotos) - 1) + D + 16
+        d.text((tx * S, (y + 33) * S), nomes, font=f("Poppins-Bold.ttf", 17), fill=BRANCO, anchor="ls")
+        d.text((tx * S, (y + 54) * S), "Nutricionistas parceiras" if len(fotos) > 1 else "Nutricionista parceira", font=f("Poppins-Bold.ttf", 14), fill=LIME, anchor="ls")
 
     ate = str(C.get("promoAte") or "")
     if ate:
