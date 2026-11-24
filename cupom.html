@@ -8,7 +8,7 @@
 <meta property="og:site_name" content="Família FR">
 <meta property="og:title" content="Seu cupom de aluno · Família FR">
 <meta property="og:description" content="Gere o seu cupom de aluno da Família FR, use na Consultoria e passe para os amigos.">
-<meta property="og:image" content="https://izaquielll.github.io/Fr-familia/img/og/consultoria.jpg">
+<meta property="og:image" content="https://izaquielll.github.io/Fr-familia/img/og/cupom.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:url" content="https://izaquielll.github.io/Fr-familia/cupom.html">
@@ -83,7 +83,7 @@ const $ = id => document.getElementById(id);
 const vitrine = location.origin + location.pathname.replace(/cupom\.html$/,"");
 let zapFR = "5522997322604";
 /* Descontos que o cupom mostra em cada plano (mesmos valores da vitrine, lidos do painel do FR) */
-let C = { consultoria: 200, consultoriaPromo: 150, consultoriaNovo: 167, nutri: 250, comboPromo: 250, promoAte: "2026-12-31" };
+let C = { consultoria: 200, consultoriaPromo: 150, consultoriaNovo: 167, nutri: 250, comboPromo: 250, avulso: 67, avulsoGuia: 80, promoAte: "2026-12-31" };
 const brl = n => "R$ " + Number(n).toLocaleString("pt-BR");
 function drawDesc(){
   const ativo = !C.promoAte || new Date() <= new Date(C.promoAte + "T23:59:59");
@@ -93,13 +93,13 @@ function drawDesc(){
              ["Consultoria + Nutri", "treino + plano alimentar com a nutri", combo, C.comboPromo]].filter(l => Number(l[3]) < Number(l[2]));
   const html = !ativo || !L.length ? `<p class="mut" style="font-size:13px;margin:6px 0">Os descontos do cupom valem durante as promoções da Família FR.</p>` :
     `<div class="h">Descontos do cupom</div>` + L.map(([n, sub, de, por]) => `<div class="l"><span class="pc">${Math.round((de - por) / de * 100)}% off</span><span class="n">${n}<small>${sub}</small></span><span class="v"><s>${brl(de)}</s><b>${brl(por)}</b></span></div>`).join("") +
-    `<p class="mut" style="font-size:12px;margin:8px 0 4px">${C.promoAte ? `Válido até ${C.promoAte.split("-").reverse().join("/")}. ` : ""}Os programas de 30 dias não entram no cupom.</p>`;
+    `<div class="l"><span class="pc" style="background:var(--s2);color:var(--tx)">30 dias</span><span class="n">Programas de 30 dias<small>Glúteo, Abdômen, Metabólica e HYROX</small></span><span class="v">${brl(C.avulsoGuia)} com guia<b>${brl(C.avulso)}</b></span></div>`;
   document.querySelectorAll(".desc").forEach(el => el.innerHTML = html);
 }
 drawDesc();
 sb.from("fr_config").select("dados").eq("id",1).maybeSingle().then(({data}) => {
   const d = data?.dados || {}; const n = String(d.whatsapp||"").replace(/\D/g,""); if(n) zapFR = n.startsWith("55") ? n : "55"+n;
-  ["consultoria","consultoriaPromo","consultoriaNovo","nutri","comboPromo","promoAte"].forEach(k => { if(d[k] !== undefined && d[k] !== "") C[k] = d[k]; });
+  ["consultoria","consultoriaPromo","consultoriaNovo","nutri","comboPromo","avulso","avulsoGuia","promoAte"].forEach(k => { if(d[k] !== undefined && d[k] !== "") C[k] = d[k]; });
   drawDesc();
 });
 $("b-gerar").onclick = async () => {

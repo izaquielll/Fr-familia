@@ -20,6 +20,8 @@ jobs:
         run: pip install --quiet pillow
       - name: Gerar páginas das nutris aprovadas
         run: python3 scripts/gerar_nutris.py
+      - name: Arte do cupom de aluno (descontos + nutris)
+        run: python3 scripts/arte_cupom.py
       - name: Salvar mudanças
         run: |
           git config user.name "familia-fr-robo"
