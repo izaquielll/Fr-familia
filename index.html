@@ -238,7 +238,8 @@ const DEFAULTS = {
   avulso: 67, avulsoGuia: 80,
   descConsult: 20, descCombo: 30,
   whatsapp: "", instagram: "",
-  precosOcultos: true, bfAbre: "2026-11-24T12:00"
+  precosOcultos: true, bfAbre: "2026-11-24T12:00",
+  cupom: "ALUNOFR", cupomAtivo: true
 };
 const IG = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>';
 const igUrl = u => "https://instagram.com/" + encodeURIComponent(u);
@@ -412,6 +413,10 @@ function perguntaCliente(promo){
       <label class="opt"><input type="radio" name="aluno" value="sim" ${S.aluno==="sim"?"checked":""}><span class="t"><b>Sim, já sou cliente</b><span>${promo && !S.id.startsWith("pl-") ? `Renovação com o valor de ${C.promoNome} até ${fmtD(C.promoAte)} · ` : ""}vai direto para o WhatsApp</span></span></label>
       <label class="opt"><input type="radio" name="aluno" value="nao" ${S.aluno==="nao"?"checked":""}><span class="t"><b>Não, sou cliente novo</b><span>Começa pela anamnese</span></span></label></div></div>`;
 }
+/* Cupom de aluno: só dá nome ao desconto que a promoção já dá (o preço final não muda) */
+const normCupom = s => String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toUpperCase().replace(/[^A-Z0-9]/g,"");
+const cupomCabe = () => C.cupomAtivo !== false && !!normCupom(C.cupom) && (S.id==="consultoria"||S.id==="combo") && !S.tri;
+const cupomOk = () => { if(!cupomCabe() || !S.cupom || normCupom(S.cupom) !== normCupom(C.cupom)) return null; const r = calc(); return r.de && r.de > r.v ? { codigo: normCupom(C.cupom), valor: r.de - r.v, de: r.de, pct: Math.round((r.de - r.v) / r.de * 100) } : null; };
 function drawSheet(){
   const promo = ativo(C.promoAte), isAv = S.id.startsWith("pl-"), combo = C.consultoria + C.nutri;
   const acc = (isAv||S.id==="convite") ? "var(--or)" : "var(--lime)";
@@ -449,12 +454,17 @@ function drawSheet(){
     <div class="fld"><label for="f-email">E-mail</label><input type="email" id="f-email" autocomplete="email" inputmode="email" placeholder="voce@email.com" value="${esc(S.email||"")}"><div class="note" style="margin-top:6px">Usamos para criar o seu acesso ao app de treino (MFIT).</div></div>
     <div class="fld"><label for="f-obj">Seu objetivo</label><select id="f-obj">${["","Emagrecimento","Hipertrofia","Definição","Condicionamento","Saúde e qualidade de vida"].map(o=>`<option ${S.obj===o?"selected":""} value="${o}">${o||"Escolha"}</option>`).join("")}</select></div>`;
 
+  if(cupomCabe()){ const cp = cupomOk();
+    h += `<div class="fld"><label for="f-cupom">Cupom de aluno (opcional)</label><div style="display:flex;gap:8px"><input type="text" id="f-cupom" autocapitalize="characters" autocomplete="off" maxlength="40" placeholder="Digite o seu cupom" value="${esc(S.cupom||"")}"><button class="btn" type="button" data-cupom style="flex:none;padding:0 16px">Aplicar</button></div>
+      ${cp ? `<div class="note" style="margin-top:6px;color:var(--acc,var(--lime))">✓ Cupom ${esc(cp.codigo)} aplicado: ${cp.pct}% off (−${brl(cp.valor)})</div>` : (S.cupomTentou && S.cupom ? `<div class="err">Cupom não encontrado. Confira o código${ativo(C.promoAte)?"":" (ele vale durante a promoção)"}.</div>` : "")}</div>`; }
+  const cupomR = cupomOk();
   const nutriNome = NUTRIS.find(n=>n.id===S.nutri)?.nome || (plano(S.programa)||{}).nutri_nome;
   const showNutri = S.comNutri || S.id==="convite" || (isAv && (S.guia || !!(plano(S.programa)||{}).nutri_slug));
   h += `<div class="sum" style="--acc:${acc}"><div class="row"><span class="mut">Plano</span><b style="text-align:right">${r.nome}</b></div>
     ${showNutri?`<div class="row"><span class="mut">Nutricionista</span><span>${esc(nutriNome)}</span></div>`:""}
     ${treinador() && !isAv?`<div class="row"><span class="mut">Treinador</span><span>${esc(treinador().nome)}</span></div>`:""}
-    <div class="tot"><span class="mut">${r.de&&r.de>r.v?`<s>${brl(r.de)}</s>`:""} ${r.per}</span><b>${brl(r.v)}</b></div>
+    ${cupomR?`<div class="row"><span class="mut">Valor normal</span><span>${brl(cupomR.de)}</span></div><div class="row"><span class="mut">Cupom ${esc(cupomR.codigo)} · ${cupomR.pct}% off</span><b style="color:var(--acc,var(--lime))">−${brl(cupomR.valor)}</b></div>`:""}
+    <div class="tot"><span class="mut">${!cupomR&&r.de&&r.de>r.v?`<s>${brl(r.de)}</s>`:""} ${r.per}</span><b>${brl(r.v)}</b></div>
     ${(S.id==="consultoria"||S.id==="combo") && S.comNutri?`<div class="note">📍 Inclui avaliação presencial e avaliação de treino (1 treino).<br>🔁 Após 60 dias, renove com ${C.descRenovaCombo}% de desconto sobre ${brl(combo)} (fica ${brl(Math.round(combo*(100-C.descRenovaCombo))/100)}).</div>`:""}
     ${S.id==="convite"?`<div class="note">💻 Plano 100% online: sem avaliação presencial.</div>`:""}
     ${isAv && (plano(S.programa)||{}).secao!=="nutri"?`<div class="note">🎁 Depois do programa: ${C.descConsult}% off na 1ª consultoria ou ${C.descCombo}% off na Consultoria + Nutri.</div>`:""}</div>
@@ -487,7 +497,8 @@ function resumo(){
   let m = `Olá, ${String(destino().nome||"FR").split(" ")[0]}! Vim pela vitrine da Família FR 💪\n\n*Plano:* ${r.nome}\n`;
   if(showNutri) m += `*Nutricionista:* ${nutriNome}\n`;
   if(treinador() && !isAv) m += `*Treinador:* ${treinador().nome}\n`;
-  m += `*Valor:* ${brl(r.v)} (${r.per})\n`;
+  const cpm = cupomOk();
+  m += cpm ? `*Valor:* ${brl(cpm.de)} − cupom ${cpm.codigo} ${cpm.pct}% (${brl(cpm.valor)}) = *${brl(r.v)}* (${r.per})\n` : `*Valor:* ${brl(r.v)} (${r.per})\n`;
   if(perguntaAluno() && S.aluno) m += `*Já sou cliente:* ${S.aluno==="sim"?(S.id.startsWith("pl-")?"Sim":"Sim, quero renovar"):"Não, sou cliente novo"}\n`;
   if(S.id==="convite") m += `*Indicado por:* ${S.indicado}\n`;
   m += `*Nome completo:* ${S.nome}\n`;
@@ -515,6 +526,7 @@ function novoToken(){
 
 document.addEventListener("click", e => {
   const fl = e.target.closest("[data-fila]"); if(fl){ entrarNaFila(fl.dataset.fila); return; }
+  if(e.target.closest("[data-cupom]")){ S.cupom = document.getElementById("f-cupom")?.value || ""; S.cupomTentou = true; drawSheet(); return; }
   const fs = e.target.closest("[data-fila-send]"); if(fs){ enviarFila(fs); return; }
   if(e.target.closest("[data-fila-zap]")){ e.preventDefault(); zapFila(FILA && FILA.plano); return; }
   const o = e.target.closest("[data-open]"); if(o){ const id = o.dataset.open; (window.FRFoguete || (f=>f()))(() => open(id)); return; }
@@ -557,6 +569,7 @@ document.addEventListener("change", e => {
   if(t.name==="nivel") S.nivel = t.value;
   if(t.id==="f-obj") S.obj=t.value;
   if(t.id==="f-nasc") S.nasc=t.value;
+  if(t.id==="f-cupom"){ S.cupom=t.value; S.cupomTentou=true; drawSheet(); }
   if(["aluno","comNutri","programa","guia","nutri"].includes(t.name)) drawSheet();
 });
 document.addEventListener("input", e => {
@@ -564,6 +577,7 @@ document.addEventListener("input", e => {
   if(e.target.id==="f-nasc") S.nasc=e.target.value;
   if(e.target.id==="f-email") S.email=e.target.value;
   if(e.target.id==="f-ind") S.indicado=e.target.value;
+  if(e.target.id==="f-cupom"){ S.cupom=e.target.value; S.cupomTentou=false; }
 });
 document.addEventListener("keydown", e => { if(e.key==="Escape") close(); });
 
@@ -574,7 +588,7 @@ async function salvarPedido(){
   const r = calc(), isAv = S.id.startsWith("pl-");
   const showNutri = S.comNutri || S.id==="convite" || (isAv && (S.guia || !!(plano(S.programa)||{}).nutri_slug));
   try{ const { error } = await sb.from("fr_pedidos").insert({plano:r.nome + ((nv => nv ? " · " + nv.nome : "")(isAv && (niveisDe(S.programa)||[]).find(x=>x.id===S.nivel))), valor:r.v, nutri: showNutri ? (NUTRIS.find(n=>n.id===S.nutri)?.nome||null) : null, nutri_slug: showNutri ? S.nutri : null, ref_nutri: (REF && NUTRIS.some(n=>n.id===REF)) ? REF : null,
-    nome:(S.nome||"").trim().slice(0,120), email:(S.email||"").trim().toLowerCase().slice(0,200)||null, nascimento:S.nasc||null, objetivo:S.obj||null, aluno: S.aluno||null, indicado:(S.indicado||"").trim().slice(0,120)||null, resumo: resumo().slice(0,2000), token: S.token || null}); return !error; }catch(e){ return false; }
+    nome:(S.nome||"").trim().slice(0,120), email:(S.email||"").trim().toLowerCase().slice(0,200)||null, nascimento:S.nasc||null, objetivo:S.obj||null, aluno: S.aluno||null, indicado:(S.indicado||"").trim().slice(0,120)||null, resumo: resumo().slice(0,2000), token: S.token || null, cupom: cupomOk() ? cupomOk().codigo : null}); return !error; }catch(e){ return false; }
 }
 let REF = (new URLSearchParams(location.search).get("nutri")||"").toLowerCase().replace(/[^a-z0-9-]/g,"").slice(0,40) || null;
 // ?com=<nutri>: link enviado pelo FR que já abre com essa nutri escolhida (não conta como indicação dela)
