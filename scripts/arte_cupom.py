@@ -78,26 +78,27 @@ def gerar():
         nutris = [{"nome": "Fabíola Amorim", "foto_url": None}]
 
     img = Image.new("RGB", (W * S, H * S), FUNDO)
-    # foto do FR ao fundo, à direita, apagando para a esquerda
-    fr = Image.open(os.path.join(RAIZ, "img/fr-frente.webp")).convert("RGB")
-    alto = H * S
-    fr = fr.resize((round(fr.width * alto / fr.height), alto), Image.LANCZOS)
-    x_fr = W * S - fr.width + 40 * S
-    mask = Image.new("L", fr.size, 0)
-    md = ImageDraw.Draw(mask)
-    for x in range(fr.width):
-        md.line((x, 0, x, fr.height), fill=int(255 * min(1, max(0, (x / fr.width - 0.12) / 0.5)) ** 1.6 * 0.85))
-    img.paste(fr, (x_fr, 0), mask)
-    # brilho verde e escurecimento atrás do texto
+    # brilho verde atrás do texto e atrás do FR
     brilho = Image.new("RGBA", img.size, (0, 0, 0, 0))
-    ImageDraw.Draw(brilho).ellipse((-300 * S, -260 * S, 520 * S, 420 * S), fill=LIME + (40,))
-    brilho = brilho.filter(ImageFilter.GaussianBlur(120 * S))
+    bd = ImageDraw.Draw(brilho)
+    bd.ellipse((-300 * S, -260 * S, 520 * S, 420 * S), fill=LIME + (34,))
+    bd.ellipse((720 * S, 40 * S, 1260 * S, 640 * S), fill=LIME + (60,))
+    brilho = brilho.filter(ImageFilter.GaussianBlur(110 * S))
     img.paste(brilho, (0, 0), brilho)
-    sombra = Image.new("L", img.size, 0)
-    sd = ImageDraw.Draw(sombra)
-    for x in range(W * S):
-        sd.line((x, 0, x, H * S), fill=int(200 * max(0, 1 - x / (760 * S))))
-    img.paste(Image.new("RGB", img.size, FUNDO), (0, 0), sombra)
+    # foto do FR sem camisa (a mesma do início do site), bem grande à direita
+    fr = Image.open(os.path.join(RAIZ, "img/fr-barra.webp")).convert("RGBA")
+    alto = round(1.42 * H * S)  # corta na cintura: mostra cabeça, ombros e tronco
+    fr = fr.resize((round(fr.width * alto / fr.height), alto), Image.LANCZOS)
+    a_fr = fr.getchannel("A")
+    fade = Image.new("L", fr.size, 255)  # some de leve na parte de baixo
+    fd = ImageDraw.Draw(fade)
+    for yy in range(fr.height):
+        t = (yy / S - 470) / 170
+        if t > 0:
+            fd.line((0, yy, fr.width, yy), fill=int(255 * max(0, 1 - t)))
+    from PIL import ImageChops
+    fr.putalpha(ImageChops.multiply(a_fr, fade))
+    img.paste(fr, (W * S - fr.width - 70 * S, 8 * S), fr)
 
     d = ImageDraw.Draw(img)
     X = 56
@@ -144,24 +145,34 @@ def gerar():
            font=f("Poppins-Medium.ttf", 15), fill=BRANCO, anchor="ls")
     y += 34
 
-    # nutricionistas
+    # nutricionistas: junto com o FR, na frente da foto, embaixo à direita
     fotos = []
-    for n in nutris[:4]:
+    for n in nutris[:3]:
         foto = baixar(n["foto_url"]) if n.get("foto_url") else None
         if foto is None and "fab" in (n.get("nome") or "").lower():
             foto = Image.open(os.path.join(RAIZ, "img/fabiola.jpg"))
         fotos.append((n.get("nome") or "", foto))
     if fotos:
-        D = 54
-        xx = X
+        D, passo = 104, 92
+        total = D + passo * (len(fotos) - 1)
+        x0 = 1170 - total
+        yb = 430
+        # faixa escura para os nomes ficarem legíveis sobre a foto
+        faixa = Image.new("RGBA", img.size, (0, 0, 0, 0))
+        ImageDraw.Draw(faixa).rounded_rectangle(((x0 - 18) * S, (yb - 14) * S, 1188 * S, 612 * S), radius=22 * S, fill=FUNDO + (215,), outline=LIME + (120,), width=S)
+        img.paste(faixa, (0, 0), faixa)
+        d = ImageDraw.Draw(img)
         for i, (nome, foto) in enumerate(fotos):
-            c = foto_redonda(foto, D)
-            img.paste(c, (xx * S, (y + 6) * S), c)
-            xx += D - 12
-        nomes = " e ".join([", ".join(n for n, _ in fotos[:-1]), fotos[-1][0]]) if len(fotos) > 1 else fotos[0][0]
-        tx = xx + 24
-        d.text((tx * S, (y + 30) * S), nomes, font=f("Poppins-Bold.ttf", 16), fill=BRANCO, anchor="ls")
-        d.text((tx * S, (y + 50) * S), "Nutricionistas parceiras" if len(fotos) > 1 else "Nutricionista parceira", font=f("Poppins-Bold.ttf", 13), fill=LIME, anchor="ls")
+            c = foto_redonda(foto, D, anel=4)
+            img.paste(c, ((x0 + i * passo) * S, yb * S), c)
+        primeiros = [n.split(" ")[0] + (" " + n.split(" ")[-1] if len(n.split(" ")) > 1 else "") for n, _ in fotos]
+        nomes = " e ".join([", ".join(primeiros[:-1]), primeiros[-1]]) if len(primeiros) > 1 else primeiros[0]
+        cx = (x0 - 18 + 1188) / 2
+        fn = f("Poppins-Bold.ttf", 17)
+        while d.textlength(nomes, font=fn) > (1188 - x0 - 10) * S and fn.size > 22:
+            fn = ImageFont.truetype(os.path.join(FONTES, "Poppins-Bold.ttf"), fn.size - 2)
+        d.text((cx * S, (yb + D + 30) * S), nomes, font=fn, fill=BRANCO, anchor="ms")
+        d.text((cx * S, (yb + D + 52) * S), "Nutricionistas parceiras" if len(fotos) > 1 else "Nutricionista parceira", font=f("Poppins-Bold.ttf", 13), fill=LIME, anchor="ms")
 
     ate = str(C.get("promoAte") or "")
     if ate:
