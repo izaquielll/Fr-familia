@@ -33,6 +33,12 @@ label{font-size:13px;font-weight:600;color:var(--mut);display:block;margin:14px 
 .st.pendente{background:rgba(255,122,47,.15);color:var(--or)}.st.aprovado{background:rgba(212,255,58,.15);color:var(--lime)}.st.pausado{background:var(--s2);color:var(--mut)}
 .g{display:grid;gap:10px;margin-top:12px}
 .hidden{display:none}
+.desc{margin-top:14px;background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:8px 14px}
+.desc .h{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--lime);margin:6px 0 2px}
+.desc .l{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line)}.desc .h + .l{border-top:0}
+.desc .l .n{flex:1;font-size:14px}.desc .l .n small{display:block;color:var(--mut);font-size:12px}
+.desc .l .v{text-align:right;font-size:13px;color:var(--mut);white-space:nowrap}.desc .l .v b{display:block;font-size:15px;color:var(--tx)}
+.desc .pc{background:var(--lime);color:var(--ink);font-weight:800;font-size:13px;border-radius:999px;padding:3px 9px;white-space:nowrap}
 .top{display:flex;align-items:center;gap:10px}.top .sp{flex:1}
 </style>
 <script src="tema.js?v=20261120i"></script>
@@ -53,6 +59,7 @@ label{font-size:13px;font-weight:600;color:var(--mut);display:block;margin:14px 
     <label for="c-cel">Celular (WhatsApp com DDD)</label><input id="c-cel" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="(22) 99999-9999">
     <div id="c-err" class="err"></div>
     <button class="btn" id="b-gerar" style="margin-top:16px">Gerar meu cupom</button>
+    <div class="desc" id="desc-form"></div>
     <p class="mut" style="font-size:13px;margin:10px 0 0">Já gerou? Coloque o mesmo celular para ver o seu cupom e se ele já foi aprovado.</p>
   </div>
 
@@ -60,6 +67,7 @@ label{font-size:13px;font-weight:600;color:var(--mut);display:block;margin:14px 
     <div class="top"><b id="ok-nome"></b><span class="sp"></span><span id="ok-st" class="st"></span></div>
     <div class="cod" id="ok-cod"></div>
     <p class="mut" id="ok-txt" style="margin:0"></p>
+    <div class="desc" id="desc-ok"></div>
     <div class="g">
       <button class="btn" id="b-copiar">Copiar cupom</button>
       <a class="btn line" id="b-zap" target="_blank" rel="noopener">Mandar para um amigo no WhatsApp</a>
@@ -74,7 +82,26 @@ const sb = window.supabase.createClient(FR_CONFIG.url, FR_CONFIG.key);
 const $ = id => document.getElementById(id);
 const vitrine = location.origin + location.pathname.replace(/cupom\.html$/,"");
 let zapFR = "5522997322604";
-sb.from("fr_config").select("dados").eq("id",1).maybeSingle().then(({data}) => { const n = String(data?.dados?.whatsapp||"").replace(/\D/g,""); if(n) zapFR = n.startsWith("55") ? n : "55"+n; });
+/* Descontos que o cupom mostra em cada plano (mesmos valores da vitrine, lidos do painel do FR) */
+let C = { consultoria: 200, consultoriaPromo: 150, consultoriaNovo: 167, nutri: 250, comboPromo: 250, promoAte: "2026-12-31" };
+const brl = n => "R$ " + Number(n).toLocaleString("pt-BR");
+function drawDesc(){
+  const ativo = !C.promoAte || new Date() <= new Date(C.promoAte + "T23:59:59");
+  const combo = Number(C.consultoria) + Number(C.nutri);
+  const L = [["Consultoria Online", "para você que já é aluno", C.consultoria, C.consultoriaPromo],
+             ["Consultoria Online", "para o amigo que usar o seu cupom", C.consultoria, C.consultoriaNovo],
+             ["Consultoria + Nutri", "treino + plano alimentar com a nutri", combo, C.comboPromo]].filter(l => Number(l[3]) < Number(l[2]));
+  const html = !ativo || !L.length ? `<p class="mut" style="font-size:13px;margin:6px 0">Os descontos do cupom valem durante as promoções da Família FR.</p>` :
+    `<div class="h">Descontos do cupom</div>` + L.map(([n, sub, de, por]) => `<div class="l"><span class="pc">${Math.round((de - por) / de * 100)}% off</span><span class="n">${n}<small>${sub}</small></span><span class="v"><s>${brl(de)}</s><b>${brl(por)}</b></span></div>`).join("") +
+    `<p class="mut" style="font-size:12px;margin:8px 0 4px">${C.promoAte ? `Válido até ${C.promoAte.split("-").reverse().join("/")}. ` : ""}Os programas de 30 dias não entram no cupom.</p>`;
+  document.querySelectorAll(".desc").forEach(el => el.innerHTML = html);
+}
+drawDesc();
+sb.from("fr_config").select("dados").eq("id",1).maybeSingle().then(({data}) => {
+  const d = data?.dados || {}; const n = String(d.whatsapp||"").replace(/\D/g,""); if(n) zapFR = n.startsWith("55") ? n : "55"+n;
+  ["consultoria","consultoriaPromo","consultoriaNovo","nutri","comboPromo","promoAte"].forEach(k => { if(d[k] !== undefined && d[k] !== "") C[k] = d[k]; });
+  drawDesc();
+});
 $("b-gerar").onclick = async () => {
   const nome = $("c-nome").value.trim().replace(/\s+/g," "), cel = $("c-cel").value.replace(/\D/g,"").replace(/^55(?=\d{10,11}$)/,"");
   if(cel.length < 10 || cel.length > 11){ $("c-err").textContent = "Coloque o celular com DDD."; return; }
