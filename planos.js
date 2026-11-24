@@ -22,6 +22,9 @@ window.FRPlanos = (function(){
     const combo = (C.consultoria||200) + (C.nutri||250), combo_v = combo;
     const lista = [];
     lista.push({nome:"Vitrine completa", url: ref ? linkFor(base, "", ref) : base, txt:"Oi! 💪 Conheça os planos da Família FR: treino e nutrição do seu jeito. Escolha o seu aqui:"});
+    // Só na Área do FR: página onde os alunos geram o cupom (capa: img/og/cupom.jpg)
+    if(!ref && C.cupomAtivo !== false) lista.push({nome:"🎟️ Cupom de aluno (o aluno gera o dele)", url: base + "cupom.html",
+      txt: "Oi! 💚 Obrigado pelo companheirismo de sempre! Gere aqui o seu cupom de aluno da Família FR, use no seu plano e passe para os amigos:"});
     if(C.mostrarConsultoria !== false) lista.push({nome:"Consultoria Online", url: linkFor(base,"consultoria",ref),
       txt: promo ? `Oi! 💪 Chegou a ${C.promoNome||"promoção"} da Família FR: renovando agora, a consultoria sai por ${brl(C.consultoriaPromo)} o ciclo de 60 dias. Monte o seu plano aqui:` : `Oi! 💪 Consultoria online da Família FR por ${brl(C.consultoria||200)} o ciclo de 60 dias. Monte o seu plano aqui:`});
     if(!ref && promo && (C.trimestralPromo ?? 240) > 0) lista.push({nome:"🔒 Consultoria Trimestral (privado, só você vê)", url: linkFor(base,"trimestral",ref),
