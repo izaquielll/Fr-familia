@@ -353,7 +353,7 @@ function render(){
 
   const cards = [
     C.mostrarConsultoria===false ? null : {id:"consultoria", cls:"lime", arte:"consultoria", bg:"img/fr-frente.webp", tag: promo? C.promoNome : "Consultoria", nome:"Consultoria Online",
-     itens:["Treino montado pra você no app MFIT","Avaliação online e anamnese completas","Suporte e correção no WhatsApp"],
+     itens:["Treino montado pra você no app MFIT","Avaliação presencial com o Personal","Avaliação online e anamnese completas","Suporte e correção no WhatsApp"],
      nao: incluiDe("consultoria").curto,
      de: promo? C.consultoria:null, v: promo? C.consultoriaPromo : C.consultoria, pre: promo?null:"A partir de", per: promo? `para alunos que renovarem até ${fmtD(C.promoAte)} · ${brl(C.consultoriaNovo)} para quem está começando · ciclo de 60 dias` : "por ciclo de 60 dias"},
     C.mostrarCombo===false ? null : {id:"combo", cls:"lime", arte:"combo", bg:"img/fr-barra.webp", tag: promo? C.promoNome : "Mais completo", nome:"Consultoria + Nutri",
@@ -430,8 +430,8 @@ function incluiDe(tipo){
   const prog = { si:["30 dias de treino pronto no app MFIT, com progressão","Suporte no WhatsApp","Guia alimentar da nutri (opcional, por " + brl(C.avulsoGuia||80) + ")",`Até ${C.descCombo}% off na 1ª consultoria`],
     no:["Treino individualizado (o programa é o mesmo para todos)","Anamnese e avaliação","Plano alimentar individual"], curto:"treino individual, avaliação e plano alimentar individual" };
   return ({
-    consultoria: { si:["Treino montado pra você no app MFIT","Avaliação online e anamnese completas","Suporte e correção no WhatsApp","Atualização do treino no ciclo de 60 dias"],
-      no:["Plano alimentar e nutricionista","Avaliação presencial","Avaliação de treino presencial"], curto:"plano alimentar e avaliação presencial" },
+    consultoria: { si:["Treino montado pra você no app MFIT","Avaliação presencial com o Personal","Avaliação online e anamnese completas","Suporte e correção no WhatsApp","Atualização do treino no ciclo de 60 dias"],
+      no:["Plano alimentar e nutricionista","Avaliação de treino presencial"], curto:"plano alimentar e nutricionista" },
     combo: { si:["Tudo da Consultoria Online","Avaliação presencial","Avaliação de treino (1 treino)","Plano alimentar com a nutricionista que você escolher","2 atualizações do plano alimentar no ciclo",`Renovação com ${C.descRenovaCombo}% off após 60 dias`], no:[] },
     convite: { si:["Avaliação online e anamnese completas","Treino montado pra você no app MFIT","Plano alimentar com a nutricionista","2 atualizações do treino no ciclo","Suporte no WhatsApp"],
       no:["Avaliação presencial","Avaliação de treino presencial"], curto:"avaliação presencial" },
@@ -464,7 +464,7 @@ function drawSheet(){
     h += perguntaCliente(promo);
     const renova = promo; // Black Friday vale para todos (novos e quem já é cliente)
     h += `<div class="fld"><span class="lb">Plano</span><div class="opts">
-      <label class="opt"><input type="radio" name="comNutri" value="0" ${!S.comNutri&&!S.tri?"checked":""}><span class="t"><b>Só consultoria · 60 dias</b><span>Treino no MFIT + suporte${renova?` · ${brl(C.consultoriaPromo)} renovando, ${brl(C.consultoriaNovo)} cliente novo`:(C.consultoriaNovoNormal>C.consultoria?` · ${brl(C.consultoria)} aluno, ${brl(C.consultoriaNovoNormal)} cliente novo`:"")}</span></span><span class="p">${brl(!renova?(S.aluno==="nao"?(C.consultoriaNovoNormal||C.consultoria):C.consultoria):(S.aluno==="nao"?C.consultoriaNovo:C.consultoriaPromo))}</span></label>
+      <label class="opt"><input type="radio" name="comNutri" value="0" ${!S.comNutri&&!S.tri?"checked":""}><span class="t"><b>Só consultoria · 60 dias</b><span>Treino no MFIT + avaliação presencial com o Personal + suporte${renova?` · ${brl(C.consultoriaPromo)} renovando, ${brl(C.consultoriaNovo)} cliente novo`:(C.consultoriaNovoNormal>C.consultoria?` · ${brl(C.consultoria)} aluno, ${brl(C.consultoriaNovoNormal)} cliente novo`:"")}</span></span><span class="p">${brl(!renova?(S.aluno==="nao"?(C.consultoriaNovoNormal||C.consultoria):C.consultoria):(S.aluno==="nao"?C.consultoriaNovo:C.consultoriaPromo))}</span></label>
       ${triOk()&&S.privado?`<label class="opt"><input type="radio" name="comNutri" value="t" ${S.tri?"checked":""}><span class="t"><b>Só consultoria · trimestral (90 dias)</b><span>${C.promoNome}: ${brl(Math.round(C.trimestralPromo/3))}/mês, pagamento único</span></span><span class="p">${brl(C.trimestralPromo)}</span></label>`:""}
       <label class="opt"><input type="radio" name="comNutri" value="1" ${S.comNutri?"checked":""}><span class="t"><b>Consultoria + Nutri</b><span>Avaliação presencial + avaliação de treino + plano alimentar com 2 atualizações</span></span><span class="p">${brl(renova?C.comboPromo:combo)}</span></label></div></div>`;
     if(S.comNutri) h += `<div class="fld"><span class="lb">Nutricionista</span><div class="opts">${nutriOpts}</div></div>`;
@@ -503,6 +503,7 @@ function drawSheet(){
     ${cupomR?`<div class="row"><span class="mut">Valor normal</span><span>${brl(cupomR.de)}</span></div><div class="row"><span class="mut">Cupom ${esc(cupomR.codigo)} · ${cupomR.pct}% off</span><b style="color:var(--acc,var(--lime))">−${brl(cupomR.valor)}</b></div>`:""}
     <div class="tot"><span class="mut">${!cupomR&&r.de&&r.de>r.v?`<s>${brl(r.de)}</s>`:""} ${r.per}</span><b>${brl(r.v)}</b></div>
     ${(S.id==="consultoria"||S.id==="combo") && S.comNutri?`<div class="note">📍 Inclui avaliação presencial e avaliação de treino (1 treino).<br>🔁 Após 60 dias, renove com ${C.descRenovaCombo}% de desconto sobre ${brl(combo)} (fica ${brl(Math.round(combo*(100-C.descRenovaCombo))/100)}).</div>`:""}
+    ${(S.id==="consultoria"||S.id==="combo") && !S.comNutri?`<div class="note">📍 Inclui avaliação presencial com o Personal.</div>`:""}
     ${S.id==="convite"?`<div class="note">💻 Plano 100% online: sem avaliação presencial.</div>`:""}
     ${isAv && (plano(S.programa)||{}).secao!=="nutri"?`<div class="note">🎁 Depois do programa: ${C.descConsult}% off na 1ª consultoria ou ${C.descCombo}% off na Consultoria + Nutri.</div>`:""}</div>
     <div id="f-err" class="err"></div>
