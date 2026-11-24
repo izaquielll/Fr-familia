@@ -118,7 +118,7 @@ $("b-gerar").onclick = async () => {
     pausado:"Seu cupom está pausado. Fale com o FR."}[r.status];
   $("b-fr").classList.toggle("hidden", r.status !== "pendente");
   $("b-fr").href = `https://wa.me/${zapFR}?text=${encodeURIComponent(`Oi, FR! Gerei o meu cupom de aluno: ${r.codigo}. Pode aprovar? 🙏`)}`;
-  $("b-zap").href = `https://wa.me/?text=${encodeURIComponent(`Bora treinar comigo na Família FR! 💪 Use o meu cupom *${r.codigo}* no pedido da Consultoria ou da Consultoria + Nutri (pelo link ele já entra aplicado): ${vitrine}consultoria/?cupom=${r.codigo}`)}`;
+  $("b-zap").href = `https://wa.me/?text=${encodeURIComponent(`Bora treinar comigo na Família FR! 💪 Use o meu cupom *${r.codigo}* no pedido da Consultoria ou da Consultoria + Nutri (pelo link ele já entra aplicado): ${vitrine}aluno/?cupom=${r.codigo}`)}`;
   $("v-ok").classList.remove("hidden"); $("v-ok").scrollIntoView({behavior:"smooth"});
 };
 $("b-copiar").onclick = async () => { try{ await navigator.clipboard.writeText($("ok-cod").textContent); $("b-copiar").textContent = "Copiado ✓"; }catch(e){ $("b-copiar").textContent = "Segure o código para copiar"; } setTimeout(()=>$("b-copiar").textContent="Copiar cupom",1800); };
