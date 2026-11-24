@@ -92,14 +92,16 @@
   /* ===== Abertura: preparação, 3-2-1 e LANÇAR ===== */
   let liberar; const pronto = new Promise(r => liberar = r);
   window.FRDepoisDaAbertura = fn => pronto.then(fn);
-  let viu = false; try{ viu = sessionStorage.getItem("fr-abertura") === "1"; }catch(e){}
+  // Cada página pode trocar o texto da abertura com window.FR_ABERTURA = { chave, l1, l2 } antes de carregar este arquivo
+  const AB = Object.assign({ chave: "fr-abertura", l1: "Preparando o lançamento da", l2: "<em>melhor consultoria</em><br>do Brasil" }, window.FR_ABERTURA || {});
+  let viu = false; try{ viu = sessionStorage.getItem(AB.chave) === "1"; }catch(e){}
   if(viu || calmo || !document.body){ liberar(); }
   else {
     const s = document.createElement("div"); s.className = "fx-splash"; s.setAttribute("role","dialog"); s.setAttribute("aria-label","Família FR");
     let pts = ""; for(let i=0;i<22;i++) pts += `<i class="pt" style="left:${Math.random()*100}%;animation-duration:${2.2+Math.random()*2.5}s;animation-delay:${Math.random()*2}s;transform:scale(${.5+Math.random()})"></i>`;
     s.innerHTML = `<div class="glow"></div><div class="aneis"><i></i><i></i><i></i></div>${pts}
       <div class="tx"><div class="badge">FR</div><div class="nome">FAMÍLIA FR</div>
-        <div class="l1">Preparando o lançamento da</div><div class="l2"><em>melhor consultoria</em><br>do Brasil</div></div>
+        <div class="l1">${AB.l1}</div><div class="l2"${AB.l2menor?' style="font-size:clamp(26px,7.4vw,50px)"':""}>${AB.l2}</div></div>
       <div class="cont" aria-live="polite"></div>
       <div class="base"><div class="fog-s">${foguete}</div><div class="pad"></div><i class="vap"></i><i class="vap v2"></i><i class="vap v3"></i></div>
       <button class="lancar" type="button">🚀 LANÇAR</button>`;
@@ -109,7 +111,7 @@
     setTimeout(() => { cont.textContent = ""; btn.classList.add("ok"); }, 3300);
     btn.addEventListener("click", () => {
       if(s.classList.contains("decola")) return;
-      try{ sessionStorage.setItem("fr-abertura","1"); }catch(e){}
+      try{ sessionStorage.setItem(AB.chave,"1"); }catch(e){}
       try{ navigator.vibrate && navigator.vibrate([30,30,60]); }catch(e){}
       s.classList.add("decola");
       setTimeout(() => { s.classList.add("sai"); document.documentElement.style.overflow = ""; }, 1250);
