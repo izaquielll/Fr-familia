@@ -4,6 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Família FR">
+<meta property="og:title" content="Seu cupom de aluno · Família FR">
+<meta property="og:description" content="Gere o seu cupom de aluno da Família FR, use na Consultoria e passe para os amigos.">
+<meta property="og:image" content="https://izaquielll.github.io/Fr-familia/img/og/consultoria.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://izaquielll.github.io/Fr-familia/cupom.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="description" content="Gere o seu cupom de aluno da Família FR, use na Consultoria e passe para os amigos.">
 <title>Meu cupom de aluno · Família FR</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -78,7 +88,7 @@ $("b-gerar").onclick = async () => {
     pausado:"Seu cupom está pausado. Fale com o FR."}[r.status];
   $("b-fr").classList.toggle("hidden", r.status !== "pendente");
   $("b-fr").href = `https://wa.me/${zapFR}?text=${encodeURIComponent(`Oi, FR! Gerei o meu cupom de aluno: ${r.codigo}. Pode aprovar? 🙏`)}`;
-  $("b-zap").href = `https://wa.me/?text=${encodeURIComponent(`Bora treinar comigo na Família FR! 💪 Use o meu cupom *${r.codigo}* no pedido da Consultoria ou da Consultoria + Nutri (pelo link ele já entra aplicado): ${vitrine}?cupom=${r.codigo}`)}`;
+  $("b-zap").href = `https://wa.me/?text=${encodeURIComponent(`Bora treinar comigo na Família FR! 💪 Use o meu cupom *${r.codigo}* no pedido da Consultoria ou da Consultoria + Nutri (pelo link ele já entra aplicado): ${vitrine}consultoria/?cupom=${r.codigo}`)}`;
   $("v-ok").classList.remove("hidden"); $("v-ok").scrollIntoView({behavior:"smooth"});
 };
 $("b-copiar").onclick = async () => { try{ await navigator.clipboard.writeText($("ok-cod").textContent); $("b-copiar").textContent = "Copiado ✓"; }catch(e){ $("b-copiar").textContent = "Segure o código para copiar"; } setTimeout(()=>$("b-copiar").textContent="Copiar cupom",1800); };

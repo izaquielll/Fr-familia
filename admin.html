@@ -212,7 +212,7 @@ function drawCupons(){
     CUPONS.map(c => `<div class="ped"><b>${esc(c.codigo)} · ${esc(c.nome)}</b><span class="pix ${c.status==="aprovado"?"ok":"no"}">${lbl[c.status]}</span><span class="tag">${USOS[c.codigo]||0} ${(USOS[c.codigo]||0)===1?"uso":"usos"}</span>
       <div class="mut" style="font-size:13px">Celular ${esc(c.celular)} · gerado em ${new Date(c.created_at).toLocaleDateString("pt-BR")}</div>
       <div class="row" style="margin-top:8px">${c.status!=="aprovado"?`<button class="btn mini" data-cst="aprovado" data-id="${c.id}">Aprovar</button>`:`<button class="btn line mini" data-cst="pausado" data-id="${c.id}">Pausar</button>`}
-      <a class="btn line mini" target="_blank" rel="noopener" href="https://wa.me/${zapCel(c.celular)}?text=${encodeURIComponent(`Oi, ${String(c.nome).split(" ")[0]}! Seu cupom ${c.codigo} da Família FR está aprovado ✅ Use no pedido e passe para os amigos: ${location.origin + location.pathname.replace(/admin\.html$/,"")}?cupom=${c.codigo}`)}">Avisar no WhatsApp</a>
+      <a class="btn line mini" target="_blank" rel="noopener" href="https://wa.me/${zapCel(c.celular)}?text=${encodeURIComponent(`Oi, ${String(c.nome).split(" ")[0]}! Seu cupom ${c.codigo} da Família FR está aprovado ✅ Use no pedido e passe para os amigos: ${location.origin + location.pathname.replace(/admin\.html$/,"")}consultoria/?cupom=${c.codigo}`)}">Avisar no WhatsApp</a>
       <button class="btn line mini del" data-cdel="${c.id}">Excluir</button></div></div>`).join(""));
   if(PEDIDOS_FR.length) drawPeds(); // mostra de quem é a indicação nos pedidos com cupom
 }
