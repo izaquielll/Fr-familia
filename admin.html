@@ -73,6 +73,9 @@ a.btn{text-decoration:none;display:inline-block}
     <h2>Nutricionistas parceiras</h2>
     <p class="mut" style="margin:0">Elas se cadastram em <b>nutri.html</b>. Só aparecem na vitrine depois que você aprovar.</p>
     <div class="card" id="nutris"><span class="mut">Carregando…</span></div>
+    <h2>Cupons dos alunos</h2>
+    <p class="mut" style="margin:0">Mande a página <b>cupom.html</b> para os alunos. Cada um gera o próprio cupom e ele só funciona depois que você aprovar. Uso sem limite; quem usar o cupom de um aluno conta como indicação dele.</p>
+    <div class="card" id="cupons"><span class="mut">Carregando…</span></div>
     <h2>Fila de espera</h2>
     <p class="mut" style="margin:0">Pré-cadastros feitos na vitrine pelo botão <b>Entrar na fila de espera</b>. As nutris aprovadas também veem esta lista.</p>
     <div class="card" id="fila"><span class="mut">Carregando…</span></div>
@@ -110,7 +113,7 @@ async function show(session){
   const { data } = await sb.from("fr_config").select("dados").eq("id",1).maybeSingle();
   C = data?.dados || {};
   $("form").innerHTML = FIELDS.map(([t,fs])=>`<h3 style="font-size:15px;margin:14px 0 0">${t}</h3><div class="g">${fs.map(([k,l,ty])=>`${ty==="check" ? `<label style="display:flex;gap:8px;align-items:center;margin-top:14px"><input id="a-${k}" type="checkbox" style="width:auto" ${C[k]!==false?"checked":""}> ${l}</label>` : `<div><label for="a-${k}">${l}</label><input id="a-${k}" type="${ty}" ${ty==="number"?'step="0.01" min="0"':""} value="${esc(C[k])}"></div>`}`).join("")}</div>`).join("");
-  loadPeds(); loadNutris(); drawLinks(); FRFila.mount($("fila"), { sb, admin: true });
+  loadPeds(); loadNutris(); drawLinks(); loadCupons(); FRFila.mount($("fila"), { sb, admin: true });
   if(!planosUI) planosUI = FRPlanos.mountPlanos($("planos"), { sb, admin: true, onChange: drawLinks }); else planosUI.reload();
 }
 let PEDIDOS_FR = [], ANAMN_FR = {};
@@ -129,7 +132,7 @@ function drawPeds(){
     const an = ANAMN_FR[p.id];
     const st = !p.token ? "" : an ? (p.pago ? `<span class="tag">📝 Anamnese com a nutri</span>` : `<span class="tag">📝 Anamnese respondida · aguarda o Pix</span>`) : `<span class="tag">📝 Anamnese ainda não respondida</span>`;
     return `<div class="ped"><b>${esc(p.nome)} · ${brl(p.valor)}</b>
-    <span class="pix ${p.pago?"ok":"no"}">${p.pago ? (p.pago_por && p.pago_por!=="fr" ? "Pix recebido pela nutri ("+esc(p.pago_por)+")" : "Pix confirmado") : (p.ref_nutri ? "Pix com a nutri ("+esc(p.ref_nutri)+")" : "Aguardando Pix")}</span><span class="tag">${esc(p.plano)}</span>${p.nutri?`<span class="tag">${esc(p.nutri)}</span>`:""}${p.objetivo?`<span class="tag">${esc(p.objetivo)}</span>`:""}${p.nascimento?`<span class="tag">Nasc. ${esc(p.nascimento.split("-").reverse().join("/"))}</span>`:""}${p.email?`<span class="tag">${esc(p.email)}</span>`:""}${p.indicado?`<span class="tag">Indicado por ${esc(p.indicado)}</span>`:""}${p.ref_nutri?`<span class="tag">Link da nutri: ${esc(p.ref_nutri)}</span>`:""}${p.cupom?`<span class="tag">🎟️ Cupom ${esc(p.cupom)}</span>`:""}${st}
+    <span class="pix ${p.pago?"ok":"no"}">${p.pago ? (p.pago_por && p.pago_por!=="fr" ? "Pix recebido pela nutri ("+esc(p.pago_por)+")" : "Pix confirmado") : (p.ref_nutri ? "Pix com a nutri ("+esc(p.ref_nutri)+")" : "Aguardando Pix")}</span><span class="tag">${esc(p.plano)}</span>${p.nutri?`<span class="tag">${esc(p.nutri)}</span>`:""}${p.objetivo?`<span class="tag">${esc(p.objetivo)}</span>`:""}${p.nascimento?`<span class="tag">Nasc. ${esc(p.nascimento.split("-").reverse().join("/"))}</span>`:""}${p.email?`<span class="tag">${esc(p.email)}</span>`:""}${p.indicado?`<span class="tag">Indicado por ${esc(p.indicado)}</span>`:""}${p.ref_nutri?`<span class="tag">Link da nutri: ${esc(p.ref_nutri)}</span>`:""}${p.cupom?`<span class="tag">🎟️ Cupom ${esc(p.cupom)}${(c => c ? " · indicação de " + esc(c.nome) : "")(CUPONS.find(c => c.codigo === p.cupom))}</span>`:""}${st}
     <div class="mut" style="font-size:13px">${new Date(p.created_at).toLocaleString("pt-BR")}${p.pago_em?` · Pix confirmado em ${new Date(p.pago_em).toLocaleDateString("pt-BR")}`:""}</div>
     <div class="row" style="margin-top:8px">
       ${p.pago?`<button class="btn line mini" data-pago="0" data-id="${p.id}">Desfazer Pix</button>`:`<button class="btn mini" data-pago="1" data-id="${p.id}">Confirmar Pix</button>`}
@@ -186,6 +189,40 @@ document.addEventListener("click", async e => {
   const { error } = await sb.from("fr_nutris").update({ status: b.dataset.nst }).eq("id", b.dataset.id);
   if(error) console.warn(error);
   loadNutris();
+});
+/* Cupons pessoais dos alunos (tabela fr_cupons) */
+let CUPONS = [], USOS = {};
+const linkCupom = () => location.origin + location.pathname.replace(/admin\.html$/,"") + "cupom.html";
+const zapCel = c => { c = String(c||"").replace(/\D/g,""); return c.startsWith("55") ? c : "55"+c; };
+async function loadCupons(){
+  const { data, error } = await sb.from("fr_cupons").select("*").order("created_at",{ascending:false});
+  if(error){ $("cupons").innerHTML = `<span class="mut">Não deu para carregar os cupons.</span>`; return; }
+  CUPONS = data || []; USOS = {};
+  const u = await sb.from("fr_pedidos").select("cupom").not("cupom","is",null).limit(5000);
+  (u.data||[]).forEach(p => USOS[p.cupom] = (USOS[p.cupom]||0) + 1);
+  drawCupons();
+}
+function drawCupons(){
+  const msg = `Oi! Gere o seu cupom de aluno da Família FR aqui 🎟️ Depois que eu aprovar, você usa e pode passar para os amigos: ${linkCupom()}`;
+  const topo = `<div class="row" style="margin-top:0"><a class="btn mini" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(msg)}">Enviar a página no WhatsApp</a><button class="btn line mini" data-copy="${esc(linkCupom())}">Copiar</button></div>`;
+  const pend = CUPONS.filter(c=>c.status==="pendente").length;
+  const lbl = {pendente:"Aguardando aprovação", aprovado:"Aprovado", pausado:"Pausado"};
+  $("cupons").innerHTML = topo + (!CUPONS.length ? `<p class="mut" style="margin:12px 0 0">Nenhum aluno gerou cupom ainda.</p>` :
+    `<p class="mut" style="margin:12px 0 0">${CUPONS.length} ${CUPONS.length===1?"cupom":"cupons"}${pend?` · <b style="color:#ff7a2f">${pend} para aprovar</b>`:""}</p>` +
+    CUPONS.map(c => `<div class="ped"><b>${esc(c.codigo)} · ${esc(c.nome)}</b><span class="pix ${c.status==="aprovado"?"ok":"no"}">${lbl[c.status]}</span><span class="tag">${USOS[c.codigo]||0} ${(USOS[c.codigo]||0)===1?"uso":"usos"}</span>
+      <div class="mut" style="font-size:13px">Celular ${esc(c.celular)} · gerado em ${new Date(c.created_at).toLocaleDateString("pt-BR")}</div>
+      <div class="row" style="margin-top:8px">${c.status!=="aprovado"?`<button class="btn mini" data-cst="aprovado" data-id="${c.id}">Aprovar</button>`:`<button class="btn line mini" data-cst="pausado" data-id="${c.id}">Pausar</button>`}
+      <a class="btn line mini" target="_blank" rel="noopener" href="https://wa.me/${zapCel(c.celular)}?text=${encodeURIComponent(`Oi, ${String(c.nome).split(" ")[0]}! Seu cupom ${c.codigo} da Família FR está aprovado ✅ Use no pedido e passe para os amigos: ${location.origin + location.pathname.replace(/admin\.html$/,"")}?cupom=${c.codigo}`)}">Avisar no WhatsApp</a>
+      <button class="btn line mini del" data-cdel="${c.id}">Excluir</button></div></div>`).join(""));
+  if(PEDIDOS_FR.length) drawPeds(); // mostra de quem é a indicação nos pedidos com cupom
+}
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-cst]");
+  if(b){ b.disabled = true; const { error } = await sb.from("fr_cupons").update({ status: b.dataset.cst }).eq("id", b.dataset.id); if(error){ b.disabled = false; alert("Não deu para salvar. Confira a internet."); return; } loadCupons(); return; }
+  const d = e.target.closest("[data-cdel]"); if(!d) return;
+  const c = CUPONS.find(x => String(x.id) === d.dataset.cdel); if(!c || !confirm(`Excluir o cupom ${c.codigo} de ${c.nome}? Ele para de funcionar.`)) return;
+  d.disabled = true; const { error, count } = await sb.from("fr_cupons").delete({ count: "exact" }).eq("id", c.id);
+  if(error || !count){ d.disabled = false; alert("Não deu para excluir."); return; } loadCupons();
 });
 function drawLinks(){
   const base = location.origin + location.pathname.replace(/admin\.html$/,"");

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Meu cupom de aluno · Família FR</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0f100d;--s1:#171914;--s2:#20231c;--line:#2c3026;--tx:#f3f4ef;--mut:#a4a99c;--lime:#d4ff3a;--ink:#141a00;--or:#ff7a2f}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 Poppins,system-ui,sans-serif}
+.wrap{max-width:520px;margin:0 auto;padding:22px 16px 60px}
+h1{font-size:26px;margin:0;line-height:1.2}
+.mut{color:var(--mut)}.card{background:var(--s1);border:1px solid var(--line);border-radius:18px;padding:18px;margin-top:16px}
+input{width:100%;background:var(--s2);border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;color:var(--tx);font:inherit}
+label{font-size:13px;font-weight:600;color:var(--mut);display:block;margin:14px 0 6px}
+.btn{border:0;border-radius:12px;padding:14px 18px;font:inherit;font-weight:700;background:var(--lime);color:var(--ink);cursor:pointer;width:100%;text-decoration:none;display:block;text-align:center}
+.btn.line{background:transparent;color:var(--tx);box-shadow:inset 0 0 0 1.5px var(--line)}
+.btn:disabled{opacity:.6}
+.err{color:#ff8a80;font-size:13px;margin-top:8px}
+.cod{font-size:34px;font-weight:800;letter-spacing:.06em;color:var(--lime);text-align:center;background:var(--bg);border:1.5px dashed var(--lime);border-radius:14px;padding:14px;margin:10px 0}
+.st{display:inline-block;font-size:12px;font-weight:700;border-radius:999px;padding:3px 10px}
+.st.pendente{background:rgba(255,122,47,.15);color:var(--or)}.st.aprovado{background:rgba(212,255,58,.15);color:var(--lime)}.st.pausado{background:var(--s2);color:var(--mut)}
+.g{display:grid;gap:10px;margin-top:12px}
+.hidden{display:none}
+.top{display:flex;align-items:center;gap:10px}.top .sp{flex:1}
+</style>
+<script src="tema.js?v=20261120i"></script>
+<link rel="apple-touch-icon" href="img/icone/fr-180.png">
+<link rel="icon" type="image/png" href="img/icone/fr-192.png">
+<meta name="theme-color" content="#0f100d">
+</head>
+<body><div class="wrap">
+  <div class="top"><b class="mut">Família FR</b><span class="sp"></span><a class="mut" href="./">Ver vitrine</a></div>
+  <h1 style="margin-top:14px">Seu cupom de aluno 🎟️</h1>
+  <p class="mut" style="margin:8px 0 0">Gere o seu cupom pessoal. Depois que o FR aprovar, você usa na Consultoria ou na Consultoria + Nutri e pode passar para os amigos: quem usar o seu cupom conta como indicação sua.</p>
+
+  <div id="v-form" class="card">
+    <label for="c-nome" style="margin-top:0">Nome completo</label><input id="c-nome" autocomplete="name" maxlength="120">
+    <label for="c-cel">Celular (WhatsApp com DDD)</label><input id="c-cel" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="(22) 99999-9999">
+    <div id="c-err" class="err"></div>
+    <button class="btn" id="b-gerar" style="margin-top:16px">Gerar meu cupom</button>
+    <p class="mut" style="font-size:13px;margin:10px 0 0">Já gerou? Coloque o mesmo celular para ver o seu cupom e se ele já foi aprovado.</p>
+  </div>
+
+  <div id="v-ok" class="card hidden">
+    <div class="top"><b id="ok-nome"></b><span class="sp"></span><span id="ok-st" class="st"></span></div>
+    <div class="cod" id="ok-cod"></div>
+    <p class="mut" id="ok-txt" style="margin:0"></p>
+    <div class="g">
+      <button class="btn" id="b-copiar">Copiar cupom</button>
+      <a class="btn line" id="b-zap" target="_blank" rel="noopener">Mandar para um amigo no WhatsApp</a>
+      <a class="btn line" id="b-fr" target="_blank" rel="noopener">Avisar o FR para aprovar</a>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+const sb = window.supabase.createClient(FR_CONFIG.url, FR_CONFIG.key);
+const $ = id => document.getElementById(id);
+const vitrine = location.origin + location.pathname.replace(/cupom\.html$/,"");
+let zapFR = "5522997322604";
+sb.from("fr_config").select("dados").eq("id",1).maybeSingle().then(({data}) => { const n = String(data?.dados?.whatsapp||"").replace(/\D/g,""); if(n) zapFR = n.startsWith("55") ? n : "55"+n; });
+$("b-gerar").onclick = async () => {
+  const nome = $("c-nome").value.trim().replace(/\s+/g," "), cel = $("c-cel").value.replace(/\D/g,"").replace(/^55(?=\d{10,11}$)/,"");
+  if(cel.length < 10 || cel.length > 11){ $("c-err").textContent = "Coloque o celular com DDD."; return; }
+  $("c-err").textContent = ""; $("b-gerar").disabled = true; $("b-gerar").textContent = "Gerando…";
+  const { data, error } = await sb.rpc("fr_cupom_gerar", { p_nome: nome, p_celular: cel });
+  $("b-gerar").disabled = false; $("b-gerar").textContent = "Gerar meu cupom";
+  if(error){ $("c-err").textContent = /nome/.test(error.message) ? "Coloque o seu nome completo (nome e sobrenome)." : "Não deu certo agora. Confira a internet e tente de novo."; return; }
+  const r = data && data[0]; if(!r) return;
+  const primeiro = r.nome.split(" ")[0];
+  $("ok-nome").textContent = r.nome; $("ok-cod").textContent = r.codigo;
+  $("ok-st").className = "st " + r.status; $("ok-st").textContent = {pendente:"Aguardando aprovação", aprovado:"Aprovado", pausado:"Pausado"}[r.status];
+  $("ok-txt").innerHTML = {pendente:"Seu cupom foi criado e está esperando a aprovação do FR. Assim que for aprovado, ele passa a funcionar na vitrine.",
+    aprovado:"Seu cupom está liberado. Use no pedido da Consultoria ou da Consultoria + Nutri, quantas vezes quiser, e passe para os seus amigos.",
+    pausado:"Seu cupom está pausado. Fale com o FR."}[r.status];
+  $("b-fr").classList.toggle("hidden", r.status !== "pendente");
+  $("b-fr").href = `https://wa.me/${zapFR}?text=${encodeURIComponent(`Oi, FR! Gerei o meu cupom de aluno: ${r.codigo}. Pode aprovar? 🙏`)}`;
+  $("b-zap").href = `https://wa.me/?text=${encodeURIComponent(`Bora treinar comigo na Família FR! 💪 Use o meu cupom *${r.codigo}* no pedido da Consultoria ou da Consultoria + Nutri (pelo link ele já entra aplicado): ${vitrine}?cupom=${r.codigo}`)}`;
+  $("v-ok").classList.remove("hidden"); $("v-ok").scrollIntoView({behavior:"smooth"});
+};
+$("b-copiar").onclick = async () => { try{ await navigator.clipboard.writeText($("ok-cod").textContent); $("b-copiar").textContent = "Copiado ✓"; }catch(e){ $("b-copiar").textContent = "Segure o código para copiar"; } setTimeout(()=>$("b-copiar").textContent="Copiar cupom",1800); };
+</script>
+</body>
+</html>

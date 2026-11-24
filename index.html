@@ -378,6 +378,7 @@ function open(id){
   if(id.startsWith("pl-")){ S.programa = id.slice(3); const p = plano(S.programa); if(p && p.nutri_slug) S.nutri = p.nutri_slug; }
   // link do FR com nutri escolhida (?com=): o plano já abre com a nutri incluída
   if(COM && pre === COM && !REF){ if(id==="consultoria") S.comNutri = true; if(id.startsWith("pl-")) S.guia = true; }
+  if(CUPOM_Q && (S.id==="consultoria"||S.id==="combo")){ S.cupom = CUPOM_Q; conferirCupom(); }
   drawSheet(); document.getElementById("ov").classList.remove("hidden"); document.body.style.overflow="hidden";
   document.getElementById("sheet").scrollTop = 0;
   try{ if(!(history.state && history.state.frPlano)) history.pushState({frPlano:1}, ""); }catch(e){} // o "voltar" do celular fecha o plano
@@ -416,7 +417,14 @@ function perguntaCliente(promo){
 /* Cupom de aluno: só dá nome ao desconto que a promoção já dá (o preço final não muda) */
 const normCupom = s => String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toUpperCase().replace(/[^A-Z0-9]/g,"");
 const cupomCabe = () => C.cupomAtivo !== false && !!normCupom(C.cupom) && (S.id==="consultoria"||S.id==="combo") && !S.tri;
-const cupomOk = () => { if(!cupomCabe() || !S.cupom || normCupom(S.cupom) !== normCupom(C.cupom)) return null; const r = calc(); return r.de && r.de > r.v ? { codigo: normCupom(C.cupom), valor: r.de - r.v, de: r.de, pct: Math.round((r.de - r.v) / r.de * 100) } : null; };
+// Cupom geral (painel) ou cupom pessoal de aluno aprovado (tabela fr_cupons, conferido pela função fr_cupom_validar)
+const cupomValido = () => { const c = normCupom(S.cupom); if(!c) return null; if(c === normCupom(C.cupom)) return { codigo: c, dono: null }; return S.cupomInfo && S.cupomInfo.codigo === c ? S.cupomInfo : null; };
+async function conferirCupom(){
+  const c = normCupom(S.cupom); S.cupomInfo = null;
+  if(c && c !== normCupom(C.cupom) && sb){ try{ const { data } = await sb.rpc("fr_cupom_validar", { p_codigo: c }); if(data && data[0]) S.cupomInfo = { codigo: data[0].codigo, dono: data[0].dono }; }catch(e){} }
+  S.cupomTentou = true; if(S.id) drawSheet();
+}
+const cupomOk = () => { const cv = cupomCabe() && cupomValido(); if(!cv) return null; const r = calc(); return r.de && r.de > r.v ? { codigo: cv.codigo, dono: cv.dono, valor: r.de - r.v, de: r.de, pct: Math.round((r.de - r.v) / r.de * 100) } : null; };
 function drawSheet(){
   const promo = ativo(C.promoAte), isAv = S.id.startsWith("pl-"), combo = C.consultoria + C.nutri;
   const acc = (isAv||S.id==="convite") ? "var(--or)" : "var(--lime)";
@@ -456,7 +464,7 @@ function drawSheet(){
 
   if(cupomCabe()){ const cp = cupomOk();
     h += `<div class="fld"><label for="f-cupom">Cupom de aluno (opcional)</label><div style="display:flex;gap:8px"><input type="text" id="f-cupom" autocapitalize="characters" autocomplete="off" maxlength="40" placeholder="Digite o seu cupom" value="${esc(S.cupom||"")}"><button class="btn" type="button" data-cupom style="flex:none;padding:0 16px">Aplicar</button></div>
-      ${cp ? `<div class="note" style="margin-top:6px;color:var(--acc,var(--lime))">✓ Cupom ${esc(cp.codigo)} aplicado: ${cp.pct}% off (−${brl(cp.valor)})</div>` : (S.cupomTentou && S.cupom ? `<div class="err">Cupom não encontrado. Confira o código${ativo(C.promoAte)?"":" (ele vale durante a promoção)"}.</div>` : "")}</div>`; }
+      ${cp ? `<div class="note" style="margin-top:6px;color:var(--acc,var(--lime))">✓ Cupom ${esc(cp.codigo)} aplicado: ${cp.pct}% off (−${brl(cp.valor)})${cp.dono?` · indicação de ${esc(cp.dono)}`:""}</div>` : (S.cupomTentou && S.cupom ? `<div class="err">Cupom não encontrado ou ainda não aprovado. Confira o código${ativo(C.promoAte)?"":" (ele vale durante a promoção)"}.</div>` : "")}</div>`; }
   const cupomR = cupomOk();
   const nutriNome = NUTRIS.find(n=>n.id===S.nutri)?.nome || (plano(S.programa)||{}).nutri_nome;
   const showNutri = S.comNutri || S.id==="convite" || (isAv && (S.guia || !!(plano(S.programa)||{}).nutri_slug));
@@ -499,6 +507,7 @@ function resumo(){
   if(treinador() && !isAv) m += `*Treinador:* ${treinador().nome}\n`;
   const cpm = cupomOk();
   m += cpm ? `*Valor:* ${brl(cpm.de)} − cupom ${cpm.codigo} ${cpm.pct}% (${brl(cpm.valor)}) = *${brl(r.v)}* (${r.per})\n` : `*Valor:* ${brl(r.v)} (${r.per})\n`;
+  if(cpm && cpm.dono) m += `*Indicação (cupom):* ${cpm.dono}\n`;
   if(perguntaAluno() && S.aluno) m += `*Já sou cliente:* ${S.aluno==="sim"?(S.id.startsWith("pl-")?"Sim":"Sim, quero renovar"):"Não, sou cliente novo"}\n`;
   if(S.id==="convite") m += `*Indicado por:* ${S.indicado}\n`;
   m += `*Nome completo:* ${S.nome}\n`;
@@ -526,7 +535,7 @@ function novoToken(){
 
 document.addEventListener("click", e => {
   const fl = e.target.closest("[data-fila]"); if(fl){ entrarNaFila(fl.dataset.fila); return; }
-  if(e.target.closest("[data-cupom]")){ S.cupom = document.getElementById("f-cupom")?.value || ""; S.cupomTentou = true; drawSheet(); return; }
+  if(e.target.closest("[data-cupom]")){ S.cupom = document.getElementById("f-cupom")?.value || ""; const bt = e.target.closest("[data-cupom]"); bt.disabled = true; bt.textContent = "…"; conferirCupom(); return; }
   const fs = e.target.closest("[data-fila-send]"); if(fs){ enviarFila(fs); return; }
   if(e.target.closest("[data-fila-zap]")){ e.preventDefault(); zapFila(FILA && FILA.plano); return; }
   const o = e.target.closest("[data-open]"); if(o){ const id = o.dataset.open; (window.FRFoguete || (f=>f()))(() => open(id)); return; }
@@ -569,7 +578,7 @@ document.addEventListener("change", e => {
   if(t.name==="nivel") S.nivel = t.value;
   if(t.id==="f-obj") S.obj=t.value;
   if(t.id==="f-nasc") S.nasc=t.value;
-  if(t.id==="f-cupom"){ S.cupom=t.value; S.cupomTentou=true; drawSheet(); }
+  if(t.id==="f-cupom"){ S.cupom=t.value; conferirCupom(); }
   if(["aluno","comNutri","programa","guia","nutri"].includes(t.name)) drawSheet();
 });
 document.addEventListener("input", e => {
@@ -595,6 +604,8 @@ let REF = (new URLSearchParams(location.search).get("nutri")||"").toLowerCase().
 // ?treinador=<slug>: treinador escolhido pela nutri no link dela
 const TREINO_Q = (new URLSearchParams(location.search).get("treinador")||"").toLowerCase().replace(/[^a-z0-9-]/g,"").slice(0,40) || null;
 const treinador = () => { const l = (Array.isArray(C.treinadores) && C.treinadores.length) ? C.treinadores : [{slug:"fr", nome:"Izaquiel Araújo"}]; return TREINO_Q ? l.find(t => t.slug === TREINO_Q) : null; };
+// ?cupom=<código>: link de indicação do aluno; o cupom já entra preenchido no pedido
+const CUPOM_Q = (new URLSearchParams(location.search).get("cupom")||"").toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,40) || null;
 let COM = (new URLSearchParams(location.search).get("com")||"").toLowerCase().replace(/[^a-z0-9-]/g,"").slice(0,40) || null;
 function refBanner(){
   const n = REF && NUTRIS.find(x=>x.id===REF); const el = document.getElementById("promo-line");
