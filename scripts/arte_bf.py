@@ -40,10 +40,12 @@ def fundo(w, h, cx, cy, raio):
     return img
 
 
-def foto(img, larg, x, y, cx, cy, raio):
+def foto(img, larg, x, y, cx, cy, raio, corte=0.62):
     d = ImageDraw.Draw(img)
     d.ellipse((cx - raio, cy - raio, cx + raio, cy + raio), fill=LIME)
-    fr = Image.open(os.path.join(RAIZ, "img", "fr-frente.webp")).convert("RGBA")
+    # foto do palco, sem camisa, cortada um pouco abaixo da cintura
+    fr = Image.open(os.path.join(RAIZ, "img", "fr-palco.webp")).convert("RGBA")
+    fr = fr.crop((0, 0, fr.width, int(fr.height * corte)))
     fr = fr.resize((larg, int(fr.height * larg / fr.width)), Image.LANCZOS)
     # esfuma a base da foto (as pernas somem no fundo)
     a = fr.getchannel("A")
@@ -113,7 +115,7 @@ def cartao(d, x, y, w, h, nome, sub, de, por, destaque):
 def story():
     W, H = 1080, 1920
     img = fundo(W, H, 700, 900, 560)
-    foto(img, 560, 470, 640, 760, 900, 270)
+    foto(img, 520, 500, 655, 775, 905, 265)
     d = ImageDraw.Draw(img)
     marca(d, 80, 170)
     selo(d, W - 80 - 236, 172, VALIDADE, f("Poppins-Bold.ttf", 30), pad=(28, 14))
@@ -143,7 +145,7 @@ def story():
 def og():
     W, H = 1200, 630
     img = fundo(W, H, 930, 330, 330)
-    foto(img, 470, 690, 120, 930, 360, 230)
+    foto(img, 430, 720, 40, 935, 350, 235)
     d = ImageDraw.Draw(img)
     marca(d, 64, 52, 0.85)
     selo(d, 64, 140, "DEZEMBRO INTEIRO · " + VALIDADE, f("Poppins-Bold.ttf", 22), pad=(20, 10))
