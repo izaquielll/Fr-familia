@@ -18,7 +18,7 @@ CINZA = (170, 174, 162)
 ESCURO = (20, 26, 0)
 
 PRECOS = [
-    ("Consultoria online", "Treino individual no app", "R$ 200", "167"),
+    ("Consultoria online", "Treino individual no app", "R$ 200", "150"),
     ("Consultoria + Nutri", "Treino + plano alimentar", "R$ 450", "250"),
 ]
 VALIDADE = "ATÉ 31/12"
@@ -161,7 +161,7 @@ def story():
     cw, gap = 444, 32
     for i, (n, s, de, por) in enumerate(PRECOS):
         cartao(d, 80 + i * (cw + gap), y, cw, 280, n, s, de, por, destaque=i == 1)
-    d.text((W / 2, y + 315), "Renovando? Consultoria por R$ 150 · ciclo de 60 dias", font=f("Poppins-Medium.ttf", 28), fill=CINZA, anchor="mm")
+    d.text((W / 2, y + 315), "Preço para todos: alunos novos e renovação", font=f("Poppins-Medium.ttf", 28), fill=CINZA, anchor="mm")
     # chamada
     fc = f("Poppins-Bold.ttf", 40)
     txt = "Toque no link e garanta o seu"
@@ -189,7 +189,7 @@ def og():
     d.line((x - 2, 468, x + wd + 2, 468), fill=CINZA, width=3)
     d.text((x + wd, 450), " por", font=fm, fill=CINZA)
     d.text((64, 500), "R$", font=f("Poppins-Bold.ttf", 34), fill=LIME)
-    d.text((118, 466), "167", font=f("Poppins-Bold.ttf", 84), fill=LIME)
+    d.text((118, 466), "150", font=f("Poppins-Bold.ttf", 84), fill=LIME)
     d.text((300, 500), "Consultoria + Nutri", font=f("Poppins-Bold.ttf", 26), fill=BRANCO)
     d.text((300, 536), "por R$ 250", font=f("Poppins-Medium.ttf", 26), fill=BRANCO)
     # selo de preço no canto da foto

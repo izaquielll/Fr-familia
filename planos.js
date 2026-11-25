@@ -31,13 +31,13 @@ window.FRPlanos = (function(){
         return (mesmo(hoje) ? `hoje (${dia})` : mesmo(am) ? `amanhã (${dia})` : `dia ${dia}`) + ` às ${h}`; })(new Date(abre.getTime() - 3*3600e3));
       lista.push({nome:"📣 Aviso da Black Friday", status: !antes, url: base + "bf/" + (ref ? "?nutri=" + encodeURIComponent(ref) : ""),
         txt: antes ? `🖤🔥 Vem aí a primeira Black Friday da Família FR! Os preços abrem ${quando}. Treino e nutrição do seu jeito, com a equipe FR. Entre na fila de espera e receba primeiro:`
-                   : `🖤🔥 BLACK FRIDAY da Família FR${C.promoAte ? `, até ${String(C.promoAte).split("-").reverse().slice(0,2).join("/")}` : ""}! Consultoria online de ${brl(C.consultoria||200)} por ${brl(C.consultoriaNovo||C.consultoriaPromo)} e Consultoria + Nutri de ${brl(combo)} por ${brl(C.comboPromo)}. Treino e nutrição do seu jeito, com a equipe FR. Garanta o seu aqui 👉`});
+                   : `🖤🔥 BLACK FRIDAY da Família FR${C.promoAte ? `, até ${String(C.promoAte).split("-").reverse().slice(0,2).join("/")}` : ""}! Consultoria online de ${brl(C.consultoria||200)} por ${brl(C.consultoriaPromo)} e Consultoria + Nutri de ${brl(combo)} por ${brl(C.comboPromo)}. Treino e nutrição do seu jeito, com a equipe FR. Garanta o seu aqui 👉`});
     }
     // Só na Área do FR: página onde os alunos geram o cupom (capa: img/og/cupom.jpg)
     if(!ref && C.cupomAtivo !== false) lista.push({nome:"🎟️ Cupom de aluno (o aluno gera o dele)", url: base + "cupom.html",
       txt: "Oi! 💚 Obrigado pelo companheirismo de sempre! Gere aqui o seu cupom de aluno da Família FR, use no seu plano e passe para os amigos:"});
     if(C.mostrarConsultoria !== false) lista.push({nome:"Consultoria Online", url: linkFor(base,"consultoria",ref),
-      txt: promo ? `Oi! 💪 Chegou a ${C.promoNome||"promoção"} da Família FR: renovando agora, a consultoria sai por ${brl(C.consultoriaPromo)} o ciclo de 60 dias. Monte o seu plano aqui:` : `Oi! 💪 Consultoria online da Família FR por ${brl(C.consultoria||200)} o ciclo de 60 dias. Monte o seu plano aqui:`});
+      txt: promo ? `Oi! 💪 Chegou a ${C.promoNome||"promoção"} da Família FR: a consultoria online sai por ${brl(C.consultoriaPromo)} o ciclo de 60 dias, para alunos novos e renovação. Monte o seu plano aqui:` : `Oi! 💪 Consultoria online da Família FR por ${brl(C.consultoria||200)} o ciclo de 60 dias. Monte o seu plano aqui:`});
     if(!ref && promo && (C.trimestralPromo ?? 240) > 0) lista.push({nome:"🔒 Consultoria Trimestral (privado, só você vê)", url: linkFor(base,"trimestral",ref),
       txt: `Oi! 💪 Só na ${C.promoNome||"promoção"}: consultoria TRIMESTRAL da Família FR por ${brl(Math.round((C.trimestralPromo ?? 240)/3))}/mês (${brl(C.trimestralPromo ?? 240)} pelos 90 dias). Monte o seu plano aqui:`});
     if(C.mostrarCombo !== false) lista.push({nome:"Consultoria + Nutri", url: linkFor(base,"combo",ref),

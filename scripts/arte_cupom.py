@@ -24,7 +24,7 @@ FUNDO = (15, 16, 13)
 S = 2  # desenha em 2x e reduz no fim
 W, H = 1200, 630
 
-PADRAO = {"consultoria": 200, "consultoriaPromo": 150, "consultoriaNovo": 167, "nutri": 250, "comboPromo": 250,
+PADRAO = {"consultoria": 200, "consultoriaPromo": 150, "consultoriaNovo": 150, "nutri": 250, "comboPromo": 250,
           "avulso": 67, "avulsoGuia": 80, "promoAte": "2026-12-31"}
 
 

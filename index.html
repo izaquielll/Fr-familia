@@ -239,7 +239,7 @@ footer{border-top:1px solid var(--line);margin-top:56px;padding:26px 0 40px;colo
 <script>
 /* ===== Valores padrão (usados quando o painel ainda não foi salvo ou não carrega) ===== */
 const DEFAULTS = {
-  consultoria: 200, consultoriaNovoNormal: 250, consultoriaPromo: 150, consultoriaNovo: 167, descRenovaCombo: 30,
+  consultoria: 200, consultoriaNovoNormal: 250, consultoriaPromo: 150, consultoriaNovo: 150, descRenovaCombo: 30,
   nutri: 250, comboPromo: 250, trimestralPromo: 240,
   convite: 200, conviteAte: "2026-12-31",
   promoNome: "Black Friday", promoAte: "2026-12-31",
@@ -355,7 +355,7 @@ function render(){
     C.mostrarConsultoria===false ? null : {id:"consultoria", cls:"lime", arte:"consultoria", bg:"img/fr-frente.webp", tag: promo? C.promoNome : "Consultoria", nome:"Consultoria Online",
      itens:["Treino montado pra você no app MFIT","Avaliação presencial com o Personal","Avaliação online e anamnese completas","Suporte e correção no WhatsApp"],
      nao: incluiDe("consultoria").curto,
-     de: promo? C.consultoria:null, v: promo? C.consultoriaPromo : C.consultoria, pre: promo?null:"A partir de", per: promo? `para alunos que renovarem até ${fmtD(C.promoAte)} · ${brl(C.consultoriaNovo)} para quem está começando · ciclo de 60 dias` : "por ciclo de 60 dias"},
+     de: promo? C.consultoria:null, v: promo? C.consultoriaPromo : C.consultoria, pre: promo?null:"A partir de", per: promo? (C.consultoriaNovo && C.consultoriaNovo !== C.consultoriaPromo ? `para alunos que renovarem até ${fmtD(C.promoAte)} · ${brl(C.consultoriaNovo)} para quem está começando · ciclo de 60 dias` : `para todos até ${fmtD(C.promoAte)}, alunos novos e renovação · ciclo de 60 dias`) : "por ciclo de 60 dias"},
     C.mostrarCombo===false ? null : {id:"combo", cls:"lime", arte:"combo", bg:"img/fr-barra.webp", tag: promo? C.promoNome : "Mais completo", nome:"Consultoria + Nutri",
      itens:["Tudo da consultoria","Avaliação presencial","Avaliação de treino (1 treino)","Plano alimentar com a nutricionista que você escolher","2 atualizações do plano alimentar no ciclo",`Após 60 dias: renove com ${C.descRenovaCombo}% off sobre ${brl(combo)}`],
      de: combo, v: promo? C.comboPromo : combo, per: promo? `pagando até ${fmtD(C.promoAte)} · ciclo de 60 dias` : `R$ ${C.consultoria} da consultoria + R$ ${C.nutri} da nutri`},
@@ -407,7 +407,7 @@ function calc(){
     const renova = promo; // Black Friday vale para todos (novos e quem já é cliente)
     if(S.tri && S.privado && triOk()) return {nome:`Consultoria Trimestral (${C.promoNome})`, v: C.trimestralPromo, de: null, per:`90 dias · ${brl(Math.round(C.trimestralPromo/3))}/mês`};
     if(S.comNutri) return {nome:"Consultoria + Nutri"+(renova?` (${C.promoNome})`:""), v: renova? C.comboPromo : combo, de: combo, per:"por ciclo de 60 dias"};
-    const vc = !renova ? (S.aluno==="nao" ? (C.consultoriaNovoNormal||C.consultoria) : C.consultoria) : (S.aluno==="nao" ? C.consultoriaNovo : C.consultoriaPromo);
+    const vc = !renova ? (S.aluno==="nao" ? (C.consultoriaNovoNormal||C.consultoria) : C.consultoria) : (S.aluno==="nao" ? (C.consultoriaNovo||C.consultoriaPromo) : C.consultoriaPromo);
     return {nome:"Consultoria Online"+(renova?` (${C.promoNome}${S.aluno==="nao"?", cliente novo":S.aluno==="sim"?", aluno":""})`:""), v: vc, de: renova? C.consultoria:null, per:"por ciclo de 60 dias"};
   }
   if(S.id==="convite") return {nome:"Consultoria + Nutri Online (convite de aluno)", v:C.convite, de:combo, per:"1º ciclo de 60 dias"};
@@ -464,7 +464,7 @@ function drawSheet(){
     h += perguntaCliente(promo);
     const renova = promo; // Black Friday vale para todos (novos e quem já é cliente)
     h += `<div class="fld"><span class="lb">Plano</span><div class="opts">
-      <label class="opt"><input type="radio" name="comNutri" value="0" ${!S.comNutri&&!S.tri?"checked":""}><span class="t"><b>Só consultoria · 60 dias</b><span>Treino no MFIT + avaliação presencial com o Personal + suporte${renova?` · ${brl(C.consultoriaPromo)} renovando, ${brl(C.consultoriaNovo)} cliente novo`:(C.consultoriaNovoNormal>C.consultoria?` · ${brl(C.consultoria)} aluno, ${brl(C.consultoriaNovoNormal)} cliente novo`:"")}</span></span><span class="p">${brl(!renova?(S.aluno==="nao"?(C.consultoriaNovoNormal||C.consultoria):C.consultoria):(S.aluno==="nao"?C.consultoriaNovo:C.consultoriaPromo))}</span></label>
+      <label class="opt"><input type="radio" name="comNutri" value="0" ${!S.comNutri&&!S.tri?"checked":""}><span class="t"><b>Só consultoria · 60 dias</b><span>Treino no MFIT + avaliação presencial com o Personal + suporte${renova?(C.consultoriaNovo && C.consultoriaNovo !== C.consultoriaPromo ? ` · ${brl(C.consultoriaPromo)} renovando, ${brl(C.consultoriaNovo)} cliente novo` : ` · ${brl(C.consultoriaPromo)} para todos`):(C.consultoriaNovoNormal>C.consultoria?` · ${brl(C.consultoria)} aluno, ${brl(C.consultoriaNovoNormal)} cliente novo`:"")}</span></span><span class="p">${brl(!renova?(S.aluno==="nao"?(C.consultoriaNovoNormal||C.consultoria):C.consultoria):(S.aluno==="nao"?(C.consultoriaNovo||C.consultoriaPromo):C.consultoriaPromo))}</span></label>
       ${triOk()&&S.privado?`<label class="opt"><input type="radio" name="comNutri" value="t" ${S.tri?"checked":""}><span class="t"><b>Só consultoria · trimestral (90 dias)</b><span>${C.promoNome}: ${brl(Math.round(C.trimestralPromo/3))}/mês, pagamento único</span></span><span class="p">${brl(C.trimestralPromo)}</span></label>`:""}
       <label class="opt"><input type="radio" name="comNutri" value="1" ${S.comNutri?"checked":""}><span class="t"><b>Consultoria + Nutri</b><span>Avaliação presencial + avaliação de treino + plano alimentar com 2 atualizações</span></span><span class="p">${brl(renova?C.comboPromo:combo)}</span></label></div></div>`;
     if(S.comNutri) h += `<div class="fld"><span class="lb">Nutricionista</span><div class="opts">${nutriOpts}</div></div>`;

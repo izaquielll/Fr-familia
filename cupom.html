@@ -83,7 +83,7 @@ const $ = id => document.getElementById(id);
 const vitrine = location.origin + location.pathname.replace(/cupom\.html$/,"");
 let zapFR = "5522997322604";
 /* Descontos que o cupom mostra em cada plano (mesmos valores da vitrine, lidos do painel do FR) */
-let C = { consultoria: 200, consultoriaPromo: 150, consultoriaNovo: 167, nutri: 250, comboPromo: 250, avulso: 67, avulsoGuia: 80, promoAte: "2026-12-31" };
+let C = { consultoria: 200, consultoriaPromo: 150, consultoriaNovo: 150, nutri: 250, comboPromo: 250, avulso: 67, avulsoGuia: 80, promoAte: "2026-12-31" };
 const brl = n => "R$ " + Number(n).toLocaleString("pt-BR");
 function drawDesc(){
   const ativo = !C.promoAte || new Date() <= new Date(C.promoAte + "T23:59:59");
