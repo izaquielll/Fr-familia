@@ -4,7 +4,9 @@
 Uso: python3 scripts/arte_bf.py"""
 import os
 
-from PIL import Image, ImageDraw, ImageFilter, ImageFont
+from PIL import ImageEnhance
+
+from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageOps
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 RAIZ = os.path.dirname(AQUI)
@@ -67,6 +69,37 @@ def foto(img, larg, x, y, cx, cy, raio, corte=0.62):
     img.paste(Image.new("RGB", (img.width, 220), FUNDO), (0, h - 220), grad)
 
 
+def fundo_foto(W, H, caixa, sombras):
+    """Foto da academia (img/fr-academia.jpg) cobrindo a caixa (x0, y0, x1, y1) e escurecida pelas faixas em `sombras`
+    (lista de (y_ini, y_fim, opac_ini, opac_fim) na vertical ou ("x", x_ini, x_fim, opac_ini, opac_fim) na horizontal)."""
+    img = Image.new("RGB", (W, H), FUNDO)
+    ft = Image.open(os.path.join(RAIZ, "img", "fr-academia.jpg")).convert("RGB")
+    ft = ImageEnhance.Contrast(ft).enhance(1.08)
+    x0, y0, x1, y1 = caixa
+    ft = ImageOps.fit(ft, (x1 - x0, y1 - y0), Image.LANCZOS, centering=(0.5, 0.2))
+    img.paste(ft, (x0, y0))
+    preto = Image.new("RGB", (W, H), FUNDO)
+    for sb in sombras:
+        m = Image.new("L", (W, H), 0)
+        dm = ImageDraw.Draw(m)
+        if sb[0] == "x":
+            _, a, b, oa, ob = sb
+            for x in range(a, b):
+                t = (x - a) / max(1, b - a - 1)
+                dm.line((x, 0, x, H), fill=int(255 * (oa + (ob - oa) * t)))
+            if b < W: dm.rectangle((b, 0, W, H), fill=int(255 * ob))
+        else:
+            a, b, oa, ob = sb
+            for y in range(a, b):
+                t = (y - a) / max(1, b - a - 1)
+                dm.line((0, y, W, y), fill=int(255 * (oa + (ob - oa) * t)))
+            if b < H and ob >= 1: dm.rectangle((0, b, W, H), fill=255)
+        img = Image.composite(preto, img, m)
+    # leve tom verde por cima, para casar com a marca
+    tom = Image.new("RGB", (W, H), (40, 60, 0))
+    return Image.blend(img, tom, 0.10)
+
+
 def selo(d, x, y, txt, fonte, pad=(26, 12), fill=LIME, cor=ESCURO, raio=999):
     w = d.textlength(txt, font=fonte)
     a = fonte.getbbox("Ag")
@@ -114,38 +147,34 @@ def cartao(d, x, y, w, h, nome, sub, de, por, destaque):
 
 def story():
     W, H = 1080, 1920
-    img = fundo(W, H, 700, 900, 560)
-    foto(img, 520, 500, 655, 775, 905, 265)
+    img = fundo_foto(W, H, (0, 500, W, 500 + 1470), [(500, 640, 1.0, 0.0), (1150, 1440, 0.0, 0.92), (1440, 1760, 0.92, 1.0)])
     d = ImageDraw.Draw(img)
-    marca(d, 80, 170)
-    selo(d, W - 80 - 236, 172, VALIDADE, f("Poppins-Bold.ttf", 30), pad=(28, 14))
-    # título
-    fb = f("Poppins-Bold.ttf", 168)
-    d.text((72, 270), "BLACK", font=fb, fill=BRANCO)
-    d.text((72, 440), "FRIDAY", font=fb, fill=LIME)
-    selo(d, 80, 760, "DEZEMBRO INTEIRO", f("Poppins-Bold.ttf", 30), pad=(24, 12), fill=BRANCO, cor=FUNDO)
-    d.text((82, 850), "Treino e\nnutrição\ndo seu jeito", font=f("Poppins-Bold.ttf", 50), fill=BRANCO, spacing=8)
-    d.text((82, 1060), "com a equipe FR", font=f("Poppins-Medium.ttf", 30), fill=LIME)
+    marca(d, 80, 120)
+    selo(d, W - 80 - 236, 122, VALIDADE, f("Poppins-Bold.ttf", 30), pad=(28, 14))
+    fb = f("Poppins-Bold.ttf", 132)
+    d.text((74, 210), "BLACK", font=fb, fill=BRANCO)
+    d.text((74, 345), "FRIDAY", font=fb, fill=LIME)
+    x, _ = selo(d, 80, 525, "DEZEMBRO INTEIRO", f("Poppins-Bold.ttf", 30), pad=(24, 12), fill=BRANCO, cor=FUNDO)
+    d.text((x + 24, 551), "Treino e nutrição do seu jeito", font=f("Poppins-Bold.ttf", 31), fill=BRANCO, anchor="lm")
     # cartões de preço
-    y = 1180
+    y = 1270
     cw, gap = 444, 32
     for i, (n, s, de, por) in enumerate(PRECOS):
-        cartao(d, 80 + i * (cw + gap), y, cw, 300, n, s, de, por, destaque=i == 1)
-    d.text((W / 2, y + 340), "Renovando? Consultoria por R$ 150 · ciclo de 60 dias", font=f("Poppins-Medium.ttf", 28), fill=CINZA, anchor="mm")
+        cartao(d, 80 + i * (cw + gap), y, cw, 280, n, s, de, por, destaque=i == 1)
+    d.text((W / 2, y + 315), "Renovando? Consultoria por R$ 150 · ciclo de 60 dias", font=f("Poppins-Medium.ttf", 28), fill=CINZA, anchor="mm")
     # chamada
     fc = f("Poppins-Bold.ttf", 40)
     txt = "Toque no link e garanta o seu"
     w = d.textlength(txt, font=fc)
-    d.rounded_rectangle(((W - w) / 2 - 50, 1590, (W + w) / 2 + 50, 1690), radius=50, fill=LIME)
-    d.text((W / 2, 1640), txt, font=fc, fill=ESCURO, anchor="mm")
-    d.text((W / 2, 1735), LINK, font=f("Poppins-Medium.ttf", 30), fill=BRANCO, anchor="mm")
+    d.rounded_rectangle(((W - w) / 2 - 50, 1640, (W + w) / 2 + 50, 1736), radius=50, fill=LIME)
+    d.text((W / 2, 1688), txt, font=fc, fill=ESCURO, anchor="mm")
+    d.text((W / 2, 1778), LINK, font=f("Poppins-Medium.ttf", 30), fill=BRANCO, anchor="mm")
     img.save(os.path.join(RAIZ, "img", "bf-status.jpg"), quality=88, optimize=True, progressive=True)
 
 
 def og():
     W, H = 1200, 630
-    img = fundo(W, H, 930, 330, 330)
-    foto(img, 430, 720, 40, 935, 350, 235)
+    img = fundo_foto(W, H, (440, -40, 1200, -40 + 1040), [("x", 440, 780, 1.0, 0.0), (480, 630, 0.0, 0.5)])
     d = ImageDraw.Draw(img)
     marca(d, 64, 52, 0.85)
     selo(d, 64, 140, "DEZEMBRO INTEIRO · " + VALIDADE, f("Poppins-Bold.ttf", 22), pad=(20, 10))
