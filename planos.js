@@ -29,9 +29,9 @@ window.FRPlanos = (function(){
       const quando = !abre ? "" : (b => { const dia = `${String(b.getUTCDate()).padStart(2,"0")}/${String(b.getUTCMonth()+1).padStart(2,"0")}`, h = `${b.getUTCHours()}h${b.getUTCMinutes()?String(b.getUTCMinutes()).padStart(2,"0"):""}`;
         const hoje = new Date(Date.now() - 3*3600e3), am = new Date(hoje.getTime() + 864e5); const mesmo = x => x.getUTCDate()===b.getUTCDate() && x.getUTCMonth()===b.getUTCMonth();
         return (mesmo(hoje) ? `hoje (${dia})` : mesmo(am) ? `amanhã (${dia})` : `dia ${dia}`) + ` às ${h}`; })(new Date(abre.getTime() - 3*3600e3));
-      lista.push({nome:"📣 Aviso da Black Friday", url: base + "bf/" + (ref ? "?nutri=" + encodeURIComponent(ref) : ""),
+      lista.push({nome:"📣 Aviso da Black Friday", status: !antes, url: base + "bf/" + (ref ? "?nutri=" + encodeURIComponent(ref) : ""),
         txt: antes ? `🖤🔥 Vem aí a primeira Black Friday da Família FR! Os preços abrem ${quando}. Treino e nutrição do seu jeito, com a equipe FR. Entre na fila de espera e receba primeiro:`
-                   : `🖤🔥 Começou a Black Friday da Família FR! Treino e nutrição do seu jeito, com a equipe FR${C.promoAte ? `, com preços especiais até ${String(C.promoAte).split("-").reverse().slice(0,2).join("/")}` : ""}. Escolha o seu plano aqui:`});
+                   : `🖤🔥 BLACK FRIDAY da Família FR${C.promoAte ? `, até ${String(C.promoAte).split("-").reverse().slice(0,2).join("/")}` : ""}! Consultoria online de ${brl(C.consultoria||200)} por ${brl(C.consultoriaNovo||C.consultoriaPromo)} e Consultoria + Nutri de ${brl(combo)} por ${brl(C.comboPromo)}. Treino e nutrição do seu jeito, com a equipe FR. Garanta o seu aqui 👉`});
     }
     // Só na Área do FR: página onde os alunos geram o cupom (capa: img/og/cupom.jpg)
     if(!ref && C.cupomAtivo !== false) lista.push({nome:"🎟️ Cupom de aluno (o aluno gera o dele)", url: base + "cupom.html",
@@ -79,7 +79,9 @@ window.FRPlanos = (function(){
       ${l.opcoes ? chips("nutri", "Nutricionista parceira", "Cliente escolhe", l.opcoes) : ""}
       ${l.treinos ? chips("treino", "Treinador", "Sem definir", l.treinos) : ""}
       <input readonly value="${esc(l.url)}" style="width:100%;margin-top:8px;font-size:13px">
-      <div class="row" style="margin-top:8px"><a class="btn" href="${esc(wa(l))}" target="_blank" rel="noopener" style="text-decoration:none;flex:1;text-align:center">Enviar no WhatsApp</a><button class="btn line" data-fr-copy="${esc(l.url)}">Copiar</button></div></div>`).join("");
+      <div class="row" style="margin-top:8px"><a class="btn" href="${esc(wa(l))}" target="_blank" rel="noopener" style="text-decoration:none;flex:1;text-align:center">Enviar no WhatsApp</a><button class="btn line" data-fr-copy="${esc(l.url)}">Copiar</button></div>
+      ${l.status ? `<button class="btn block" data-fr-status style="margin-top:8px">📲 Postar no status (arte + link)</button>
+      <div class="mut" style="font-size:12.5px;margin-top:6px">Abre o compartilhar do celular com a arte da Black Friday e o texto com o link. Escolha o WhatsApp e toque em <b>Meu status</b>.</div>` : ""}</div>`).join("");
     const atualizar = box => {
       const l = lista[+box.dataset.frItem];
       const n = +(box.querySelector("[data-fr-nutri][aria-pressed=true]")?.dataset.frNutri ?? -1);
@@ -90,6 +92,25 @@ window.FRPlanos = (function(){
       box.querySelector("a.btn").href = wa(o);
       box.querySelector("[data-fr-copy]").dataset.frCopy = o.url;
     };
+    // Postar no status: compartilha a arte (img/bf-status.jpg) com o texto e o link; sem suporte, cai no WhatsApp só com o texto
+    el.querySelectorAll("[data-fr-status]").forEach(b => b.onclick = async () => {
+      const box = b.closest("[data-fr-item]"), l = lista[+box.dataset.frItem];
+      const n = +(box.querySelector("[data-fr-nutri][aria-pressed=true]")?.dataset.frNutri ?? -1);
+      const txt = (n < 0 ? l.txt : l.opcoes[n].txt) + "\n" + box.querySelector("input").value;
+      const rot = b.textContent; b.disabled = true; b.textContent = "Preparando a arte…";
+      try{
+        const blob = await (await fetch(base + "img/bf-status.jpg?v=" + Date.now().toString().slice(0,7))).blob();
+        const file = new File([blob], "black-friday-familia-fr.jpg", {type: "image/jpeg"});
+        if(navigator.canShare && navigator.canShare({files:[file]})){
+          try{ await navigator.clipboard.writeText(txt); }catch(e){}
+          await navigator.share({files:[file], text: txt});
+        } else {
+          const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = file.name; a.click();
+          window.open("https://wa.me/?text=" + encodeURIComponent(txt), "_blank");
+        }
+      }catch(e){ if(e && e.name !== "AbortError") window.open("https://wa.me/?text=" + encodeURIComponent(txt), "_blank"); }
+      b.disabled = false; b.textContent = rot;
+    });
     el.querySelectorAll("[data-fr-nutri],[data-fr-treino]").forEach(b => b.onclick = () => {
       const tipo = b.hasAttribute("data-fr-nutri") ? "nutri" : "treino", box = b.closest("[data-fr-item]");
       box.querySelectorAll(`[data-fr-${tipo}]`).forEach(x => x.setAttribute("aria-pressed", x === b));
