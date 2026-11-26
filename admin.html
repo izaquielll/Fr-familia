@@ -29,6 +29,12 @@ a.btn{text-decoration:none;display:inline-block}
 .mini.del{color:#ff7a2f;margin-left:auto}
 .anbox{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:4px 12px 10px;margin-top:8px}
 .an-sec{font-size:13px;color:var(--lime);margin:14px 0 4px;text-transform:uppercase}.an-i{padding:6px 0;border-top:1px solid var(--line)}.an-l{font-size:12px;color:var(--mut)}.an-v{font-weight:600;font-size:14px}.an-vazio{color:var(--mut);font-weight:400}
+.sino{position:relative;border:0;background:var(--s2);color:var(--tx);border-radius:999px;width:42px;height:42px;font-size:19px;cursor:pointer}
+.sino .bd{position:absolute;top:-4px;right:-4px;background:#ff7a2f;color:#fff;font-size:11px;font-weight:800;border-radius:999px;min-width:19px;height:19px;line-height:19px;padding:0 5px}
+.nt{display:flex;gap:10px;align-items:flex-start;border-top:1px solid var(--line);padding:10px 0}.nt:first-of-type{border-top:0}
+.nt .ic{font-size:20px;line-height:1.3}.nt .tx{flex:1;min-width:0}.nt .tx b{display:block;font-size:14px}.nt .tx .mut{font-size:12px}
+.nt.novo .tx b::after{content:"NOVO";margin-left:6px;font-size:10px;font-weight:800;color:var(--ink);background:var(--lime);border-radius:999px;padding:1px 6px;vertical-align:2px}
+.nt .row{margin-top:6px}.alvo{animation:pisca 1.6s ease}@keyframes pisca{0%,60%{box-shadow:0 0 0 2px var(--lime)}100%{box-shadow:none}}
 </style>
 <script src="tema.js?v=20261120i"></script>
 <link rel="manifest" href="manifest-admin.json">
@@ -41,7 +47,7 @@ a.btn{text-decoration:none;display:inline-block}
 <meta name="theme-color" content="#0f100d">
 </head>
 <body><div class="wrap">
-  <div class="top"><h1>Área do FR</h1><span class="sp"></span><a class="mut" href="index.html">Ver vitrine</a></div>
+  <div class="top"><h1>Área do FR</h1><span class="sp"></span><a class="mut" href="index.html">Ver vitrine</a><button class="sino hidden" id="b-sino" aria-label="Notificações">🔔<span class="bd hidden" id="sino-n"></span></button></div>
 
   <div id="v-login" class="card">
     <p class="mut" style="margin:0">Entre com o e-mail de administrador.</p>
@@ -61,6 +67,9 @@ a.btn{text-decoration:none;display:inline-block}
 
   <div id="v-app" class="hidden">
     <div class="card"><div class="top"><span id="who" class="mut"></span><span class="sp"></span><button class="btn line" id="b-out">Sair</button></div></div>
+    <h2 id="h-notif">🔔 Notificações</h2>
+    <p class="mut" style="margin:0">Tudo o que chegou nos últimos 14 dias: pedidos, anamneses, cupons, fila e nutris. Atualiza sozinho a cada minuto.</p>
+    <div class="card" id="notif"><span class="mut">Carregando…</span></div>
     <h2>Valores da vitrine</h2>
     <div class="card" id="form"></div>
     <div class="row"><button class="btn" id="b-save">Salvar valores</button><span id="st-save" class="mut"></span></div>
@@ -114,6 +123,7 @@ async function show(session){
   C = data?.dados || {};
   $("form").innerHTML = FIELDS.map(([t,fs])=>`<h3 style="font-size:15px;margin:14px 0 0">${t}</h3><div class="g">${fs.map(([k,l,ty])=>`${ty==="check" ? `<label style="display:flex;gap:8px;align-items:center;margin-top:14px"><input id="a-${k}" type="checkbox" style="width:auto" ${C[k]!==false?"checked":""}> ${l}</label>` : `<div><label for="a-${k}">${l}</label><input id="a-${k}" type="${ty}" ${ty==="number"?'step="0.01" min="0"':""} value="${esc(C[k])}"></div>`}`).join("")}</div>`).join("");
   loadPeds(); loadNutris(); drawLinks(); loadCupons(); FRFila.mount($("fila"), { sb, admin: true });
+  $("b-sino").classList.remove("hidden"); loadNotif();
   if(!planosUI) planosUI = FRPlanos.mountPlanos($("planos"), { sb, admin: true, onChange: drawLinks }); else planosUI.reload();
 }
 let PEDIDOS_FR = [], ANAMN_FR = {};
@@ -224,6 +234,70 @@ document.addEventListener("click", async e => {
   d.disabled = true; const { error, count } = await sb.from("fr_cupons").delete({ count: "exact" }).eq("id", c.id);
   if(error || !count){ d.disabled = false; alert("Não deu para excluir."); return; } loadCupons();
 });
+/* ===== Notificações: tudo o que chegou, no topo da Área do FR ===== */
+const NKEY = "fr-notif-visto";
+let NOTIF = [], NVISTO = (() => { try{ return localStorage.getItem(NKEY) || ""; }catch(e){ return ""; } })(), NTODAS = false, NULT = 0;
+if(!NVISTO) NVISTO = new Date(Date.now() - 864e5).toISOString(); // 1ª vez: mostra como novo o que chegou nas últimas 24h
+const quando = d => { const s = (Date.now() - new Date(d)) / 1000; if(s < 60) return "agora"; if(s < 3600) return `há ${Math.floor(s/60)} min`; if(s < 86400) return `há ${Math.floor(s/3600)} h`; const n = Math.floor(s/86400); return n === 1 ? "ontem" : `há ${n} dias`; };
+const pNome = s => String(s||"").trim().split(/\s+/)[0];
+async function loadNotif(){
+  const desde = new Date(Date.now() - 14*864e5).toISOString();
+  const q = (t, sel, col="created_at") => sb.from(t).select(sel).gte(col, desde).order(col, {ascending:false}).limit(100);
+  const [pe, an, cu, fi, nu, pl] = await Promise.all([
+    q("fr_pedidos", "id,created_at,nome,plano,valor,cupom,pago,pago_em,token,nutri"),
+    q("fr_anamneses", "pedido_id,atualizada_em,fr_pedidos(nome,plano,pago)", "atualizada_em"),
+    sb.from("fr_cupons").select("id,created_at,nome,codigo,status").or(`status.eq.pendente,created_at.gte."${desde}"`).order("created_at",{ascending:false}).limit(100),
+    q("fr_fila", "id,created_at,nome,plano"),
+    sb.from("fr_nutris").select("id,created_at,nome,status").or(`status.eq.pendente,created_at.gte."${desde}"`).order("created_at",{ascending:false}).limit(50),
+    sb.from("fr_planos").select("id,created_at,nome,aprovado,nutri_id,fr_nutris(nome)").not("nutri_id","is",null).eq("aprovado",false).limit(50)
+  ].map(p => p.then(r => r.data || [], () => [])));
+  const L = [];
+  pe.forEach(p => L.push({ t:p.created_at, ic:"🛒", alvo:"peds", tit:`Novo pedido · ${p.nome}`, sub:`${p.plano} · ${brl(p.valor)}${p.cupom?` · cupom ${p.cupom}`:""}${p.nutri?` · ${p.nutri}`:""}`,
+    acao: p.pago ? `<span class="pix ok">Pix confirmado</span>` : `<button class="btn mini" data-pago="1" data-id="${p.id}">Confirmar Pix</button>` }));
+  pe.filter(p => p.pago && p.pago_em).forEach(p => L.push({ t:p.pago_em, ic:"✅", alvo:"peds", tit:`Pix confirmado · ${p.nome}`, sub:p.plano }));
+  an.forEach(a => { const p = a.fr_pedidos || {}; L.push({ t:a.atualizada_em, ic:"📝", alvo:"peds", tit:`Anamnese respondida · ${p.nome||"cliente"}`, sub:`${p.plano||""}${p.pago?" · já está com a nutri":" · aguarda o Pix"}`,
+    acao:`<button class="btn line mini" data-ver="${a.pedido_id}" data-ir="peds">Ver anamnese</button>` }); });
+  cu.forEach(c => L.push({ t:c.created_at, ic:"🎟️", alvo:"cupons", fixo: c.status==="pendente", tit: c.status==="pendente" ? `Cupom para aprovar · ${c.nome}` : `Cupom gerado · ${c.nome}`, sub:`Código ${c.codigo}`,
+    acao: c.status==="pendente" ? `<button class="btn mini" data-cst="aprovado" data-id="${c.id}">Aprovar</button>` : "" }));
+  fi.forEach(f => L.push({ t:f.created_at, ic:"⏳", alvo:"fila", tit:`Entrou na fila · ${f.nome}`, sub: f.plano || "Fila de espera" }));
+  nu.forEach(n => L.push({ t:n.created_at, ic:"🥗", alvo:"nutris", fixo: n.status==="pendente", tit: n.status==="pendente" ? `Nutri para aprovar · ${n.nome}` : `Nutri cadastrada · ${n.nome}`, sub: n.status==="pendente" ? "Cadastro novo esperando você" : "Nutricionista parceira" }));
+  pl.forEach(x => L.push({ t:x.created_at, ic:"📋", alvo:"planos", fixo:true, tit:`Plano para aprovar · ${x.nome}`, sub:`Criado por ${x.fr_nutris?.nome || "nutri"}` }));
+  L.sort((a,b) => ((!!b.fixo) - (!!a.fixo)) || (new Date(b.t) - new Date(a.t)));
+  const antes = NOTIF.filter(n => n.t > NVISTO).length;
+  NOTIF = L; drawNotif();
+  const agora = NOTIF.filter(n => n.t > NVISTO).length;
+  if(NULT && agora > antes){ loadPeds(); loadCupons(); loadNutris(); FRFila.mount($("fila"), { sb, admin: true }); } // chegou coisa nova: atualiza as listas lá embaixo
+  NULT = Date.now();
+}
+function drawNotif(){
+  const novos = NOTIF.filter(n => n.t > NVISTO).length, pend = NOTIF.filter(n => n.fixo).length, badge = novos + NOTIF.filter(n => n.fixo && !(n.t > NVISTO)).length;
+  $("sino-n").textContent = badge > 99 ? "99+" : badge; $("sino-n").classList.toggle("hidden", !badge);
+  try{ badge ? navigator.setAppBadge?.(badge) : navigator.clearAppBadge?.(); }catch(e){}
+  document.title = (badge ? `(${badge}) ` : "") + "Área do FR · Família FR";
+  if(!NOTIF.length){ $("notif").innerHTML = `<span class="mut">Nada novo nos últimos 14 dias.</span>`; return; }
+  const mostra = NTODAS ? NOTIF : NOTIF.slice(0, 8);
+  $("notif").innerHTML = `<div class="row" style="margin-top:0"><b>${novos ? `${novos} ${novos===1?"novidade":"novidades"}` : "Nada novo desde a última vez"}</b>${pend?`<span class="pix no">${pend} para aprovar</span>`:""}${novos?`<button class="btn line mini" data-nvisto style="margin-left:auto">Marcar como visto</button>`:""}</div>` +
+    mostra.map(n => `<div class="nt${n.t > NVISTO ? " novo" : ""}"><span class="ic">${n.ic}</span><div class="tx"><b>${esc(n.tit)}</b><div class="mut">${esc(n.sub)} · ${quando(n.t)}</div>
+      <div class="row">${n.acao||""}<button class="btn line mini" data-ir="${n.alvo}">Abrir</button></div></div></div>`).join("") +
+    (NOTIF.length > 8 ? `<div class="row"><button class="btn line mini" data-ntodas>${NTODAS ? "Mostrar menos" : `Ver todas (${NOTIF.length})`}</button></div>` : "");
+}
+document.addEventListener("click", e => {
+  if(e.target.closest("#b-sino")){ $("h-notif").scrollIntoView({behavior:"smooth"}); return; }
+  if(e.target.closest("[data-nvisto]")){ NVISTO = new Date().toISOString(); try{ localStorage.setItem(NKEY, NVISTO); }catch(err){} drawNotif(); return; }
+  if(e.target.closest("[data-ntodas]")){ NTODAS = !NTODAS; drawNotif(); return; }
+  const ir = e.target.closest("[data-ir]");
+  if(ir && ir.closest("#notif")){
+    const el = $(ir.dataset.ir); if(!el) return;
+    const v = ir.dataset.ver && $("an-" + ir.dataset.ver);
+    setTimeout(() => { const alvo = v ? v.closest(".ped") : el; alvo.scrollIntoView({behavior:"smooth", block: v ? "start" : "center"}); alvo.classList.remove("alvo"); void alvo.offsetWidth; alvo.classList.add("alvo"); }, v ? 50 : 0);
+    return;
+  }
+  // depois de aprovar cupom ou confirmar Pix pela notificação, atualiza a lista
+  if(e.target.closest("#notif [data-cst], #notif [data-pago]")) setTimeout(loadNotif, 1200);
+});
+setInterval(() => { if(!document.hidden && !$("v-app").classList.contains("hidden")) loadNotif(); }, 60000);
+document.addEventListener("visibilitychange", () => { if(!document.hidden && !$("v-app").classList.contains("hidden") && Date.now() - NULT > 15000) loadNotif(); });
+
 function drawLinks(){
   const base = location.origin + location.pathname.replace(/admin\.html$/,"");
   FRPlanos.mountLinks($("links"), { sb, base });
