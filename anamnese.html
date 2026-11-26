@@ -101,7 +101,7 @@ function abrirForm(R){
   $("sub").innerHTML = `${esc(P.nome)} · ${esc(P.plano)}`;
   $("aviso").innerHTML = P.pago
     ? `<div class="aviso ok">✅ Pix confirmado. Ao enviar, a sua anamnese vai direto para ${nutri}.</div>`
-    : `<div class="aviso lock">🔒 <b>Aguardando a confirmação do seu Pix.</b> Você já pode responder agora. A anamnese só chega para ${nutri} depois que o pagamento for confirmado, e até lá você pode alterar as respostas.</div>`;
+    : `<div class="aviso ok">📝 Ao enviar, a sua anamnese vai direto para ${nutri} e para a equipe FR. Até o seu Pix ser confirmado, você ainda pode alterar as respostas por este mesmo link.</div>`;
   $("b-enviar").textContent = rotulo();
   $("nota").textContent = P.pago ? "Depois de enviar, as respostas não podem mais ser alteradas." : "";
   FRAnamnese.form($("perguntas"), R || {});
@@ -115,11 +115,11 @@ function fim(R){
     $("b-editar").classList.add("hidden");
   } else if(W){
     $("fim-t").textContent = "Anamnese respondida ✓";
-    $("fim-txt").innerHTML = `Agora é só mandar o seu resumo no WhatsApp. A gente confirma e te envia o Pix. Assim que o Pix for confirmado, a sua anamnese segue sozinha para <b>${nutri}</b>.`;
+    $("fim-txt").innerHTML = `Sua anamnese já chegou para <b>${nutri}</b> e para a equipe FR ✅ Agora é só mandar o seu resumo no WhatsApp: a gente confirma e te envia o Pix.`;
     $("b-editar").classList.remove("hidden");
   } else {
     $("fim-t").textContent = "Respostas salvas ✓";
-    $("fim-txt").innerHTML = `Assim que o seu Pix for confirmado, a sua anamnese segue sozinha para <b>${nutri}</b>. Você não precisa fazer mais nada. Se quiser mudar alguma resposta até lá, é só voltar por este mesmo link.`;
+    $("fim-txt").innerHTML = `Sua anamnese já chegou para <b>${nutri}</b> e para a equipe FR ✅ Você não precisa fazer mais nada. Se quiser mudar alguma resposta antes da confirmação do Pix, é só voltar por este mesmo link.`;
     $("b-editar").classList.remove("hidden");
   }
   $("fim-resp").innerHTML = FRAnamnese.html(R); $("fim-resp").classList.toggle("hidden", !P.pago);

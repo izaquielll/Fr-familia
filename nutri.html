@@ -65,6 +65,7 @@ a.btn{text-decoration:none;display:inline-block}.mini{padding:7px 12px;font-size
 
   <div id="v-app" class="hidden">
     <div class="card"><div class="top"><span id="who" class="mut"></span><span class="sp"></span><button class="btn line" id="b-out">Sair</button></div></div>
+    <div class="card" id="push"></div>
 
     <div id="box-link" class="card hidden">
       <div class="top"><b>Seu link</b><span class="sp"></span><span id="st" class="st"></span></div>
@@ -103,11 +104,11 @@ a.btn{text-decoration:none;display:inline-block}.mini{padding:7px 12px;font-size
     <div class="card" id="fila"><span class="mut">Salve o seu perfil para começar.</span></div>
 
     <h2>Anamneses dos seus clientes</h2>
-    <p class="mut" style="margin:0">Chegam aqui assim que o cliente responde e o FR confirma o Pix.</p>
+    <p class="mut" style="margin:0">Chegam aqui assim que o cliente que escolheu você termina de responder. Ative as notificações acima para receber o aviso no celular.</p>
     <div class="card" id="anams"><span class="mut">Salve o seu perfil para começar.</span></div>
 
     <h2>Pedidos com você</h2>
-    <p class="mut" style="margin:0">Quem entra pelo <b>seu link</b> manda o pedido no seu WhatsApp e faz o Pix para você. Quando o Pix cair, toque em <b>Confirmar Pix</b>: isso libera a anamnese e avisa a equipe FR. Depois repasse a parte do FR.</p>
+    <p class="mut" style="margin:0">Quem entra pelo <b>seu link</b> manda o pedido no seu WhatsApp e faz o Pix para você. Quando o Pix cair, toque em <b>Confirmar Pix</b>: isso avisa a equipe FR. Depois repasse a parte do FR.</p>
     <div class="card" id="peds"><span class="mut">Salve o seu perfil para começar.</span></div>
   </div>
 </div>
@@ -116,6 +117,7 @@ a.btn{text-decoration:none;display:inline-block}.mini{padding:7px 12px;font-size
 <script src="planos.js?v=20261123b"></script>
 <script src="anamnese.js?v=20261122b"></script>
 <script src="fila.js?v=20261124a"></script>
+<script src="push.js?v=20261126a"></script>
 <script>
 const sb = window.supabase.createClient(FR_CONFIG.url, FR_CONFIG.key);
 const $ = id => document.getElementById(id);
@@ -136,6 +138,7 @@ async function show(session){
   $("f-esp").value = data?.especialidades || ""; $("f-form").value = data?.formacao || ""; $("f-bio").value = data?.bio || ""; $("f-insta").value = data?.instagram ? "@" + data.instagram : "";
   $("foto-prev").src = fotoUrl || "";
   drawLink(); loadPeds(); loadAnams(); loadFila();
+  FRPush.mount($("push"), { sb, quem: "nutri" });
 }
 function loadFila(){
   if(!perfil) return;
@@ -147,15 +150,16 @@ const vistoKey = () => "fr-anamneses-vistas-" + (user?.id || "");
 const vistas = () => { try{ return JSON.parse(localStorage.getItem(vistoKey())) || []; }catch(e){ return []; } };
 async function loadAnams(){
   if(!perfil) return;
-  const { data, error } = await sb.from("fr_anamneses").select("pedido_id,respostas,atualizada_em,fr_pedidos(nome,plano,pago_em,created_at)").order("atualizada_em",{ascending:false}).limit(200);
+  const { data, error } = await sb.from("fr_anamneses").select("pedido_id,respostas,atualizada_em,fr_pedidos(nome,plano,pago,pago_em,created_at,celular,objetivo)").order("atualizada_em",{ascending:false}).limit(200);
   if(error){ $("anams").innerHTML = `<span class="mut">Não deu para carregar as anamneses.</span>`; return; }
   ANAMS = data || [];
   if(!ANAMS.length){ $("anams").innerHTML = `<span class="mut">Nenhuma anamnese ainda.</span>`; return; }
   const vs = vistas();
   $("anams").innerHTML = ANAMS.map(a => { const p = a.fr_pedidos || {}; return `<div class="ped"><b>${esc(p.nome||"Cliente")}</b>
     ${vs.includes(a.pedido_id)?"":`<span class="tag novo">Nova</span>`}<span class="tag">${esc(p.plano||"")}</span>
+    ${p.objetivo?`<span class="tag">${esc(p.objetivo)}</span>`:""}<span class="pix ${p.pago?"ok":"no"}">${p.pago?"Pix confirmado":"Pix ainda não confirmado"}</span>
     <div class="mut" style="font-size:13px">Respondida em ${new Date(a.atualizada_em).toLocaleDateString("pt-BR")}${p.pago_em?` · Pix confirmado em ${new Date(p.pago_em).toLocaleDateString("pt-BR")}`:""}</div>
-    <div class="row" style="margin-top:8px"><button class="btn mini" data-ver="${a.pedido_id}">Ver anamnese</button><button class="btn line mini" data-print="${a.pedido_id}">Imprimir / PDF</button><button class="btn line mini" data-copiar="${a.pedido_id}">Copiar texto</button></div>
+    <div class="row" style="margin-top:8px"><button class="btn mini" data-ver="${a.pedido_id}">Ver anamnese</button><button class="btn line mini" data-print="${a.pedido_id}">Imprimir / PDF</button><button class="btn line mini" data-copiar="${a.pedido_id}">Copiar texto</button>${p.celular?`<a class="btn line mini" target="_blank" rel="noopener" href="https://wa.me/55${esc(p.celular)}">WhatsApp de ${esc(String(p.nome||"").split(" ")[0])}</a>`:""}</div>
     <div id="an-${a.pedido_id}" class="anbox hidden"></div></div>`; }).join("");
 }
 document.addEventListener("click", async e => {
@@ -207,7 +211,7 @@ async function loadPeds(){
 document.addEventListener("click", async e => {
   const b = e.target.closest("[data-pix]"); if(!b) return;
   const pago = b.dataset.pix === "1";
-  if(!pago && !confirm("Desfazer a confirmação do Pix? A anamnese deste cliente volta a ficar bloqueada.")) return;
+  if(!pago && !confirm("Desfazer a confirmação do Pix?")) return;
   b.disabled = true; b.textContent = "Salvando…";
   const { error } = await sb.rpc("fr_nutri_confirmar_pix", { p_id: Number(b.dataset.id), p_pago: pago });
   if(error){ b.disabled = false; b.textContent = "Não deu certo. Tentar de novo"; return; }

@@ -69,6 +69,7 @@ a.btn{text-decoration:none;display:inline-block}
     <div class="card"><div class="top"><span id="who" class="mut"></span><span class="sp"></span><button class="btn line" id="b-out">Sair</button></div></div>
     <h2 id="h-notif">🔔 Notificações</h2>
     <p class="mut" style="margin:0">Tudo o que chegou nos últimos 14 dias: pedidos, anamneses, cupons, fila e nutris. Atualiza sozinho a cada minuto.</p>
+    <div class="card" id="push"></div>
     <div class="card" id="notif"><span class="mut">Carregando…</span></div>
     <h2>Valores da vitrine</h2>
     <div class="card" id="form"></div>
@@ -98,6 +99,7 @@ a.btn{text-decoration:none;display:inline-block}
 <script src="planos.js?v=20261123b"></script>
 <script src="anamnese.js?v=20261122b"></script>
 <script src="fila.js?v=20261124a"></script>
+<script src="push.js?v=20261126a"></script>
 <script>
 const sb = window.supabase.createClient(FR_CONFIG.url, FR_CONFIG.key);
 const FIELDS = [
@@ -123,10 +125,37 @@ async function show(session){
   C = data?.dados || {};
   $("form").innerHTML = FIELDS.map(([t,fs])=>`<h3 style="font-size:15px;margin:14px 0 0">${t}</h3><div class="g">${fs.map(([k,l,ty])=>`${ty==="check" ? `<label style="display:flex;gap:8px;align-items:center;margin-top:14px"><input id="a-${k}" type="checkbox" style="width:auto" ${C[k]!==false?"checked":""}> ${l}</label>` : `<div><label for="a-${k}">${l}</label><input id="a-${k}" type="${ty}" ${ty==="number"?'step="0.01" min="0"':""} value="${esc(C[k])}"></div>`}`).join("")}</div>`).join("");
   loadPeds(); loadNutris(); drawLinks(); loadCupons(); FRFila.mount($("fila"), { sb, admin: true });
-  $("b-sino").classList.remove("hidden"); loadNotif();
+  $("b-sino").classList.remove("hidden"); loadNotif(); FRPush.mount($("push"), { sb, quem: "fr" });
   if(!planosUI) planosUI = FRPlanos.mountPlanos($("planos"), { sb, admin: true, onChange: drawLinks }); else planosUI.reload();
 }
-let PEDIDOS_FR = [], ANAMN_FR = {};
+let PEDIDOS_FR = [], ANAMN_FR = {}, NUTRIS_FR = [];
+const nutriDo = p => { const s = p.nutri_slug || p.ref_nutri; return s ? NUTRIS_FR.find(n => n.slug === s) : (p.nutri ? NUTRIS_FR.find(n => n.nome === p.nutri) : null); };
+const baseSite = () => location.origin + location.pathname.replace(/admin\.html$/,"");
+/* Mensagem pronta para o cliente: o que o plano inclui e como vai ser o trabalho */
+function tipoPedido(p){ const n = String(p.plano||""); return /convite/i.test(n) ? "convite" : /\+\s*nutri/i.test(n) ? "combo" : /consultoria/i.test(n) ? "consultoria" : "programa"; }
+function msgBoasVindas(p, an){
+  const nome = pNome(p.nome), tipo = tipoPedido(p), nutri = p.nutri || (nutriDo(p)||{}).nome || "a nutricionista", comNutri = nutri === "a nutricionista" ? nutri : "a nutricionista " + nutri, aN = nutri === "a nutricionista" ? nutri : "a " + nutri;
+  const reno = C.descRenovaCombo ?? 0, dc = C.descConsult ?? 20, dcb = C.descCombo ?? 30;
+  const acesso = p.email ? `Você vai receber o acesso ao app MFIT no e-mail *${p.email}*.` : "Vou te mandar o acesso ao app MFIT.";
+  const pix = p.pago ? "✅ *Pagamento:* Pix confirmado. Já estamos começando!" : "💳 *Pagamento:* assim que o Pix cair, eu confirmo por aqui e a gente começa.";
+  const anam = !p.token ? "" : an ? `📝 *Anamnese:* recebida ✅ ${aN.charAt(0).toUpperCase()+aN.slice(1)} já está com as suas respostas.` : `📝 *Anamnese:* responda com calma (uns 15 minutos), ela é a base do seu plano alimentar: ${linkAn(p)}`;
+  const inc = {
+    consultoria: ["Treino montado para você no app MFIT","Avaliação presencial com o Personal","Avaliação online e anamnese de treino completas","Suporte e correção dos exercícios no WhatsApp","Atualização do treino dentro do ciclo"],
+    combo: ["Treino montado para você no app MFIT","Avaliação presencial com o Personal","Avaliação de treino (1 treino acompanhado)",`Plano alimentar com ${comNutri}`,"2 atualizações do plano alimentar no ciclo de 60 dias","Suporte e correção dos exercícios no WhatsApp", ...(reno ? [`Renovação com ${reno}% de desconto depois dos 60 dias`] : [])],
+    convite: ["Avaliação online e anamnese completas","Treino montado para você no app MFIT",`Plano alimentar com ${comNutri}`,"2 atualizações do plano alimentar no ciclo","Suporte e correção dos exercícios no WhatsApp","100% online (não inclui avaliação presencial)"],
+    programa: ["30 dias de treino pronto no app MFIT, com progressão","Suporte no WhatsApp", ...(/guia/i.test(p.plano||"") ? [`Guia alimentar d${comNutri.slice(1)}`] : []), `Depois do programa: ${dc}% off na 1ª consultoria ou ${dcb}% off na Consultoria + Nutri`]
+  }[tipo];
+  const passos = {
+    consultoria: [pix, "📍 *Avaliação:* a gente combina o dia da sua avaliação presencial, e eu te mando a avaliação online e a anamnese de treino.", `📲 *Treino no MFIT:* com a avaliação em mãos, eu monto o seu treino e libero no app. ${acesso}`, "🎥 *Acompanhamento:* você me manda vídeos dos exercícios e dúvidas aqui no WhatsApp, e eu corrijo.", "🔁 *Ajustes:* o treino é atualizado dentro do ciclo de 60 dias, conforme você evolui."],
+    combo: [pix, anam, "📍 *Avaliação:* a gente combina o dia da sua avaliação presencial e da avaliação de treino.", `📲 *Treino no MFIT:* eu monto o seu treino e libero no app. ${acesso}`, `🥗 *Plano alimentar:* ${aN} monta o seu plano com base na anamnese e faz 2 atualizações no ciclo. Exames dos últimos 6 meses? Mande para ela.`, "🎥 *Acompanhamento:* vídeos dos exercícios e dúvidas aqui no WhatsApp, eu corrijo e a nutri ajusta a alimentação."],
+    convite: [pix, anam, `📲 *Treino no MFIT:* eu monto o seu treino a partir da avaliação online e libero no app. ${acesso}`, `🥗 *Plano alimentar:* ${aN} monta o seu plano com base na anamnese.`, "🎥 *Acompanhamento:* vídeos dos exercícios e dúvidas aqui no WhatsApp, eu corrijo."],
+    programa: [pix, `📲 *Programa no MFIT:* eu libero os seus 30 dias de treino no app. ${acesso}`, "📈 *Progressão:* você anota as cargas no app e vai subindo semana a semana.", "💬 *Dúvidas:* é só me chamar aqui no WhatsApp."]
+  }[tipo].filter(Boolean);
+  return `Oi, ${nome}! Seja bem-vindo(a) à Família FR 💪\n\nSeu plano: *${p.plano}* · ${brl(p.valor)}\n\n✅ *O que está incluído:*\n${inc.map(i => "• " + i).join("\n")}\n\n📋 *Como vai funcionar o nosso trabalho:*\n${passos.map((x,i) => `${i+1}. ${x}`).join("\n")}\n\nQualquer dúvida, é só me chamar aqui. Bora começar! 🔥`;
+}
+function msgNutri(p, an){
+  return `Oi, ${pNome((nutriDo(p)||{}).nome)}! Cliente novo para você na Família FR 🥗\n\n*Cliente:* ${p.nome}\n*Plano:* ${p.plano}${p.objetivo?`\n*Objetivo:* ${p.objetivo}`:""}${p.celular?`\n*WhatsApp:* ${p.celular}`:""}\n*Anamnese:* ${an ? "respondida ✅ já está na sua Área da Nutri" : "ainda não respondida (chega na sua área assim que ele responder)"}\n*Pix:* ${p.pago ? "confirmado ✅" : "ainda não confirmado"}\n\nSua área: ${baseSite()}nutri.html`;
+}
 async function loadPeds(){
   const { data, error } = await sb.from("fr_pedidos").select("*").order("created_at",{ascending:false}).limit(100);
   if(error){ $("peds").innerHTML = `<span class="mut">Sem permissão para ver os pedidos. Confira se este e-mail é de administrador.</span>`; return; }
@@ -140,7 +169,7 @@ const linkAn = p => location.origin + location.pathname.replace(/admin\.html$/,"
 function drawPeds(){
   $("peds").innerHTML = PEDIDOS_FR.map(p=>{
     const an = ANAMN_FR[p.id];
-    const st = !p.token ? "" : an ? (p.pago ? `<span class="tag">📝 Anamnese com a nutri</span>` : `<span class="tag">📝 Anamnese respondida · aguarda o Pix</span>`) : `<span class="tag">📝 Anamnese ainda não respondida</span>`;
+    const st = !p.token ? "" : an ? `<span class="tag">📝 Anamnese respondida · já está com a nutri</span>` : `<span class="tag">📝 Anamnese ainda não respondida</span>`;
     return `<div class="ped"><b>${esc(p.nome)} · ${brl(p.valor)}</b>
     <span class="pix ${p.pago?"ok":"no"}">${p.pago ? (p.pago_por && p.pago_por!=="fr" ? "Pix recebido pela nutri ("+esc(p.pago_por)+")" : "Pix confirmado") : (p.ref_nutri ? "Pix com a nutri ("+esc(p.ref_nutri)+")" : "Aguardando Pix")}</span><span class="tag">${esc(p.plano)}</span>${p.nutri?`<span class="tag">${esc(p.nutri)}</span>`:""}${p.objetivo?`<span class="tag">${esc(p.objetivo)}</span>`:""}${p.nascimento?`<span class="tag">Nasc. ${esc(p.nascimento.split("-").reverse().join("/"))}</span>`:""}${p.email?`<span class="tag">${esc(p.email)}</span>`:""}${p.celular?`<a class="tag" href="https://wa.me/55${esc(p.celular)}" target="_blank" rel="noopener" style="text-decoration:none">📱 WhatsApp ${esc(p.celular.length===11?"("+p.celular.slice(0,2)+") "+p.celular.slice(2,7)+"-"+p.celular.slice(7):p.celular)}</a>`:""}${p.indicado?`<span class="tag">Indicado por ${esc(p.indicado)}</span>`:""}${p.ref_nutri?`<span class="tag">Link da nutri: ${esc(p.ref_nutri)}</span>`:""}${p.cupom?`<span class="tag">🎟️ Cupom ${esc(p.cupom)}${(c => c ? " · indicação de " + esc(c.nome) : "")(CUPONS.find(c => c.codigo === p.cupom))}</span>`:""}${st}
     <div class="mut" style="font-size:13px">${new Date(p.created_at).toLocaleString("pt-BR")}${p.pago_em?` · Pix confirmado em ${new Date(p.pago_em).toLocaleDateString("pt-BR")}`:""}</div>
@@ -148,8 +177,10 @@ function drawPeds(){
       ${p.pago?`<button class="btn line mini" data-pago="0" data-id="${p.id}">Desfazer Pix</button>`:`<button class="btn mini" data-pago="1" data-id="${p.id}">Confirmar Pix</button>`}
       ${p.token?`<a class="btn line mini" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(`Oi, ${String(p.nome||"").split(" ")[0]}! Aqui está a sua anamnese da Família FR 📝 Leva uns 15 minutos: ${linkAn(p)}`)}">Enviar link da anamnese</a>`:""}
       ${an?`<button class="btn line mini" data-ver="${p.id}">Ver anamnese</button>`:""}
+      <button class="btn mini" data-msg="${p.id}">💬 Mensagem pronta</button>
+      ${nutriDo(p)?.whatsapp?`<a class="btn line mini" target="_blank" rel="noopener" href="https://wa.me/${zapCel(nutriDo(p).whatsapp)}?text=${encodeURIComponent(msgNutri(p, an))}">🥗 Avisar ${esc(pNome(nutriDo(p).nome))}</a>`:""}
       <button class="btn line mini del" data-del="${p.id}">Excluir</button>
-    </div><div id="an-${p.id}" class="anbox hidden"></div></div>`;
+    </div><div id="msg-${p.id}" class="anbox hidden"></div><div id="an-${p.id}" class="anbox hidden"></div></div>`;
   }).join("");
 }
 document.addEventListener("click", async e => {
@@ -165,11 +196,21 @@ document.addEventListener("click", async e => {
   const b = e.target.closest("[data-pago]");
   if(b){
     const pago = b.dataset.pago === "1";
-    if(!pago && !confirm("Desfazer a confirmação do Pix? A nutri deixa de ver a anamnese deste cliente.")) return;
+    if(!pago && !confirm("Desfazer a confirmação do Pix?")) return;
     b.disabled = true;
     const { data, error } = await sb.from("fr_pedidos").update({ pago }).eq("id", b.dataset.id).select().single();
     if(error){ b.disabled = false; alert("Não deu para salvar. Confira a internet."); return; }
     PEDIDOS_FR = PEDIDOS_FR.map(p => p.id === data.id ? data : p); drawPeds(); return;
+  }
+  const mb = e.target.closest("[data-msg]");
+  if(mb){
+    const box = $("msg-"+mb.dataset.msg), p = PEDIDOS_FR.find(x=>String(x.id)===mb.dataset.msg);
+    if(box.classList.toggle("hidden")) return;
+    const m = msgBoasVindas(p, ANAMN_FR[p.id]);
+    box.innerHTML = `<div class="mut" style="font-size:13px;margin-top:10px">Mensagem para ${esc(pNome(p.nome))}: o que o plano inclui e como vai ser o trabalho. Confira e envie.</div>
+      <div style="white-space:pre-wrap;background:var(--bg,#0f100d);border:1px solid var(--line,#2c3026);border-radius:10px;padding:10px;font-size:14px;margin-top:6px">${esc(m)}</div>
+      <div class="row" style="margin-top:8px"><a class="btn mini" target="_blank" rel="noopener" href="https://wa.me/${p.celular?"55"+p.celular:""}?text=${encodeURIComponent(m)}">${p.celular?"Enviar no WhatsApp de "+esc(pNome(p.nome)):"Enviar no WhatsApp (escolher contato)"}</a><button class="btn line mini" data-copy="${esc(m)}">Copiar</button></div>`;
+    return;
   }
   const v = e.target.closest("[data-ver]");
   if(v){
@@ -183,6 +224,7 @@ document.addEventListener("click", async e => {
 });
 async function loadNutris(){
   const { data, error } = await sb.from("fr_nutris").select("id,slug,nome,whatsapp,especialidades,foto_url,status,created_at").order("created_at",{ascending:false});
+  if(!error){ NUTRIS_FR = data || []; if(PEDIDOS_FR.length) drawPeds(); }
   if(error){ $("nutris").innerHTML = `<span class="mut">Não deu para carregar.</span>`; return; }
   if(!data.length){ $("nutris").innerHTML = `<span class="mut">Nenhuma nutricionista cadastrada ainda. Mande o link <b>${esc(location.origin + location.pathname.replace(/admin\.html$/,""))}nutri.html</b> para elas.</span>`; return; }
   const lbl = {pendente:"Em análise", aprovada:"Aprovada", pausada:"Pausada"};
@@ -255,7 +297,7 @@ async function loadNotif(){
   pe.forEach(p => L.push({ t:p.created_at, ic:"🛒", alvo:"peds", tit:`Novo pedido · ${p.nome}`, sub:`${p.plano} · ${brl(p.valor)}${p.cupom?` · cupom ${p.cupom}`:""}${p.nutri?` · ${p.nutri}`:""}`,
     acao: p.pago ? `<span class="pix ok">Pix confirmado</span>` : `<button class="btn mini" data-pago="1" data-id="${p.id}">Confirmar Pix</button>` }));
   pe.filter(p => p.pago && p.pago_em).forEach(p => L.push({ t:p.pago_em, ic:"✅", alvo:"peds", tit:`Pix confirmado · ${p.nome}`, sub:p.plano }));
-  an.forEach(a => { const p = a.fr_pedidos || {}; L.push({ t:a.atualizada_em, ic:"📝", alvo:"peds", tit:`Anamnese respondida · ${p.nome||"cliente"}`, sub:`${p.plano||""}${p.pago?" · já está com a nutri":" · aguarda o Pix"}`,
+  an.forEach(a => { const p = a.fr_pedidos || {}; L.push({ t:a.atualizada_em, ic:"📝", alvo:"peds", tit:`Anamnese respondida · ${p.nome||"cliente"}`, sub:`${p.plano||""} · já está com a nutri${p.pago?"":" · Pix ainda não confirmado"}`,
     acao:`<button class="btn line mini" data-ver="${a.pedido_id}" data-ir="peds">Ver anamnese</button>` }); });
   cu.forEach(c => L.push({ t:c.created_at, ic:"🎟️", alvo:"cupons", fixo: c.status==="pendente", tit: c.status==="pendente" ? `Cupom para aprovar · ${c.nome}` : `Cupom gerado · ${c.nome}`, sub:`Código ${c.codigo}`,
     acao: c.status==="pendente" ? `<button class="btn mini" data-cst="aprovado" data-id="${c.id}">Aprovar</button>` : "" }));

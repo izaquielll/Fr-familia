@@ -555,7 +555,7 @@ function resumo(){
   m += `\nQuero fechar! Pode me mandar o Pix?`;
   return m;
 }
-/* Anamnese da nutri: o link nasce com o pedido e só chega para a nutri depois que o FR confirma o Pix */
+/* Anamnese da nutri: o link nasce com o pedido; quando o cliente responde, chega na hora para a nutri e para o FR */
 const linkAnamnese = () => new URL("anamnese.html?t=" + S.token, location.href).href;
 function precisaAnamnese(){
   const isAv = S.id.startsWith("pl-"), PP = isAv ? plano(S.programa) : null;
