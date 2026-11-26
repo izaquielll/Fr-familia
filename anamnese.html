@@ -127,11 +127,19 @@ function fim(R){
   mostra("v-fim");
 }
 
+// Saída de emergência: se o banco falhar, o cliente que veio da vitrine nunca fica sem chegar no WhatsApp
+function zapSimples(){
+  if(!W) return null; const tel = W.startsWith("55") ? W : "55" + W;
+  const m = (P && P.resumo) || "Olá, FR! Vim pela vitrine da Família FR 💪\nQuero fechar o meu plano! Pode me mandar o Pix?";
+  return `https://wa.me/${tel}?text=${encodeURIComponent(m)}`;
+}
+const linkSaida = () => { const z = zapSimples(); return z ? ` Ou <a href="${z}" style="color:var(--lime)">mande o seu pedido no WhatsApp</a>.` : ""; };
 async function iniciar(){
   if(TOKEN.length < 32){ erro(`Este link de anamnese não está completo. Peça o link de novo para o FR no WhatsApp.`); return; }
-  const { data, error } = await sb.rpc("fr_anamnese_ver", { p_token: TOKEN });
-  if(error){ erro(`Não deu para abrir agora. Confira a internet e <a href="" style="color:var(--lime)">tente de novo</a>.`); return; }
-  if(!data){ erro(`Não encontramos esta anamnese. Peça o link de novo para o FR no WhatsApp.`); return; }
+  let data = null, error = null;
+  try{ ({ data, error } = await sb.rpc("fr_anamnese_ver", { p_token: TOKEN })); }catch(e){ error = e; }
+  if(error){ erro(`Não deu para abrir agora. Confira a internet e <a href="" style="color:var(--lime)">tente de novo</a>.` + linkSaida()); return; }
+  if(!data){ erro(`Não encontramos esta anamnese. Peça o link de novo para o FR no WhatsApp.` + linkSaida()); return; }
   P = data;
   if(P.respondida){ fim(P.respostas); return; }
   abrirForm(rascunho() || P.respostas || {});
@@ -151,11 +159,12 @@ $("b-enviar").onclick = async () => {
     return;
   }
   $("f-err").textContent = ""; $("b-enviar").disabled = true; $("b-enviar").textContent = "Enviando…";
-  const { data, error } = await sb.rpc("fr_anamnese_salvar", { p_token: TOKEN, p_respostas: R });
+  let data = null, error = null;
+  try{ ({ data, error } = await sb.rpc("fr_anamnese_salvar", { p_token: TOKEN, p_respostas: R })); }catch(e){ error = { message: String(e && e.message || e) }; }
   $("b-enviar").disabled = false;
   if(error){
     if(/ja_enviada/.test(error.message)){ const r = await sb.rpc("fr_anamnese_ver", { p_token: TOKEN }); P = r.data || P; fim(P.respostas); return; }
-    $("f-err").textContent = "Não deu para enviar. Confira a internet e toque de novo. Suas respostas continuam guardadas aqui.";
+    $("f-err").innerHTML = "Não deu para enviar. Confira a internet e toque de novo. Suas respostas continuam guardadas aqui." + linkSaida();
     $("b-enviar").textContent = rotulo(); return;
   }
   P.pago = !!(data && data.pago); P.respondida = true; P.respostas = R;

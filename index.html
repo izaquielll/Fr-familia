@@ -586,10 +586,14 @@ document.addEventListener("click", e => {
     if(S.token){
       // Planos com nutri: primeiro a anamnese; o WhatsApp abre quando ela terminar
       const b = e.target.closest("[data-send]"); b.disabled = true; b.textContent = "Abrindo a anamnese…";
+      // Nunca trava o cliente: se o pedido não salvar (ou demorar), vai direto pro WhatsApp com o resumo
+      let foi = false;
+      const zap = () => { if(foi) return; foi = true; S.token = null; location.href = `https://wa.me/${tel}?text=${encodeURIComponent(resumo())}`; };
+      const t = setTimeout(zap, 8000);
       salvarPedido().then(ok => {
-        if(ok){ location.href = linkAnamnese() + "&w=" + tel; return; }
-        b.disabled = false; b.textContent = "Enviar resumo no WhatsApp"; S.token = null;
-        err.textContent = "Não deu para abrir a anamnese agora. Toque de novo para mandar o resumo no WhatsApp.";
+        if(foi) return;
+        if(ok){ foi = true; clearTimeout(t); location.href = linkAnamnese() + "&w=" + tel; return; }
+        clearTimeout(t); zap();
       });
       return;
     }
